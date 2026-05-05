@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>PlayForge — TestId Fixture</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        max-width: 480px;
+        margin: 60px auto;
+        padding: 0 16px;
+      }
+      button {
+        margin: 8px;
+        padding: 10px 20px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      input {
+        display: block;
+        margin: 8px 0;
+        padding: 8px;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      label {
+        font-size: 13px;
+        color: #555;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>PlayForge Fixture — data-testid elements</h1>
+    <p>Open the PlayForge side panel, click Start Recording, then interact below.</p>
+
+    <form>
+      <label for="email">Email</label>
+      <input id="email" type="email" data-testid="login-email" placeholder="user@example.com" />
+
+      <label for="pass">Password</label>
+      <input id="pass" type="password" data-testid="login-password" placeholder="••••••••" />
+
+      <button type="submit" data-testid="login-submit">Sign In</button>
+    </form>
+
+    <hr style="margin: 32px 0" />
+
+    <h2>data-test-id fallback</h2>
+    <button data-test-id="cancel-btn">Cancel</button>
+
+    <h2>No testid (locator engine skips these)</h2>
+    <button id="no-testid">Plain button</button>
+    <button class="css-1a2b3c MuiButton-root-273">Dynamic class button</button>
+  </body>
+</html>
