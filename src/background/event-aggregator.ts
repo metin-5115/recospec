@@ -8,6 +8,7 @@ export async function aggregateEvent(sessionId: string, event: CapturedEvent): P
   const existing = await getActionsBySession(sessionId)
   const sequenceNumber = existing.length
 
+  const bundle = event.target?.locatorBundle ?? null
   const action: RecordedAction = {
     actionId: crypto.randomUUID(),
     sessionId,
@@ -15,13 +16,14 @@ export async function aggregateEvent(sessionId: string, event: CapturedEvent): P
     type: event.type,
     timestamp: event.timestamp,
     pageUrl: event.pageMetadata.url,
-    target: event.target
+    target: bundle
       ? {
-          primaryLocator: event.target.locatorBundle.primary,
-          fallbackLocators: event.target.locatorBundle.fallbacks,
-          elementSnapshot: event.target.elementSnapshot,
+          primaryLocator: bundle.primary,
+          fallbackLocators: bundle.fallbacks,
+          elementSnapshot: event.target!.elementSnapshot,
         }
       : undefined,
+    elementSnapshot: event.target?.elementSnapshot,
     payload: event.payload,
   }
 

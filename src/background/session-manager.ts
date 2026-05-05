@@ -33,11 +33,12 @@ export async function startSession(
 
   const sessionId = crypto.randomUUID()
   const now = Date.now()
+  const tab = await chrome.tabs.get(tabId).catch(() => null)
   const session: Session = {
     sessionId,
     name: `${SESSION_NAME_PREFIX} ${new Date(now).toLocaleString()}`,
     state: 'recording',
-    startUrl: '',
+    startUrl: tab?.url ?? '',
     startedAt: now,
     tabId,
     metadata,

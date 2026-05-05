@@ -33,6 +33,7 @@ export interface RecordedAction {
     fallbackLocators: Locator[]
     elementSnapshot: ElementSnapshot
   }
+  elementSnapshot?: ElementSnapshot
   payload?: Record<string, unknown>
   annotation?: string
 }
@@ -40,7 +41,7 @@ export interface RecordedAction {
 export interface CapturedEvent {
   type: ActionType
   target: {
-    locatorBundle: LocatorBundle
+    locatorBundle: LocatorBundle | null
     elementSnapshot: ElementSnapshot
   } | null
   payload?: Record<string, unknown>

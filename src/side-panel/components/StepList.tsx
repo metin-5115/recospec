@@ -16,10 +16,13 @@ export function StepList({ steps }: StepListProps) {
   return (
     <ol className="divide-y divide-gray-100">
       {steps.map((step, index) => {
+        const snapshot = step.target?.elementSnapshot ?? step.elementSnapshot
         const locatorLabel =
           typeof step.target?.primaryLocator.selector === 'string'
             ? step.target.primaryLocator.selector
-            : step.pageUrl
+            : snapshot
+              ? `<${snapshot.tagName}>`
+              : step.type
 
         return (
           <li key={step.actionId} className="flex items-center gap-3 px-4 py-2 text-sm">

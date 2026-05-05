@@ -26,7 +26,7 @@ function buildEvent(
   const bundle: LocatorBundle | null = engine.evaluate(target, document)
   return {
     type,
-    target: bundle ? { locatorBundle: bundle, elementSnapshot: buildSnapshot(target) } : null,
+    target: { locatorBundle: bundle, elementSnapshot: buildSnapshot(target) },
     payload,
     timestamp: Date.now(),
     pageMetadata: { url: location.href, title: document.title },
