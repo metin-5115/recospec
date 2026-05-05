@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "PlayForge",
+  "version": "0.1.0",
+  "description": "Record browser interactions and generate production-ready test automation code.",
+  "permissions": ["storage", "tabs", "activeTab", "sidePanel"],
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_title": "PlayForge"
+  },
+  "side_panel": {
+    "default_path": "src/side-panel/side-panel.html"
+  },
+  "background": {
+    "service_worker": "src/background/index.ts",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content/index.ts"]
+    }
+  ]
+}
