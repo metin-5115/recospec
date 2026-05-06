@@ -5,6 +5,7 @@ import { CodePreview } from './components/CodePreview'
 export function SidePanelApp() {
   const {
     isRecording,
+    isStarting,
     steps,
     generatedCode,
     codeGenError,
@@ -34,11 +35,12 @@ export function SidePanelApp() {
         </div>
         <button
           onClick={isRecording ? stopRecording : startRecording}
-          className={`rounded px-3 py-1.5 text-sm font-medium text-white transition-colors ${
+          disabled={isStarting}
+          className={`rounded px-3 py-1.5 text-sm font-medium text-white transition-colors disabled:opacity-50 ${
             isRecording ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
           }`}
         >
-          {isRecording ? 'Stop' : 'Start Recording'}
+          {isStarting ? 'Starting…' : isRecording ? 'Stop' : 'Start Recording'}
         </button>
       </header>
 

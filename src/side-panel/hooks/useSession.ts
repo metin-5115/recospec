@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useState } from 'react'
 import { useSessionStore } from '../sessionStore'
 import { onUIMessage } from '@shared/messaging/listen'
 import { sendToBackground } from '@shared/messaging/send'
@@ -37,27 +37,49 @@ export function useSession() {
     return cleanup
   }, [appendStep, setActiveSession, setGeneratedCode, setCodeGenError])
 
+  const [isStarting, setIsStarting] = useState(false)
+
   const startRecording = useCallback(async () => {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-    if (!tab?.id) return
-    clearSteps()
-    setGeneratedCode(null)
-    setCodeGenError(null)
-    await sendToBackground({
-      type: 'SESSION_START',
-      tabId: tab.id,
-      metadata: {
-        userAgent: navigator.userAgent,
-        viewport: { width: window.screen.width, height: window.screen.height },
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      },
-      config: {
-        captureClicks: true,
-        captureInputs: true,
-        captureNavigation: true,
-      },
-    })
-  }, [clearSteps, setGeneratedCode, setCodeGenError])
+    if (isStarting) return
+    setIsStarting(true)
+    try {
+      // Side panel runs in an extension context; `currentWindow` can resolve to the
+      // extension window instead of the browser window. Use getLastFocused with
+      // windowTypes: ['normal'] to reliably find the user-facing browser window.
+      let tab: chrome.tabs.Tab | undefined
+      try {
+        const win = await chrome.windows.getLastFocused({ populate: true, windowTypes: ['normal'] })
+        tab = win.tabs?.find((t) => t.active)
+      } catch {
+        // Fallback for environments where getLastFocused is unavailable
+        const [fallbackTab] = await chrome.tabs.query({ active: true, currentWindow: true })
+        tab = fallbackTab
+      }
+      if (!tab?.id) {
+        setCodeGenError('Could not find an active browser tab. Please click on the page first.')
+        return
+      }
+      clearSteps()
+      setGeneratedCode(null)
+      setCodeGenError(null)
+      await sendToBackground({
+        type: 'SESSION_START',
+        tabId: tab.id,
+        metadata: {
+          userAgent: navigator.userAgent,
+          viewport: { width: window.screen.width, height: window.screen.height },
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        },
+        config: {
+          captureClicks: true,
+          captureInputs: true,
+          captureNavigation: true,
+        },
+      })
+    } finally {
+      setIsStarting(false)
+    }
+  }, [isStarting, clearSteps, setGeneratedCode, setCodeGenError])
 
   const stopRecording = useCallback(async () => {
     if (!activeSession) return
@@ -91,6 +113,7 @@ export function useSession() {
     activeSession,
     steps,
     isRecording,
+    isStarting,
     generatedCode,
     codeGenError,
     startRecording,

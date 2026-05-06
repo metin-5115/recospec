@@ -27,8 +27,17 @@ export async function startSession(
   config: CaptureConfig,
 ): Promise<void> {
   if (activeSessionId) {
-    logger.warn('[BG] Session already active, ignoring SESSION_START')
-    return
+    // Service worker may have restored a stale 'recording' session from DB after
+    // being terminated. Archive it so the user can start fresh without reloading.
+    logger.warn('[BG] Archiving stale session to allow new recording', activeSessionId)
+    await updateSession(activeSessionId, { state: 'archived' }).catch(() => undefined)
+    if (activeTabId !== null) {
+      await sendToTab(activeTabId, { type: 'STOP_CAPTURE', sessionId: activeSessionId }).catch(
+        () => undefined,
+      )
+    }
+    activeSessionId = null
+    activeTabId = null
   }
 
   const sessionId = crypto.randomUUID()
