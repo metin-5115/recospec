@@ -28,7 +28,7 @@
   "author": "Metin Tunçbilek <tuncbilek.51metin@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/playforge.git"
+    "url": "https://github.com/metin-5115/playforge.git"
   },
   "license": "MIT",
   "packageManager": "pnpm@10.32.1",
