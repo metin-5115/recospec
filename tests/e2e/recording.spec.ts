@@ -10,7 +10,7 @@ test.describe('Recording flow', () => {
     const context = await loadExtension()
     const page = await context.newPage()
 
-    const fixturePath = `file://${resolve(__dirname, '../../fixtures/simple-form.html')}`
+    const fixturePath = `file://${resolve(__dirname, '../fixtures/simple-form.html')}`
     await page.goto(fixturePath)
 
     await expect(page.getByTestId('name-input')).toBeVisible()
