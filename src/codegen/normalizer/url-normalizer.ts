@@ -10,6 +10,11 @@ export function normalizeUrl(rawUrl: string): string {
     return rawUrl
   }
 
+  if (url.protocol === 'file:') {
+    const filename = url.pathname.split('/').pop() ?? 'page'
+    return '/' + filename.replace(/\.[^.]+$/, '')
+  }
+
   const segments = url.pathname.split('/').map((seg) => {
     if (NUMERIC_SEGMENT.test(seg)) return ':id'
     if (UUID_SEGMENT.test(seg)) return ':id'

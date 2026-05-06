@@ -9,17 +9,33 @@ export interface NormalizedActions {
   flatSteps: IRStep[]
 }
 
+function rawSelector(locator: Locator): string {
+  return typeof locator.selector === 'string' ? locator.selector : JSON.stringify(locator.selector)
+}
+
 function buildElement(
   snapshot: ElementSnapshot,
   primaryLocator: Locator,
   usedNames: Set<string>,
+  locatorToName: Map<string, string>,
 ): IRElement {
+  const key = rawSelector(primaryLocator)
+  const existing = locatorToName.get(key)
+  if (existing) {
+    return {
+      name: existing,
+      locatorStrategy: primaryLocator.strategy,
+      locatorValue: key,
+      tagName: snapshot.tagName,
+    }
+  }
   const name = nameElement(snapshot, primaryLocator, usedNames)
   usedNames.add(name)
+  locatorToName.set(key, name)
   return {
     name,
     locatorStrategy: primaryLocator.strategy,
-    locatorValue: primaryLocator.framework.playwright ?? (primaryLocator.selector as string),
+    locatorValue: key,
     tagName: snapshot.tagName,
   }
 }
@@ -30,9 +46,7 @@ function isSameFillMerge(prev: IRStep, curr: RecordedAction): boolean {
     prev.action === 'fill' &&
     prev.element !== undefined &&
     curr.target !== undefined &&
-    prev.element.locatorValue ===
-      (curr.target.primaryLocator.framework.playwright ??
-        (curr.target.primaryLocator.selector as string))
+    prev.element.locatorValue === rawSelector(curr.target.primaryLocator)
   )
 }
 
@@ -40,6 +54,7 @@ export function normalizeActions(actions: RecordedAction[]): NormalizedActions {
   const sessionId = actions[0]?.sessionId ?? ''
   const steps: IRStep[] = []
   const usedNames = new Set<string>()
+  const locatorToName = new Map<string, string>()
 
   for (const action of actions) {
     const { actionId: id, type, payload, pageUrl, annotation } = action
@@ -55,6 +70,7 @@ export function normalizeActions(actions: RecordedAction[]): NormalizedActions {
         action.target.elementSnapshot,
         action.target.primaryLocator,
         usedNames,
+        locatorToName,
       )
       const step: IRStep = { id, action: type, element, annotation }
       if (type === 'fill' && payload?.value !== undefined) {
