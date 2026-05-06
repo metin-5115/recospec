@@ -12,10 +12,20 @@ export function PopupApp() {
 
   return (
     <div className="w-64 p-4">
-      <h1 className="text-base font-bold text-gray-900">PlayForge</h1>
-      <div className="mt-3 flex items-center gap-2">
-        <span className={`h-2 w-2 rounded-full ${isRecording ? 'bg-red-500' : 'bg-gray-300'}`} />
-        <span className="text-sm text-gray-600">{isRecording ? 'Recording' : 'Idle'}</span>
+      <div className="flex items-center justify-between">
+        <h1 className="text-base font-bold text-gray-900">PlayForge</h1>
+        <span
+          className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold tracking-wide ${
+            isRecording ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-500'
+          }`}
+        >
+          <span
+            className={`h-1.5 w-1.5 rounded-full ${
+              isRecording ? 'animate-pulse bg-white' : 'bg-gray-400'
+            }`}
+          />
+          {isRecording ? 'REC' : 'IDLE'}
+        </span>
       </div>
       <button
         onClick={openSidePanel}

@@ -54,6 +54,10 @@ export async function startSession(
   )
 
   await broadcastToUI({ type: 'SESSION_STATE_CHANGED', session })
+
+  await chrome.action.setBadgeText({ text: 'REC' }).catch(() => undefined)
+  await chrome.action.setBadgeBackgroundColor({ color: '#dc2626' }).catch(() => undefined)
+
   logger.info('[BG] Session started', sessionId)
 }
 
@@ -79,6 +83,9 @@ export async function stopSession(sessionId: string): Promise<void> {
 
   activeSessionId = null
   activeTabId = null
+
+  await chrome.action.setBadgeText({ text: '' }).catch(() => undefined)
+
   logger.info('[BG] Session stopped', sessionId)
 }
 

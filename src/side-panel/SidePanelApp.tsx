@@ -3,8 +3,16 @@ import { StepList } from './components/StepList'
 import { CodePreview } from './components/CodePreview'
 
 export function SidePanelApp() {
-  const { isRecording, steps, generatedCode, startRecording, stopRecording, generateCode } =
-    useSession()
+  const {
+    isRecording,
+    steps,
+    generatedCode,
+    codeGenError,
+    startRecording,
+    stopRecording,
+    generateCode,
+    deleteStep,
+  } = useSession()
 
   return (
     <div className="flex h-screen flex-col bg-white">
@@ -12,11 +20,16 @@ export function SidePanelApp() {
         <div className="flex items-center gap-2">
           <span className="text-base font-bold text-gray-900">PlayForge</span>
           <span
-            className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+            className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold tracking-wide ${
               isRecording ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500'
             }`}
           >
-            {isRecording ? 'Recording' : 'Idle'}
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                isRecording ? 'animate-pulse bg-red-500' : 'bg-gray-400'
+              }`}
+            />
+            {isRecording ? 'REC' : 'IDLE'}
           </span>
         </div>
         <button
@@ -30,17 +43,20 @@ export function SidePanelApp() {
       </header>
 
       <main className="flex-1 overflow-y-auto">
-        <StepList steps={steps} />
+        <StepList steps={steps} onDeleteStep={deleteStep} />
       </main>
 
       {steps.length > 0 && !isRecording && (
-        <div className="border-t border-gray-200 px-4 py-3">
+        <div className="space-y-2 border-t border-gray-200 px-4 py-3">
           <button
             onClick={generateCode}
-            className="w-full rounded bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 transition-colors"
+            className="w-full rounded bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
           >
             Generate Playwright TS Code
           </button>
+          {codeGenError && (
+            <p className="rounded bg-red-50 px-2 py-1.5 text-xs text-red-600">{codeGenError}</p>
+          )}
         </div>
       )}
 
