@@ -9,6 +9,12 @@ export interface IRElement {
   tagName: string
 }
 
+export interface AssertionDetail {
+  type: 'visible' | 'hidden' | 'text' | 'value' | 'attribute' | 'count'
+  expected?: string | number
+  attribute?: string
+}
+
 export interface IRStep {
   id: string
   action: IRActionType
@@ -18,6 +24,7 @@ export interface IRStep {
   pageTitle?: string
   key?: string
   annotation?: string
+  assertionDetail?: AssertionDetail
 }
 
 export interface InferredMethod {

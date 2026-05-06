@@ -1,6 +1,6 @@
-import type { RecordedAction, ElementSnapshot } from '@shared/types/action'
+import type { RecordedAction, ElementSnapshot, AssertionType } from '@shared/types/action'
 import type { Locator } from '@shared/types/locator'
-import type { IRStep, IRElement } from '../ir/types'
+import type { IRStep, IRElement, AssertionDetail } from '../ir/types'
 import { normalizeUrl } from './url-normalizer'
 import { nameElement } from '../planner/element-namer'
 
@@ -100,7 +100,26 @@ export function normalizeActions(actions: RecordedAction[]): NormalizedActions {
     }
 
     if (type === 'assert') {
-      steps.push({ id, action: 'assert', annotation })
+      const assertionDetail: AssertionDetail | undefined =
+        payload?.assertionType !== undefined
+          ? {
+              type: payload.assertionType as AssertionType,
+              expected:
+                payload.expected !== undefined ? (payload.expected as string | number) : undefined,
+              attribute: payload.attribute !== undefined ? String(payload.attribute) : undefined,
+            }
+          : undefined
+
+      const element = action.target
+        ? buildElement(
+            action.target.elementSnapshot,
+            action.target.primaryLocator,
+            usedNames,
+            locatorToName,
+          )
+        : undefined
+
+      steps.push({ id, action: 'assert', element, assertionDetail, annotation })
     }
   }
 

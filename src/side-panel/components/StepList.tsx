@@ -18,6 +18,8 @@ function actionIcon(type: ActionType): string {
       return '⌨️'
     case 'scroll':
       return '↕'
+    case 'assert':
+      return '✓'
     default:
       return '▶'
   }

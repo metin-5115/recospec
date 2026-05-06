@@ -2,6 +2,16 @@ import { useEffect, useCallback, useState } from 'react'
 import { useSessionStore } from '../sessionStore'
 import { onUIMessage } from '@shared/messaging/listen'
 import { sendToBackground } from '@shared/messaging/send'
+import type { AssertionSuggestion } from '@shared/types/action'
+import type { LocatorBundle } from '@shared/types/locator'
+import type { ElementSnapshot } from '@shared/types/action'
+
+interface AssertionContext {
+  suggestions: AssertionSuggestion[]
+  locatorBundle: LocatorBundle | null
+  elementSnapshot: ElementSnapshot
+  pageMetadata: { url: string; title: string }
+}
 
 const MAX_RETRIES = 3
 
@@ -19,6 +29,9 @@ export function useSession() {
     setCodeGenError,
   } = useSessionStore()
 
+  const [isProbeActive, setIsProbeActive] = useState(false)
+  const [assertionContext, setAssertionContext] = useState<AssertionContext | null>(null)
+
   useEffect(() => {
     const cleanup = onUIMessage((message) => {
       if (message.type === 'STEP_RECORDED') {
@@ -32,12 +45,58 @@ export function useSession() {
         setGeneratedCode(message.code)
       } else if (message.type === 'CODE_GENERATE_ERROR') {
         setCodeGenError(message.error)
+      } else if (message.type === 'ASSERTION_SUGGESTIONS') {
+        setIsProbeActive(false)
+        setAssertionContext({
+          suggestions: message.suggestions,
+          locatorBundle: message.locatorBundle,
+          elementSnapshot: message.elementSnapshot,
+          pageMetadata: message.pageMetadata,
+        })
       }
     })
     return cleanup
   }, [appendStep, setActiveSession, setGeneratedCode, setCodeGenError])
 
   const [isStarting, setIsStarting] = useState(false)
+
+  const toggleAssertionProbe = useCallback(async () => {
+    if (!activeSession) return
+    if (isProbeActive) {
+      setIsProbeActive(false)
+      await sendToBackground({ type: 'ASSERTION_PROBE_STOP', sessionId: activeSession.sessionId })
+    } else {
+      setIsProbeActive(true)
+      await sendToBackground({ type: 'ASSERTION_PROBE_START', sessionId: activeSession.sessionId })
+    }
+  }, [activeSession, isProbeActive])
+
+  const cancelAssertionBuilder = useCallback(() => {
+    setAssertionContext(null)
+  }, [])
+
+  const addAssertion = useCallback(
+    async (
+      suggestion: AssertionSuggestion,
+      locatorBundle: LocatorBundle | null,
+      elementSnapshot: ElementSnapshot,
+      pageMetadata: { url: string; title: string },
+      customExpected?: string,
+    ) => {
+      if (!activeSession) return
+      setAssertionContext(null)
+      await sendToBackground({
+        type: 'ASSERTION_ADD',
+        sessionId: activeSession.sessionId,
+        suggestion,
+        customExpected,
+        locatorBundle,
+        elementSnapshot,
+        pageMetadata,
+      })
+    },
+    [activeSession],
+  )
 
   const startRecording = useCallback(async () => {
     if (isStarting) return
@@ -116,9 +175,14 @@ export function useSession() {
     isStarting,
     generatedCode,
     codeGenError,
+    isProbeActive,
+    assertionContext,
     startRecording,
     stopRecording,
     generateCode,
     deleteStep,
+    toggleAssertionProbe,
+    cancelAssertionBuilder,
+    addAssertion,
   }
 }

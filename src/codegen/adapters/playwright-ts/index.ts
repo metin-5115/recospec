@@ -5,6 +5,7 @@ import type {
   IRScenario,
   InferredMethod,
   GeneratedFile,
+  AssertionDetail,
 } from '../../ir/types'
 
 // ---------------------------------------------------------------------------
@@ -34,6 +35,27 @@ function renderElementGetter(el: IRElement): string {
 }
 
 // ---------------------------------------------------------------------------
+// Assertion rendering
+// ---------------------------------------------------------------------------
+
+function renderAssertionMatcher(d: AssertionDetail, locator: string, indent: string): string {
+  switch (d.type) {
+    case 'visible':
+      return `${indent}await expect(${locator}).toBeVisible();`
+    case 'hidden':
+      return `${indent}await expect(${locator}).toBeHidden();`
+    case 'text':
+      return `${indent}await expect(${locator}).toHaveText(${JSON.stringify(d.expected ?? '')});`
+    case 'value':
+      return `${indent}await expect(${locator}).toHaveValue(${JSON.stringify(d.expected ?? '')});`
+    case 'attribute':
+      return `${indent}await expect(${locator}).toHaveAttribute(${JSON.stringify(d.attribute ?? '')}, ${JSON.stringify(d.expected ?? '')});`
+    case 'count':
+      return `${indent}await expect(${locator}).toHaveCount(${Number(d.expected ?? 0)});`
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Step rendering
 // ---------------------------------------------------------------------------
 
@@ -51,6 +73,9 @@ function renderStepInMethod(step: IRStep, indent: string): string {
     return `${indent}await this.page.keyboard.press(${JSON.stringify(step.key)});`
   }
   if (step.action === 'assert') {
+    if (step.assertionDetail && step.element) {
+      return renderAssertionMatcher(step.assertionDetail, `this.${step.element.name}`, indent)
+    }
     return `${indent}// assert: ${step.annotation ?? ''}`
   }
   return ''
@@ -70,6 +95,9 @@ function renderStepInSpec(step: IRStep, indent: string): string {
     return `${indent}await page.keyboard.press(${JSON.stringify(step.key)});`
   }
   if (step.action === 'assert') {
+    if (step.assertionDetail && step.element) {
+      return renderAssertionMatcher(step.assertionDetail, renderLocator(step.element), indent)
+    }
     return `${indent}// assert: ${step.annotation ?? ''}`
   }
   return ''

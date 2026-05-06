@@ -15,6 +15,22 @@ export type ActionType =
   | 'wait'
   | 'screenshot'
 
+export type AssertionType = 'visible' | 'hidden' | 'text' | 'value' | 'attribute' | 'count'
+
+export interface AssertionSuggestion {
+  type: AssertionType
+  label: string
+  expected?: string | number
+  attribute?: string
+}
+
+export interface AssertionSpec {
+  type: AssertionType
+  target: Locator
+  expected?: string | number
+  attribute?: string
+}
+
 export interface ElementSnapshot {
   tagName: string
   attributes: Record<string, string>

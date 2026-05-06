@@ -1,6 +1,7 @@
 import { useSession } from './hooks/useSession'
 import { StepList } from './components/StepList'
 import { CodePreview } from './components/CodePreview'
+import { AssertionBuilder } from './components/AssertionBuilder'
 
 export function SidePanelApp() {
   const {
@@ -9,10 +10,15 @@ export function SidePanelApp() {
     steps,
     generatedCode,
     codeGenError,
+    isProbeActive,
+    assertionContext,
     startRecording,
     stopRecording,
     generateCode,
     deleteStep,
+    toggleAssertionProbe,
+    cancelAssertionBuilder,
+    addAssertion,
   } = useSession()
 
   return (
@@ -33,15 +39,32 @@ export function SidePanelApp() {
             {isRecording ? 'REC' : 'IDLE'}
           </span>
         </div>
-        <button
-          onClick={isRecording ? stopRecording : startRecording}
-          disabled={isStarting}
-          className={`rounded px-3 py-1.5 text-sm font-medium text-white transition-colors disabled:opacity-50 ${
-            isRecording ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
-          }`}
-        >
-          {isStarting ? 'Starting…' : isRecording ? 'Stop' : 'Start Recording'}
-        </button>
+        <div className="flex items-center gap-2">
+          {isRecording && (
+            <button
+              onClick={toggleAssertionProbe}
+              title={
+                isProbeActive ? 'Cancel assertion mode' : 'Add assertion by clicking an element'
+              }
+              className={`rounded px-3 py-1.5 text-sm font-medium transition-colors ${
+                isProbeActive
+                  ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {isProbeActive ? '✓ Pick element…' : '✓ Assert'}
+            </button>
+          )}
+          <button
+            onClick={isRecording ? stopRecording : startRecording}
+            disabled={isStarting}
+            className={`rounded px-3 py-1.5 text-sm font-medium text-white transition-colors disabled:opacity-50 ${
+              isRecording ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
+            }`}
+          >
+            {isStarting ? 'Starting…' : isRecording ? 'Stop' : 'Start Recording'}
+          </button>
+        </div>
       </header>
 
       <main className="flex-1 overflow-y-auto">
@@ -68,6 +91,17 @@ export function SidePanelApp() {
         <footer className="border-t border-gray-100 px-4 py-2 text-xs text-gray-400">
           {steps.length} step{steps.length !== 1 ? 's' : ''} recorded
         </footer>
+      )}
+
+      {assertionContext && (
+        <AssertionBuilder
+          suggestions={assertionContext.suggestions}
+          locatorBundle={assertionContext.locatorBundle}
+          elementSnapshot={assertionContext.elementSnapshot}
+          pageMetadata={assertionContext.pageMetadata}
+          onConfirm={addAssertion}
+          onCancel={cancelAssertionBuilder}
+        />
       )}
     </div>
   )

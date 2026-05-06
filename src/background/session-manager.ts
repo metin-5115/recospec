@@ -101,3 +101,7 @@ export async function stopSession(sessionId: string): Promise<void> {
 export function getActiveSessionId(): string | null {
   return activeSessionId
 }
+
+export function getActiveTabId(): number | null {
+  return activeTabId
+}
