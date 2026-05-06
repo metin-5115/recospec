@@ -1,0 +1,5 @@
+{
+  "username": { "minScore": 50, "forbiddenPrimaryStrategies": ["css", "xpath"] },
+  "email": { "minScore": 50, "forbiddenPrimaryStrategies": ["css", "xpath"] },
+  "submitButton": { "minScore": 50, "forbiddenPrimaryStrategies": ["css", "xpath"] }
+}

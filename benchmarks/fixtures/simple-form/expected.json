@@ -1,0 +1,5 @@
+{
+  "email": { "selector": "[data-testid='login-email']", "strategy": "testid" },
+  "password": { "selector": "[data-testid='login-password']", "strategy": "testid" },
+  "submitButton": { "strategy": "testid" }
+}
