@@ -1,7 +1,9 @@
 import { chromium } from '@playwright/test'
 import type { BrowserContext, Worker } from '@playwright/test'
 import { resolve } from 'path'
+import { fileURLToPath } from 'url'
 
+const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const EXTENSION_PATH = resolve(__dirname, '../../../dist')
 
 export async function loadExtension(): Promise<BrowserContext> {
