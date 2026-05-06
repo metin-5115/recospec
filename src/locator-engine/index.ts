@@ -1,10 +1,18 @@
 import type { LocatorBundle, ScoredLocator } from '@shared/types/locator'
 import { LOCATOR_FALLBACK_COUNT } from '@shared/constants'
 import { TestIdStrategy } from './strategies/testid'
+import { AriaLabelStrategy } from './strategies/aria-label'
+import { IdStrategy } from './strategies/id'
+import { CssStrategy } from './strategies/css'
 import type { LocatorStrategy } from './strategies/base'
 
 export class LocatorEngine {
-  private readonly strategies: LocatorStrategy[] = [new TestIdStrategy()]
+  private readonly strategies: LocatorStrategy[] = [
+    new TestIdStrategy(),
+    new AriaLabelStrategy(),
+    new IdStrategy(),
+    new CssStrategy(),
+  ]
 
   evaluate(element: Element, doc: Document): LocatorBundle | null {
     const candidates: ScoredLocator[] = []
