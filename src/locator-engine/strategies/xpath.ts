@@ -15,15 +15,17 @@ function buildXPath(el: Element, doc: Document): { xpath: string; isAbsolute: bo
   let current: Element | null = el
 
   while (current && current !== doc.documentElement && current !== doc.body) {
-    const parent = current.parentElement
-    if (!parent) break
+    const parentEl: Element | null = current.parentElement
+    if (!parentEl) break
 
     const t = current.tagName.toLowerCase()
-    const siblings = Array.from(parent.children).filter((s) => s.tagName === current!.tagName)
+    const siblings = Array.from<Element>(parentEl.children).filter(
+      (sibling) => sibling.tagName === current!.tagName,
+    )
     const segment = siblings.length > 1 ? `${t}[${siblings.indexOf(current) + 1}]` : t
     segments.unshift(segment)
 
-    const parentId = parent.getAttribute('id')
+    const parentId = parentEl.getAttribute('id')
     if (parentId && !isDynamicId(parentId)) {
       return {
         xpath: `//*[@id="${parentId}"]/${segments.join('/')}`,
@@ -31,7 +33,7 @@ function buildXPath(el: Element, doc: Document): { xpath: string; isAbsolute: bo
       }
     }
 
-    current = parent
+    current = parentEl
   }
 
   return { xpath: `//${segments.join('/')}`, isAbsolute: true }
