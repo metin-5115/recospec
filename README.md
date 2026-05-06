@@ -40,4 +40,30 @@ MIT — see [LICENSE](LICENSE)
 
 ## Contributing
 
-Issues and PRs are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting.
+Issues and PRs are welcome.
+
+### Setup
+
+```bash
+git clone https://github.com/your-username/playforge.git
+cd playforge
+pnpm install
+```
+
+### Test commands
+
+```bash
+pnpm typecheck        # TypeScript type check (src + tests)
+pnpm lint             # ESLint (zero warnings policy)
+pnpm test             # Unit tests (runs typecheck first)
+pnpm test:ci          # Unit tests with coverage report
+pnpm test:e2e         # E2E tests (requires built extension)
+```
+
+### PR process
+
+1. Branch from `main`, use `feat/`, `fix/`, or `chore/` prefix.
+2. Follow [Conventional Commits](https://www.conventionalcommits.org/) for commit messages.
+3. Run `pnpm test:ci` locally — CI enforces 75% coverage threshold.
+4. Build must be clean: `pnpm build`.
+5. Open a PR against `main`; CI runs automatically.
