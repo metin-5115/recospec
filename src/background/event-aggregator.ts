@@ -16,6 +16,7 @@ export async function aggregateEvent(sessionId: string, event: CapturedEvent): P
     type: event.type,
     timestamp: event.timestamp,
     pageUrl: event.pageMetadata.url,
+    pageTitle: event.pageMetadata.title || undefined,
     target: bundle
       ? {
           primaryLocator: bundle.primary,

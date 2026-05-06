@@ -28,6 +28,7 @@ export interface RecordedAction {
   type: ActionType
   timestamp: number
   pageUrl: string
+  pageTitle?: string
   target?: {
     primaryLocator: Locator
     fallbackLocators: Locator[]

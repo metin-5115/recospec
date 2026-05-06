@@ -2,7 +2,7 @@ import { getActionsBySession } from '@storage/action-repo'
 import { getSession } from '@storage/session-repo'
 import { normalizeActions } from './normalizer/action-normalizer'
 import { groupIntoPages } from './planner/page-grouper'
-import { renderPageObject, renderScenario } from './adapters/playwright-ts'
+import { renderPageObject, renderScenario, renderScaffold } from './adapters/playwright-ts'
 import type { GeneratedCode, IRDocument, IRScenario } from './ir/types'
 
 export async function generate(
@@ -40,8 +40,10 @@ export async function generate(
     content: renderScenario(scenario),
   }
 
+  const scaffoldFiles = renderScaffold()
+
   return {
     framework: 'playwright-ts',
-    files: [...pageFiles, specFile],
+    files: [...pageFiles, specFile, ...scaffoldFiles],
   }
 }

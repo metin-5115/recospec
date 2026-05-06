@@ -1,9 +1,10 @@
-export type IRActionType = 'navigate' | 'click' | 'fill' | 'assert'
+export type IRActionType = 'navigate' | 'click' | 'fill' | 'assert' | 'keypress'
 
 export interface IRElement {
   name: string
   locatorStrategy: string
   locatorValue: string
+  fallbackLocators?: string[]
   fallbackLocator?: string
   tagName: string
 }
@@ -14,15 +15,26 @@ export interface IRStep {
   element?: IRElement
   value?: string
   url?: string
+  pageTitle?: string
+  key?: string
   annotation?: string
+}
+
+export interface InferredMethod {
+  name: string
+  params: string[]
+  steps: IRStep[]
 }
 
 export interface IRPage {
   name: string
   className: string
   normalizedUrl: string
+  pageTitle?: string
+  collisionWarning?: boolean
   steps: IRStep[]
   elements: IRElement[]
+  inferredMethods?: InferredMethod[]
 }
 
 export interface IRScenario {

@@ -15,12 +15,18 @@ export function normalizeUrl(rawUrl: string): string {
     return '/' + filename.replace(/\.[^.]+$/, '')
   }
 
+  // Strip query string and fragment — only use pathname
   const segments = url.pathname.split('/').map((seg) => {
     if (NUMERIC_SEGMENT.test(seg)) return ':id'
-    if (UUID_SEGMENT.test(seg)) return ':id'
+    if (UUID_SEGMENT.test(seg)) return ':uuid'
     if (HASH_SEGMENT.test(seg)) return ':id'
     return seg
   })
+
+  // Remove trailing empty segment (e.g. '/users/' → '/users')
+  if (segments.length > 1 && segments[segments.length - 1] === '') {
+    segments.pop()
+  }
 
   return segments.join('/')
 }

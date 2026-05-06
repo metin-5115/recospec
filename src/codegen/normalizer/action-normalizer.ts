@@ -60,7 +60,19 @@ export function normalizeActions(actions: RecordedAction[]): NormalizedActions {
     const { actionId: id, type, payload, pageUrl, annotation } = action
 
     if (type === 'navigate') {
-      steps.push({ id, action: 'navigate', url: normalizeUrl(pageUrl), annotation })
+      steps.push({
+        id,
+        action: 'navigate',
+        url: normalizeUrl(pageUrl),
+        pageTitle: action.pageTitle,
+        annotation,
+      })
+      continue
+    }
+
+    if (type === 'keypress') {
+      const key = payload?.key !== undefined ? String(payload.key) : undefined
+      steps.push({ id, action: 'keypress', key, annotation })
       continue
     }
 

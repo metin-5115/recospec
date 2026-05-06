@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { groupIntoPages } from './page-grouper'
 import type { IRStep } from '../ir/types'
 
-function navStep(url: string): IRStep {
-  return { id: crypto.randomUUID(), action: 'navigate', url }
+function navStep(url: string, pageTitle?: string): IRStep {
+  return { id: crypto.randomUUID(), action: 'navigate', url, pageTitle }
 }
 
 function clickStep(name: string, locatorValue: string): IRStep {
@@ -11,6 +11,15 @@ function clickStep(name: string, locatorValue: string): IRStep {
     id: crypto.randomUUID(),
     action: 'click',
     element: { name, locatorStrategy: 'testid', locatorValue, tagName: 'button' },
+  }
+}
+
+function fillStep(name: string, locatorValue: string, value = 'test'): IRStep {
+  return {
+    id: crypto.randomUUID(),
+    action: 'fill',
+    value,
+    element: { name, locatorStrategy: 'testid', locatorValue, tagName: 'input' },
   }
 }
 
@@ -49,5 +58,26 @@ describe('groupIntoPages', () => {
     ]
     const pages = groupIntoPages(steps, 'https://example.com/form')
     expect(pages[0].elements).toHaveLength(1)
+  })
+
+  it('strips query string and fragment from start URL', () => {
+    const steps: IRStep[] = [clickStep('btn', 'btn')]
+    const pages = groupIntoPages(steps, 'https://example.com/search?q=test#results')
+    // normalizeUrl strips query + fragment, so normalizedUrl should be '/search'
+    expect(pages[0].normalizedUrl).toBe('/search')
+  })
+
+  it('sets collisionWarning when same URL pattern has different page titles', () => {
+    const steps: IRStep[] = [
+      fillStep('emailInput', 'email'),
+      navStep('/dashboard', 'Dashboard - Alice'),
+      clickStep('profileBtn', 'profile'),
+      navStep('/dashboard', 'Dashboard - Bob'),
+      clickStep('settingsBtn', 'settings'),
+    ]
+    const pages = groupIntoPages(steps, 'https://example.com/login')
+    const dashboardPages = pages.filter((p) => p.normalizedUrl === '/dashboard')
+    // Second visit to /dashboard with different title should flag collision
+    expect(dashboardPages.some((p) => p.collisionWarning)).toBe(true)
   })
 })

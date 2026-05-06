@@ -7,6 +7,7 @@ export class LoginPage {
   constructor(private readonly page: Page) {}
 
   get usernameInput() { return page.getByTestId("username-input"); }
+
   get submitBtn() { return page.getByTestId("submit-btn"); }
 
   async goto() {
@@ -25,10 +26,12 @@ exports[`renderScenario > matches snapshot 1`] = `
 "import { test, expect } from '@playwright/test';
 import { LoginPage } from './LoginPage';
 
-test('Login flow', async ({ page }) => {
-  await page.goto("/login");
-  await this.usernameInput.fill("admin");
-  await this.submitBtn.click();
+test.describe('Login flow', () => {
+  test('full flow', async ({ page }) => {
+    await page.goto("/login");
+    await page.getByTestId("username-input").fill("admin");
+    await page.getByTestId("submit-btn").click();
+  });
 });
 "
 `;
