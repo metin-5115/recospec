@@ -1,6 +1,9 @@
 import { test, expect } from '@playwright/test'
 import { loadExtension } from './helpers/extension'
 import { resolve } from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 test.describe('Recording flow', () => {
   test('loads extension and can navigate fixture page', async () => {
