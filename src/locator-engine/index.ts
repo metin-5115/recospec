@@ -1,18 +1,31 @@
 import type { LocatorBundle, ScoredLocator } from '@shared/types/locator'
-import { LOCATOR_FALLBACK_COUNT } from '@shared/constants'
 import { TestIdStrategy } from './strategies/testid'
+import { TestAttributesStrategy } from './strategies/test-attributes'
 import { AriaLabelStrategy } from './strategies/aria-label'
+import { RoleNameStrategy } from './strategies/role-name'
+import { LabelStrategy } from './strategies/label'
+import { TextStrategy } from './strategies/text'
 import { IdStrategy } from './strategies/id'
 import { CssStrategy } from './strategies/css'
+import { XPathStrategy } from './strategies/xpath'
+import { score } from './scoring/stability-scorer'
+import { LocatorSelector } from './selector'
 import type { LocatorStrategy } from './strategies/base'
 
 export class LocatorEngine {
   private readonly strategies: LocatorStrategy[] = [
     new TestIdStrategy(),
+    new TestAttributesStrategy(),
     new AriaLabelStrategy(),
+    new RoleNameStrategy(),
+    new LabelStrategy(),
+    new TextStrategy(),
     new IdStrategy(),
     new CssStrategy(),
+    new XPathStrategy(),
   ]
+
+  private readonly selector = new LocatorSelector()
 
   evaluate(element: Element, doc: Document): LocatorBundle | null {
     const candidates: ScoredLocator[] = []
@@ -20,20 +33,11 @@ export class LocatorEngine {
     for (const strategy of this.strategies) {
       const locator = strategy.evaluate(element, doc)
       if (locator) {
-        // Simplified scoring: higher basePriority number = lower priority
-        const score = Math.round(100 / strategy.basePriority)
-        candidates.push({ ...locator, score })
+        candidates.push({ ...locator, score: score(locator, element, doc) })
       }
     }
 
     if (candidates.length === 0) return null
-
-    candidates.sort((a, b) => b.score - a.score)
-    const [primary, ...rest] = candidates
-    return {
-      primary,
-      fallbacks: rest.slice(0, LOCATOR_FALLBACK_COUNT),
-      rejected: rest.slice(LOCATOR_FALLBACK_COUNT),
-    }
+    return this.selector.select(candidates)
   }
 }

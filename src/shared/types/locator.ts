@@ -20,6 +20,7 @@ export interface Locator {
   strategy: LocatorStrategyName
   selector: string | Record<string, string>
   framework: LocatorFrameworkOutput
+  warning?: string
 }
 
 export interface ScoredLocator extends Locator {

@@ -1,7 +1,12 @@
 import type { Locator } from '@shared/types/locator'
 import type { LocatorStrategy } from './base'
+import { isDynamicClass } from '../scoring/dynamic-detector'
 
-function buildSelector(el: Element): string {
+function staticClasses(el: Element): string[] {
+  return Array.from(el.classList).filter((cls) => !isDynamicClass(cls))
+}
+
+function buildSelector(el: Element, doc: Document): string {
   const tag = el.tagName.toLowerCase()
   const type = el.getAttribute('type')
   const name = el.getAttribute('name')
@@ -14,6 +19,25 @@ function buildSelector(el: Element): string {
   if (type) return `${tag}[type="${type}"]`
   if (href && href !== '#' && !href.startsWith('javascript')) return `a[href="${href}"]`
 
+  const classes = staticClasses(el)
+  if (classes.length > 0) {
+    const classSelector = `${tag}.${classes.map((c) => CSS.escape(c)).join('.')}`
+    try {
+      if (doc.querySelectorAll(classSelector).length === 1) return classSelector
+    } catch {
+      // fall through
+    }
+  }
+
+  const parent = el.parentElement
+  if (parent) {
+    const parentTag = parent.tagName.toLowerCase()
+    const sameTagSiblings = Array.from(parent.children).filter((s) => s.tagName === el.tagName)
+    if (sameTagSiblings.length === 1) return `${parentTag} > ${tag}`
+    const idx = sameTagSiblings.indexOf(el) + 1
+    return `${parentTag} > ${tag}:nth-of-type(${idx})`
+  }
+
   return tag
 }
 
@@ -21,8 +45,8 @@ export class CssStrategy implements LocatorStrategy {
   readonly name = 'css'
   readonly basePriority = 8
 
-  evaluate(el: Element, _doc: Document): Locator | null {
-    const selector = buildSelector(el)
+  evaluate(el: Element, doc: Document): Locator | null {
+    const selector = buildSelector(el, doc)
     return {
       strategy: 'css',
       selector,
