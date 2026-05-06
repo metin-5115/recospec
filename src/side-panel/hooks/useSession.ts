@@ -19,12 +19,9 @@ export function useSession() {
       if (message.type === 'STEP_RECORDED') {
         appendStep(message.step)
       } else if (message.type === 'SESSION_STATE_CHANGED') {
-        const { session } = message
-        if (session.state === 'recording') {
-          setActiveSession(session)
-        } else {
-          setActiveSession(null)
-        }
+        // Keep the session object even when stopped so generateCode can use its sessionId.
+        // isRecording checks session.state === 'recording', not whether activeSession is null.
+        setActiveSession(message.session)
       } else if (message.type === 'CODE_GENERATED') {
         setGeneratedCode(message.code)
       }
@@ -35,6 +32,7 @@ export function useSession() {
   const startRecording = useCallback(async () => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
     if (!tab?.id) return
+    clearSteps()
     setGeneratedCode(null)
     await sendToBackground({
       type: 'SESSION_START',
@@ -50,13 +48,12 @@ export function useSession() {
         captureNavigation: true,
       },
     })
-  }, [setGeneratedCode])
+  }, [clearSteps, setGeneratedCode])
 
   const stopRecording = useCallback(async () => {
     if (!activeSession) return
     await sendToBackground({ type: 'SESSION_STOP', sessionId: activeSession.sessionId })
-    clearSteps()
-  }, [activeSession, clearSteps])
+  }, [activeSession])
 
   const generateCode = useCallback(async () => {
     if (!activeSession) return
