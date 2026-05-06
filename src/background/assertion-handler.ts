@@ -22,7 +22,7 @@ export async function handleAssertionProbeStop(sessionId: string): Promise<void>
 }
 
 export async function handleAssertionSuggestion(
-  sessionId: string,
+  _sessionId: string,
   locatorBundle: LocatorBundle | null,
   elementSnapshot: ElementSnapshot,
   suggestions: AssertionSuggestion[],

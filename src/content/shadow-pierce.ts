@@ -56,21 +56,24 @@ export function detectShadowContext(
  * or null when it is in the top-level document.
  */
 export function detectFrameContext(): FrameContext | null {
+  // Avoid the global `parent` alias by using window.parent explicitly.
+  // window.top is null-safe: for the top-level window, window === window.top.
   if (window === window.top) return null
 
   const frameChain: string[] = []
-  let win: Window | null = window
+  // Cast to unknown first to avoid circular WindowProxy type inference.
+  let win: Window = window as Window
 
-  // Walk from current frame to top, collecting locator expressions
-  while (win && win !== win.top) {
-    const parent = win.parent
+  while (win !== win.top) {
+    const parentWin = win.parent as Window
 
-    // Find the <iframe> element in the parent document that contains `win`
+    // Find the <iframe> element in the parent document that hosts `win`.
+    // Wrapped in try/catch because cross-origin access throws a SecurityError.
     let frameEl: HTMLIFrameElement | null = null
     try {
-      const frames = Array.from(parent.document.querySelectorAll('iframe'))
+      const iframes = Array.from(parentWin.document.querySelectorAll<HTMLIFrameElement>('iframe'))
       frameEl =
-        frames.find((f) => {
+        iframes.find((f: HTMLIFrameElement) => {
           try {
             return f.contentWindow === win
           } catch {
@@ -98,7 +101,9 @@ export function detectFrameContext(): FrameContext | null {
       frameChain.unshift('iframe')
     }
 
-    win = parent !== win ? parent : null
+    // Move up one level; stop if we've reached the top.
+    if (parentWin === win || parentWin === parentWin.top) break
+    win = parentWin
   }
 
   return {
