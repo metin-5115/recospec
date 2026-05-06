@@ -1,10 +1,12 @@
 import type { ElementSnapshot, AssertionSuggestion } from '@shared/types/action'
 import type { LocatorBundle } from '@shared/types/locator'
 import { LocatorEngine } from '@locator/index'
+import { detectShadowContext, detectFrameContext } from './shadow-pierce'
 import { sendToBackground } from '@shared/messaging/send'
 import { logger } from '@shared/logger'
 
 const engine = new LocatorEngine()
+const frameContext = detectFrameContext()
 
 let activeSessionId: string | null = null
 let overlayEl: HTMLDivElement | null = null
@@ -82,7 +84,12 @@ function onClickProbe(e: MouseEvent): void {
   const sessionId = activeSessionId
   const el = e.target
   const snapshot = buildSnapshot(el)
-  const bundle: LocatorBundle | null = engine.evaluate(el, document)
+  const shadowResult = detectShadowContext(el)
+  const bundle: LocatorBundle | null = engine.evaluate(el, document, {
+    shadowContext: shadowResult?.context,
+    shadowClosed: shadowResult?.closed,
+    frameContext: frameContext ?? undefined,
+  })
   const suggestions = buildSuggestions(el, snapshot)
 
   removeOverlay()

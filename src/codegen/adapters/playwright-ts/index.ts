@@ -12,21 +12,46 @@ import type {
 // Locator rendering
 // ---------------------------------------------------------------------------
 
-function renderLocator(el: IRElement): string {
+/** Render the inner locator expression relative to its root (page or frame). */
+function renderInnerLocator(el: IRElement, root: string): string {
   const val = el.locatorValue
   const strategy = el.locatorStrategy
 
   if (strategy === 'testid')
-    return `page.getByTestId(${JSON.stringify(val.replace(/^\[data-testid="(.+)"\]$/, '$1'))})`
+    return `${root}.getByTestId(${JSON.stringify(val.replace(/^\[data-testid="(.+)"\]$/, '$1'))})`
   if (strategy === 'aria-label')
-    return `page.getByLabel(${JSON.stringify(val.replace(/^\[aria-label="(.+)"\]$/, '$1'))})`
-  if (strategy === 'role-name') return `page.getByRole(${val})`
-  if (strategy === 'text') return `page.getByText(${JSON.stringify(val)})`
-  return `page.locator(${JSON.stringify(val)})`
+    return `${root}.getByLabel(${JSON.stringify(val.replace(/^\[aria-label="(.+)"\]$/, '$1'))})`
+  if (strategy === 'role-name') return `${root}.getByRole(${val})`
+  if (strategy === 'text') return `${root}.getByText(${JSON.stringify(val)})`
+  return `${root}.locator(${JSON.stringify(val)})`
+}
+
+function renderLocator(el: IRElement): string {
+  // Iframe chain: wrap with frameLocator() calls, outermost first
+  let root = 'page'
+  if (el.frameContext?.frameChain.length) {
+    root = el.frameContext.frameChain.reduce(
+      (acc, frame) => `${acc}.frameLocator(${JSON.stringify(frame)})`,
+      'page',
+    )
+  }
+
+  // Shadow DOM: chain .locator() calls through each host, then the inner selector
+  if (el.shadowContext?.hostChain.length) {
+    const hostChain = el.shadowContext.hostChain
+      .map((h) => `locator(${JSON.stringify(h)})`)
+      .join('.')
+    return `${root}.${hostChain}.locator(${JSON.stringify(el.locatorValue)})`
+  }
+
+  return renderInnerLocator(el, root)
 }
 
 function renderElementGetter(el: IRElement): string {
-  const primary = `  get ${el.name}() { return ${renderLocator(el)}; }`
+  const shadowWarning = el.shadowClosed
+    ? `  // WARNING: element is inside a closed shadow root — locator may be unreliable\n`
+    : ''
+  const primary = `${shadowWarning}  get ${el.name}() { return ${renderLocator(el)}; }`
   if (!el.fallbackLocators?.length) return primary
   const fallbacks = el.fallbackLocators
     .map((f) => `  // fallback: page.locator(${JSON.stringify(f)})`)

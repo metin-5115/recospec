@@ -27,8 +27,29 @@ export interface ScoredLocator extends Locator {
   score: number
 }
 
+/** Describes that an element lives inside one or more open shadow roots. */
+export interface ShadowContext {
+  /** CSS selectors of each shadow host, outermost first. */
+  hostChain: string[]
+}
+
+/** Describes that an element lives inside a (possibly nested) iframe. */
+export interface FrameContext {
+  frameUrl?: string
+  frameName?: string
+  frameTitle?: string
+  /** Frame locator expressions (e.g. 'iframe[name="x"]'), outermost first. */
+  frameChain: string[]
+}
+
 export interface LocatorBundle {
   primary: ScoredLocator
   fallbacks: ScoredLocator[]
   rejected: ScoredLocator[]
+  /** Present when the element lives inside an open shadow root. */
+  shadowContext?: ShadowContext
+  /** Set to true when a closed shadow root was encountered (locator may be unreliable). */
+  shadowClosed?: boolean
+  /** Present when the element lives inside an iframe. */
+  frameContext?: FrameContext
 }

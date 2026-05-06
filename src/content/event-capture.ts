@@ -1,10 +1,12 @@
 import type { ActionType, CapturedEvent, ElementSnapshot } from '@shared/types/action'
 import type { LocatorBundle } from '@shared/types/locator'
 import { LocatorEngine } from '@locator/index'
+import { detectShadowContext, detectFrameContext } from './shadow-pierce'
 import { sendToBackground } from '@shared/messaging/send'
 import { logger } from '@shared/logger'
 
 const engine = new LocatorEngine()
+const frameContext = detectFrameContext()
 
 function buildSnapshot(el: Element): ElementSnapshot {
   const attributes: Record<string, string> = {}
@@ -23,7 +25,15 @@ function buildEvent(
   target: Element,
   payload?: Record<string, unknown>,
 ): CapturedEvent {
-  const bundle: LocatorBundle | null = engine.evaluate(target, document)
+  const shadowResult = detectShadowContext(target)
+  const bundle: LocatorBundle | null = engine.evaluate(target, document, {
+    shadowContext: shadowResult?.context,
+    shadowClosed: shadowResult?.closed,
+    frameContext: frameContext ?? undefined,
+  })
+  if (shadowResult?.closed) {
+    logger.warn('[CS] Element is inside a closed shadow root — locator may be unreliable', target)
+  }
   return {
     type,
     target: { locatorBundle: bundle, elementSnapshot: buildSnapshot(target) },

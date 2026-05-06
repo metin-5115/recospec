@@ -1,3 +1,5 @@
+import type { ShadowContext, FrameContext } from '@shared/types/locator'
+
 export type IRActionType = 'navigate' | 'click' | 'fill' | 'assert' | 'keypress'
 
 export interface IRElement {
@@ -7,6 +9,9 @@ export interface IRElement {
   fallbackLocators?: string[]
   fallbackLocator?: string
   tagName: string
+  shadowContext?: ShadowContext
+  shadowClosed?: boolean
+  frameContext?: FrameContext
 }
 
 export interface AssertionDetail {

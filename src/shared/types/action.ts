@@ -1,4 +1,4 @@
-import type { Locator, LocatorBundle } from './locator'
+import type { Locator, LocatorBundle, ShadowContext, FrameContext } from './locator'
 
 export type ActionType =
   | 'click'
@@ -49,6 +49,9 @@ export interface RecordedAction {
     primaryLocator: Locator
     fallbackLocators: Locator[]
     elementSnapshot: ElementSnapshot
+    shadowContext?: ShadowContext
+    shadowClosed?: boolean
+    frameContext?: FrameContext
   }
   elementSnapshot?: ElementSnapshot
   payload?: Record<string, unknown>

@@ -1,4 +1,9 @@
-import type { LocatorBundle, ScoredLocator } from '@shared/types/locator'
+import type {
+  LocatorBundle,
+  ScoredLocator,
+  ShadowContext,
+  FrameContext,
+} from '@shared/types/locator'
 import { TestIdStrategy } from './strategies/testid'
 import { TestAttributesStrategy } from './strategies/test-attributes'
 import { AriaLabelStrategy } from './strategies/aria-label'
@@ -11,6 +16,12 @@ import { XPathStrategy } from './strategies/xpath'
 import { score } from './scoring/stability-scorer'
 import { LocatorSelector } from './selector'
 import type { LocatorStrategy } from './strategies/base'
+
+export interface ShadowOptions {
+  shadowContext?: ShadowContext
+  shadowClosed?: boolean
+  frameContext?: FrameContext
+}
 
 export class LocatorEngine {
   private readonly strategies: LocatorStrategy[] = [
@@ -27,7 +38,7 @@ export class LocatorEngine {
 
   private readonly selector = new LocatorSelector()
 
-  evaluate(element: Element, doc: Document): LocatorBundle | null {
+  evaluate(element: Element, doc: Document, options?: ShadowOptions): LocatorBundle | null {
     const candidates: ScoredLocator[] = []
 
     for (const strategy of this.strategies) {
@@ -38,6 +49,12 @@ export class LocatorEngine {
     }
 
     if (candidates.length === 0) return null
-    return this.selector.select(candidates)
+    const bundle = this.selector.select(candidates)
+    return {
+      ...bundle,
+      shadowContext: options?.shadowContext,
+      shadowClosed: options?.shadowClosed,
+      frameContext: options?.frameContext,
+    }
   }
 }

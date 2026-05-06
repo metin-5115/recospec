@@ -1,5 +1,5 @@
 import type { RecordedAction, ElementSnapshot, AssertionType } from '@shared/types/action'
-import type { Locator } from '@shared/types/locator'
+import type { Locator, ShadowContext, FrameContext } from '@shared/types/locator'
 import type { IRStep, IRElement, AssertionDetail } from '../ir/types'
 import { normalizeUrl } from './url-normalizer'
 import { nameElement } from '../planner/element-namer'
@@ -18,6 +18,9 @@ function buildElement(
   primaryLocator: Locator,
   usedNames: Set<string>,
   locatorToName: Map<string, string>,
+  shadowContext?: ShadowContext,
+  shadowClosed?: boolean,
+  frameContext?: FrameContext,
 ): IRElement {
   const key = rawSelector(primaryLocator)
   const existing = locatorToName.get(key)
@@ -27,6 +30,9 @@ function buildElement(
       locatorStrategy: primaryLocator.strategy,
       locatorValue: key,
       tagName: snapshot.tagName,
+      shadowContext,
+      shadowClosed,
+      frameContext,
     }
   }
   const name = nameElement(snapshot, primaryLocator, usedNames)
@@ -37,6 +43,9 @@ function buildElement(
     locatorStrategy: primaryLocator.strategy,
     locatorValue: key,
     tagName: snapshot.tagName,
+    shadowContext,
+    shadowClosed,
+    frameContext,
   }
 }
 
@@ -83,6 +92,9 @@ export function normalizeActions(actions: RecordedAction[]): NormalizedActions {
         action.target.primaryLocator,
         usedNames,
         locatorToName,
+        action.target.shadowContext,
+        action.target.shadowClosed,
+        action.target.frameContext,
       )
       const step: IRStep = { id, action: type, element, annotation }
       if (type === 'fill' && payload?.value !== undefined) {
@@ -116,6 +128,9 @@ export function normalizeActions(actions: RecordedAction[]): NormalizedActions {
             action.target.primaryLocator,
             usedNames,
             locatorToName,
+            action.target.shadowContext,
+            action.target.shadowClosed,
+            action.target.frameContext,
           )
         : undefined
 

@@ -4,3 +4,6 @@ export const LOCATOR_FALLBACK_COUNT = 2 as const
 export const MAX_TEXT_CONTENT_LENGTH = 100 as const
 export const MAX_DYNAMIC_ID_ENTROPY = 3.5 as const
 export const SESSION_NAME_PREFIX = 'Session' as const
+export const CONTENT_REINJECT_MAX_ATTEMPTS = 3 as const
+export const GC_ARCHIVED_DAYS = 30 as const
+export const STORAGE_QUOTA_WARN_RATIO = 0.8 as const

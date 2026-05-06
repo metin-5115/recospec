@@ -6,6 +6,7 @@ import {
   listSessionsByState,
 } from '@storage/session-repo'
 import { sendToTab, broadcastToUI } from '@shared/messaging/send'
+import { reinjectContentScript, resetReinjectAttempts } from './content-injector'
 import { logger } from '@shared/logger'
 import { SESSION_NAME_PREFIX } from '@shared/constants'
 
@@ -58,9 +59,14 @@ export async function startSession(
   activeSessionId = sessionId
   activeTabId = tabId
 
-  await sendToTab(tabId, { type: 'START_CAPTURE', sessionId, config }).catch((err) =>
-    logger.error('[BG] Failed to send START_CAPTURE', err),
-  )
+  await sendToTab(tabId, { type: 'START_CAPTURE', sessionId, config }).catch(async (err) => {
+    logger.warn('[BG] START_CAPTURE failed — content script may have crashed, re-injecting', err)
+    await reinjectContentScript(tabId)
+    // Retry once after re-injection
+    await sendToTab(tabId, { type: 'START_CAPTURE', sessionId, config }).catch((err2) =>
+      logger.error('[BG] START_CAPTURE still failed after re-inject', err2),
+    )
+  })
 
   await broadcastToUI({ type: 'SESSION_STATE_CHANGED', session })
 
@@ -90,6 +96,7 @@ export async function stopSession(sessionId: string): Promise<void> {
     await broadcastToUI({ type: 'SESSION_STATE_CHANGED', session: stopped })
   }
 
+  if (activeTabId !== null) resetReinjectAttempts(activeTabId)
   activeSessionId = null
   activeTabId = null
 
