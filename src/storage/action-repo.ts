@@ -12,3 +12,16 @@ export async function getActionsBySession(sessionId: string): Promise<RecordedAc
 export async function deleteActionsBySession(sessionId: string): Promise<void> {
   await db.actions.where('sessionId').equals(sessionId).delete()
 }
+
+/** Lazy-load actions in pages. offset/limit follow DB row order (sorted by sequenceNumber). */
+export async function getActionsBySessionPage(
+  sessionId: string,
+  offset: number,
+  limit: number,
+): Promise<RecordedAction[]> {
+  return db.actions
+    .where('sessionId')
+    .equals(sessionId)
+    .sortBy('sequenceNumber')
+    .then((all) => all.slice(offset, offset + limit))
+}

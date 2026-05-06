@@ -4,6 +4,7 @@ import {
   updateSession,
   getSession,
   listSessionsByState,
+  deleteSession,
 } from '@storage/session-repo'
 import { sendToTab, broadcastToUI } from '@shared/messaging/send'
 import { reinjectContentScript, resetReinjectAttempts } from './content-injector'
@@ -103,6 +104,83 @@ export async function stopSession(sessionId: string): Promise<void> {
   await chrome.action.setBadgeText({ text: '' }).catch(() => undefined)
 
   logger.info('[BG] Session stopped', sessionId)
+}
+
+export async function pauseSession(sessionId: string): Promise<void> {
+  if (activeSessionId !== sessionId) {
+    logger.warn('[BG] Pause requested for unknown session', sessionId)
+    return
+  }
+
+  await updateSession(sessionId, { state: 'paused' })
+
+  if (activeTabId !== null) {
+    await sendToTab(activeTabId, { type: 'STOP_CAPTURE', sessionId }).catch((err) =>
+      logger.error('[BG] Failed to send STOP_CAPTURE on pause', err),
+    )
+  }
+
+  const paused = await getSession(sessionId)
+  if (paused) await broadcastToUI({ type: 'SESSION_STATE_CHANGED', session: paused })
+
+  await chrome.action.setBadgeText({ text: 'PAUSE' }).catch(() => undefined)
+  await chrome.action.setBadgeBackgroundColor({ color: '#d97706' }).catch(() => undefined)
+
+  logger.info('[BG] Session paused', sessionId)
+}
+
+export async function resumeSession(sessionId: string): Promise<void> {
+  if (activeSessionId !== sessionId) {
+    logger.warn('[BG] Resume requested for unknown session', sessionId)
+    return
+  }
+
+  const session = await getSession(sessionId)
+  if (!session || session.state !== 'paused') return
+
+  await updateSession(sessionId, { state: 'recording' })
+
+  if (activeTabId !== null) {
+    await sendToTab(activeTabId, {
+      type: 'START_CAPTURE',
+      sessionId,
+      config: session.config,
+    }).catch((err) => logger.error('[BG] Failed to send START_CAPTURE on resume', err))
+  }
+
+  const resumed = await getSession(sessionId)
+  if (resumed) await broadcastToUI({ type: 'SESSION_STATE_CHANGED', session: resumed })
+
+  await chrome.action.setBadgeText({ text: 'REC' }).catch(() => undefined)
+  await chrome.action.setBadgeBackgroundColor({ color: '#dc2626' }).catch(() => undefined)
+
+  logger.info('[BG] Session resumed', sessionId)
+}
+
+export async function deleteSessionById(sessionId: string): Promise<void> {
+  if (activeSessionId === sessionId) {
+    if (activeTabId !== null) {
+      await sendToTab(activeTabId, { type: 'STOP_CAPTURE', sessionId }).catch(() => undefined)
+      resetReinjectAttempts(activeTabId)
+    }
+    activeSessionId = null
+    activeTabId = null
+    await chrome.action.setBadgeText({ text: '' }).catch(() => undefined)
+  }
+
+  await deleteSession(sessionId)
+  await broadcastToUI({ type: 'SESSION_DELETED', sessionId })
+
+  logger.info('[BG] Session deleted', sessionId)
+}
+
+export async function renameSessionById(sessionId: string, name: string): Promise<void> {
+  await updateSession(sessionId, { name })
+
+  const updated = await getSession(sessionId)
+  if (updated) await broadcastToUI({ type: 'SESSION_STATE_CHANGED', session: updated })
+
+  logger.info('[BG] Session renamed', sessionId, name)
 }
 
 export function getActiveSessionId(): string | null {

@@ -30,6 +30,11 @@ export async function archiveSession(sessionId: string): Promise<void> {
   await db.sessions.update(sessionId, { state: 'archived' })
 }
 
+export async function deleteSession(sessionId: string): Promise<void> {
+  await deleteActionsBySession(sessionId)
+  await db.sessions.delete(sessionId)
+}
+
 /** Delete archived sessions older than GC_ARCHIVED_DAYS. Returns count deleted. */
 export async function garbageCollectArchivedSessions(): Promise<number> {
   const cutoff = Date.now() - GC_ARCHIVED_DAYS * 24 * 60 * 60 * 1000

@@ -31,6 +31,7 @@
   "packageManager": "pnpm@10.32.1",
   "dependencies": {
     "dexie": "^4.4.2",
+    "jszip": "^3.10.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "zustand": "^4.5.7"
@@ -50,6 +51,7 @@
     "@tailwindcss/postcss": "^4.2.4",
     "@testing-library/react": "^16.3.2",
     "@types/chrome": "^0.1.40",
+    "@types/jszip": "^3.4.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.59.2",

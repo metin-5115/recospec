@@ -2,9 +2,15 @@ import { useEffect, useCallback, useState } from 'react'
 import { useSessionStore } from '../sessionStore'
 import { onUIMessage } from '@shared/messaging/listen'
 import { sendToBackground } from '@shared/messaging/send'
+import { listSessions } from '@storage/session-repo'
+import { getActionsBySession } from '@storage/action-repo'
+import { downloadJsonExport } from '@codegen/export/json-export'
+import { downloadZipExport } from '@codegen/export/zip-export'
+import { generate } from '@codegen/index'
 import type { AssertionSuggestion } from '@shared/types/action'
 import type { LocatorBundle } from '@shared/types/locator'
 import type { ElementSnapshot } from '@shared/types/action'
+import type { Session } from '@shared/types/session'
 
 interface AssertionContext {
   suggestions: AssertionSuggestion[]
@@ -21,25 +27,38 @@ export function useSession() {
     steps,
     generatedCode,
     codeGenError,
+    sessions,
     setActiveSession,
     appendStep,
     deleteStep,
     clearSteps,
     setGeneratedCode,
     setCodeGenError,
+    setSessions,
+    upsertSession,
+    removeSession,
   } = useSessionStore()
 
   const [isProbeActive, setIsProbeActive] = useState(false)
   const [assertionContext, setAssertionContext] = useState<AssertionContext | null>(null)
 
+  // Load session list from DB on mount
+  useEffect(() => {
+    listSessions()
+      .then(setSessions)
+      .catch(() => undefined)
+  }, [setSessions])
+
+  // Listen to background broadcasts
   useEffect(() => {
     const cleanup = onUIMessage((message) => {
       if (message.type === 'STEP_RECORDED') {
         appendStep(message.step)
       } else if (message.type === 'SESSION_STATE_CHANGED') {
-        // Keep the session object even when stopped so generateCode can use its sessionId.
-        // isRecording checks session.state === 'recording', not whether activeSession is null.
         setActiveSession(message.session)
+        upsertSession(message.session)
+      } else if (message.type === 'SESSION_DELETED') {
+        removeSession(message.sessionId)
       } else if (message.type === 'CODE_GENERATED') {
         setCodeGenError(null)
         setGeneratedCode(message.code)
@@ -56,7 +75,14 @@ export function useSession() {
       }
     })
     return cleanup
-  }, [appendStep, setActiveSession, setGeneratedCode, setCodeGenError])
+  }, [
+    appendStep,
+    setActiveSession,
+    setGeneratedCode,
+    setCodeGenError,
+    upsertSession,
+    removeSession,
+  ])
 
   const [isStarting, setIsStarting] = useState(false)
 
@@ -102,15 +128,11 @@ export function useSession() {
     if (isStarting) return
     setIsStarting(true)
     try {
-      // Side panel runs in an extension context; `currentWindow` can resolve to the
-      // extension window instead of the browser window. Use getLastFocused with
-      // windowTypes: ['normal'] to reliably find the user-facing browser window.
       let tab: chrome.tabs.Tab | undefined
       try {
         const win = await chrome.windows.getLastFocused({ populate: true, windowTypes: ['normal'] })
         tab = win.tabs?.find((t) => t.active)
       } catch {
-        // Fallback for environments where getLastFocused is unavailable
         const [fallbackTab] = await chrome.tabs.query({ active: true, currentWindow: true })
         tab = fallbackTab
       }
@@ -145,6 +167,16 @@ export function useSession() {
     await sendToBackground({ type: 'SESSION_STOP', sessionId: activeSession.sessionId })
   }, [activeSession])
 
+  const pauseRecording = useCallback(async () => {
+    if (!activeSession) return
+    await sendToBackground({ type: 'SESSION_PAUSE', sessionId: activeSession.sessionId })
+  }, [activeSession])
+
+  const resumeRecording = useCallback(async () => {
+    if (!activeSession) return
+    await sendToBackground({ type: 'SESSION_RESUME', sessionId: activeSession.sessionId })
+  }, [activeSession])
+
   const generateCode = useCallback(async () => {
     if (!activeSession) return
     setCodeGenError(null)
@@ -166,12 +198,69 @@ export function useSession() {
     }
   }, [activeSession, setCodeGenError])
 
+  const handleDeleteSession = useCallback(
+    async (sessionId: string) => {
+      await sendToBackground({ type: 'SESSION_DELETE', sessionId })
+      // If this was the loaded session, clear steps
+      if (activeSession?.sessionId === sessionId) {
+        setActiveSession(null)
+        clearSteps()
+        setGeneratedCode(null)
+      }
+    },
+    [activeSession, setActiveSession, clearSteps, setGeneratedCode],
+  )
+
+  const handleRenameSession = useCallback(async (sessionId: string, name: string) => {
+    await sendToBackground({ type: 'SESSION_RENAME', sessionId, name })
+  }, [])
+
+  const loadSession = useCallback(
+    async (session: Session) => {
+      setActiveSession(session)
+      clearSteps()
+      setGeneratedCode(null)
+      setCodeGenError(null)
+      const actions = await getActionsBySession(session.sessionId)
+      // Bulk-set steps without triggering one appendStep per action
+      useSessionStore.setState({ steps: actions })
+    },
+    [setActiveSession, clearSteps, setGeneratedCode, setCodeGenError],
+  )
+
+  const exportJson = useCallback(
+    async (sessionId: string) => {
+      const session = sessions.find((s) => s.sessionId === sessionId)
+      if (!session) return
+      const actions = await getActionsBySession(sessionId)
+      downloadJsonExport(session, actions)
+    },
+    [sessions],
+  )
+
+  const exportZip = useCallback(
+    async (sessionId: string) => {
+      const session = sessions.find((s) => s.sessionId === sessionId)
+      if (!session) return
+      try {
+        const code = await generate(sessionId, 'playwright-ts')
+        await downloadZipExport(session, code)
+      } catch (err) {
+        setCodeGenError(err instanceof Error ? err.message : 'ZIP export failed')
+      }
+    },
+    [sessions, setCodeGenError],
+  )
+
   const isRecording = activeSession?.state === 'recording'
+  const isPaused = activeSession?.state === 'paused'
 
   return {
     activeSession,
     steps,
+    sessions,
     isRecording,
+    isPaused,
     isStarting,
     generatedCode,
     codeGenError,
@@ -179,10 +268,17 @@ export function useSession() {
     assertionContext,
     startRecording,
     stopRecording,
+    pauseRecording,
+    resumeRecording,
     generateCode,
     deleteStep,
     toggleAssertionProbe,
     cancelAssertionBuilder,
     addAssertion,
+    loadSession,
+    handleDeleteSession,
+    handleRenameSession,
+    exportJson,
+    exportZip,
   }
 }

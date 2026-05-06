@@ -1,5 +1,12 @@
 import { onBackgroundMessage } from '@shared/messaging/listen'
-import { startSession, stopSession } from './session-manager'
+import {
+  startSession,
+  stopSession,
+  pauseSession,
+  resumeSession,
+  deleteSessionById,
+  renameSessionById,
+} from './session-manager'
 import { aggregateEvent } from './event-aggregator'
 import { handleCodeGenerate } from './codegen-orchestrator'
 import {
@@ -21,6 +28,26 @@ export function initMessageRouter(): void {
       case 'SESSION_STOP':
         return stopSession(message.sessionId).catch((err) =>
           logger.error('[BG] SESSION_STOP failed', err),
+        )
+
+      case 'SESSION_PAUSE':
+        return pauseSession(message.sessionId).catch((err) =>
+          logger.error('[BG] SESSION_PAUSE failed', err),
+        )
+
+      case 'SESSION_RESUME':
+        return resumeSession(message.sessionId).catch((err) =>
+          logger.error('[BG] SESSION_RESUME failed', err),
+        )
+
+      case 'SESSION_DELETE':
+        return deleteSessionById(message.sessionId).catch((err) =>
+          logger.error('[BG] SESSION_DELETE failed', err),
+        )
+
+      case 'SESSION_RENAME':
+        return renameSessionById(message.sessionId, message.name).catch((err) =>
+          logger.error('[BG] SESSION_RENAME failed', err),
         )
 
       case 'EVENT_CAPTURED':
