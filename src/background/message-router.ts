@@ -1,6 +1,7 @@
 import { onBackgroundMessage } from '@shared/messaging/listen'
 import { startSession, stopSession } from './session-manager'
 import { aggregateEvent } from './event-aggregator'
+import { handleCodeGenerate } from './codegen-orchestrator'
 import { logger } from '@shared/logger'
 
 export function initMessageRouter(): void {
@@ -19,6 +20,11 @@ export function initMessageRouter(): void {
       case 'EVENT_CAPTURED':
         return aggregateEvent(message.sessionId, message.event).catch((err) =>
           logger.error('[BG] EVENT_CAPTURED failed', err),
+        )
+
+      case 'CODE_GENERATE':
+        return handleCodeGenerate(message.sessionId, message.framework).catch((err) =>
+          logger.error('[BG] CODE_GENERATE failed', err),
         )
     }
   })

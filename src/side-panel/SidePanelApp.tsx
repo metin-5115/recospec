@@ -1,8 +1,10 @@
 import { useSession } from './hooks/useSession'
 import { StepList } from './components/StepList'
+import { CodePreview } from './components/CodePreview'
 
 export function SidePanelApp() {
-  const { isRecording, steps, startRecording, stopRecording } = useSession()
+  const { isRecording, steps, generatedCode, startRecording, stopRecording, generateCode } =
+    useSession()
 
   return (
     <div className="flex h-screen flex-col bg-white">
@@ -30,6 +32,19 @@ export function SidePanelApp() {
       <main className="flex-1 overflow-y-auto">
         <StepList steps={steps} />
       </main>
+
+      {steps.length > 0 && !isRecording && (
+        <div className="border-t border-gray-200 px-4 py-3">
+          <button
+            onClick={generateCode}
+            className="w-full rounded bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700 transition-colors"
+          >
+            Generate Playwright TS Code
+          </button>
+        </div>
+      )}
+
+      {generatedCode && <CodePreview code={generatedCode} />}
 
       {steps.length > 0 && (
         <footer className="border-t border-gray-100 px-4 py-2 text-xs text-gray-400">
