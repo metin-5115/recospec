@@ -11,7 +11,14 @@ export type UIToBackgroundMessage =
   | { type: 'SESSION_RESUME'; sessionId: string }
   | { type: 'SESSION_DELETE'; sessionId: string }
   | { type: 'SESSION_RENAME'; sessionId: string; name: string }
-  | { type: 'CODE_GENERATE'; sessionId: string; framework: FrameworkId }
+  | {
+      type: 'CODE_GENERATE'
+      sessionId: string
+      framework: FrameworkId
+      includeMocks?: boolean
+      /** Override inferred method names. Keyed by `${pageClassName}.${oldName}`. */
+      methodRenames?: Record<string, string>
+    }
   | { type: 'ASSERTION_PROBE_START'; sessionId: string }
   | { type: 'ASSERTION_PROBE_STOP'; sessionId: string }
   | {

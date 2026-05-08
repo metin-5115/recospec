@@ -1,6 +1,9 @@
 import type { ShadowContext, FrameContext } from '@shared/types/locator'
 
-export type IRActionType = 'navigate' | 'click' | 'fill' | 'assert' | 'keypress'
+export type IRActionType = 'navigate' | 'click' | 'fill' | 'assert' | 'keypress' | 'network'
+
+/** TS-level parameter type used when rendering inferred method signatures. */
+export type IRParamType = 'string' | 'number' | 'boolean'
 
 /**
  * Per-fallback record carried into the IR so adapters can render each one
@@ -31,6 +34,8 @@ export interface IRElement {
   locatorValue: string
   fallbackLocators?: IRFallback[]
   tagName: string
+  /** Lower-cased `type` attribute when tagName === 'input' (email, password, number, checkbox, …). */
+  inputType?: string
   elementSnapshot?: IRElementSnapshot
   shadowContext?: ShadowContext
   shadowClosed?: boolean
@@ -43,6 +48,19 @@ export interface AssertionDetail {
   attribute?: string
 }
 
+/**
+ * Captured request/response metadata for a `network` step.
+ * Powers Playwright `page.route(...)` mock generation.
+ */
+export interface IRNetworkInfo {
+  method: string
+  url: string
+  status?: number
+  contentType?: string
+  /** Truncated response body (max NETWORK_BODY_MAX_BYTES) — string or stringified JSON. */
+  responseBody?: string
+}
+
 export interface IRStep {
   id: string
   action: IRActionType
@@ -53,11 +71,14 @@ export interface IRStep {
   key?: string
   annotation?: string
   assertionDetail?: AssertionDetail
+  network?: IRNetworkInfo
 }
 
 export interface InferredMethod {
   name: string
   params: string[]
+  /** Parallel array of TS types (defaults to all `'string'` when omitted). */
+  paramTypes?: IRParamType[]
   steps: IRStep[]
 }
 

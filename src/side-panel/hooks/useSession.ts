@@ -43,6 +43,12 @@ export function useSession() {
 
   const [isProbeActive, setIsProbeActive] = useState(false)
   const [assertionContext, setAssertionContext] = useState<AssertionContext | null>(null)
+  const [includeMocks, setIncludeMocks] = useState(false)
+  const [methodRenames, setMethodRenames] = useState<Record<string, string>>({})
+
+  const renameMethod = useCallback((key: string, value: string) => {
+    setMethodRenames((prev) => ({ ...prev, [key]: value }))
+  }, [])
 
   // Load session list from DB on mount
   useEffect(() => {
@@ -188,6 +194,8 @@ export function useSession() {
           type: 'CODE_GENERATE',
           sessionId: activeSession.sessionId,
           framework: selectedFramework,
+          includeMocks,
+          methodRenames,
         })
         return
       } catch {
@@ -198,7 +206,7 @@ export function useSession() {
         }
       }
     }
-  }, [activeSession, selectedFramework, setCodeGenError])
+  }, [activeSession, selectedFramework, includeMocks, methodRenames, setCodeGenError])
 
   const handleDeleteSession = useCallback(
     async (sessionId: string) => {
@@ -245,13 +253,13 @@ export function useSession() {
       const session = sessions.find((s) => s.sessionId === sessionId)
       if (!session) return
       try {
-        const code = await generate(sessionId, selectedFramework)
+        const code = await generate(sessionId, selectedFramework, { includeMocks, methodRenames })
         await downloadZipExport(session, code)
       } catch (err) {
         setCodeGenError(err instanceof Error ? err.message : 'ZIP export failed')
       }
     },
-    [sessions, selectedFramework, setCodeGenError],
+    [sessions, selectedFramework, includeMocks, methodRenames, setCodeGenError],
   )
 
   const isRecording = activeSession?.state === 'recording'
@@ -270,6 +278,10 @@ export function useSession() {
     assertionContext,
     selectedFramework,
     setSelectedFramework,
+    includeMocks,
+    setIncludeMocks,
+    methodRenames,
+    renameMethod,
     startRecording,
     stopRecording,
     pauseRecording,

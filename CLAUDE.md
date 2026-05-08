@@ -259,7 +259,7 @@ Bu projede Claude Code'dan beklenen davranış:
 > Bu bölümü her milestone sonrasında güncelle.
 
 **Faz:** Faz 2 — Hardening (Hafta 7+)
-**Mevcut Hafta:** Hafta 7 — Self-Healing Locator Desteği (TAMAMLANDI)
+**Mevcut Hafta:** Hafta 8 — Method Inference v2 + Temel Network Capture (TAMAMLANDI)
 **Sonraki Görev:** Selenium Python adapter (Pytest) ya da Faz 3 sıradaki milestone
 
 **Tamamlananlar:**
@@ -275,5 +275,10 @@ Bu projede Claude Code'dan beklenen davranış:
 - [x] Hafta 6.5 Faz 2 — İçerik komponentleri (StepList, SessionList, FrameworkPicker, AssertionBuilder, CodePreview)
 - [x] Hafta 6.5 Faz 3 — Popup refresh, modal animasyonları, a11y (aria-label, reduced-motion guard)
 - [x] Hafta 7 — Self-Healing Locator: IR'a `IRFallback[]` + `IRElementSnapshot`; her element üstüne idiomatic `// Fallbacks: ...` yorumu; scaffold'a `utils/locator.ts` (Playwright `selfHealingLocator`) + `cypress/support/locator.js` (`cy.selfHealing`); side panel badge "{N} fallback(s)"; README ve zip README'sine "Self-healing locators" bölümü
+- [x] Hafta 8 — Method Inference v2: 10 pattern (search, login/register, submitForm, fillForm, acceptAndSubmit, navigateFromMenu, selectFromMenu, openItem, confirmAction + fallback) · `IRElement.inputType` + parametre tipi çıkarımı (`number`, `boolean`) · sayfa içi method ismi çakışmaları numerik suffix ile çözülür · default isim stratejisi (`click<Name>`, `fill<Name>`, `press<Key>`, `verify<Name>`)
+- [x] Hafta 8 — Network Request Capture: yeni izin yok, MAIN-world content script (`src/content/network-proxy.ts`, `world: "MAIN"`, `run_at: "document_start"`) `window.fetch` ve `XMLHttpRequest`'i sarmalar; ISOLATED CS `playforge:network` CustomEvent'ini `EVENT_CAPTURED` olarak background'a iletir; response body cap = `NETWORK_BODY_MAX_BYTES` (50 KB)
+- [x] Hafta 8 — IR'a `IRActionType: 'network'` + `IRStep.network: IRNetworkInfo`; step listesinde `Globe` ikonu ile `METHOD path STATUS` etiketi
+- [x] Hafta 8 — Playwright adapter mock üretimi (`page.route(... route.fulfill(...))`); JSON body live JSON olarak kalır (`JSON.stringify(...)`), text body string literal'e dönüşür; opsiyonel `Generate` checkbox: "Include mocks for captured network requests"
+- [x] Hafta 8 — Side panel `MethodPreview`: çıkarılan methodları sayfa-bazlı listeler, kullanıcı method ismini düzenleyebilir; `methodRenames: Record<"PageClass.oldName", string>` `CODE_GENERATE` mesajıyla aktarılır, codegen pipeline `applyRenames` ile uygular
 
 > Bütün haftalık görevler için: `ROADMAP.md`

@@ -20,6 +20,7 @@ import { SessionList } from './components/SessionList'
 import { CodePreview } from './components/CodePreview'
 import { AssertionBuilder } from './components/AssertionBuilder'
 import { FrameworkPicker } from './components/FrameworkPicker'
+import { MethodPreview } from './components/MethodPreview'
 
 type Tab = 'recording' | 'history'
 
@@ -39,6 +40,10 @@ export function SidePanelApp() {
     assertionContext,
     selectedFramework,
     setSelectedFramework,
+    includeMocks,
+    setIncludeMocks,
+    methodRenames,
+    renameMethod,
     startRecording,
     stopRecording,
     pauseRecording,
@@ -173,6 +178,24 @@ export function SidePanelApp() {
       {activeTab === 'recording' && steps.length > 0 && !isActive && (
         <div className="space-y-3 border-t border-border bg-bg-elevated/40 px-5 py-4">
           <FrameworkPicker value={selectedFramework} onChange={setSelectedFramework} />
+          <MethodPreview
+            steps={steps}
+            startUrl={activeSession?.startUrl ?? 'about:blank'}
+            renames={methodRenames}
+            onRename={renameMethod}
+          />
+          <label className="flex cursor-pointer items-center gap-2 text-xs text-text-muted">
+            <input
+              type="checkbox"
+              checked={includeMocks}
+              onChange={(e) => setIncludeMocks(e.target.checked)}
+              className="h-3.5 w-3.5 cursor-pointer rounded border-border accent-accent"
+            />
+            <span>
+              Include mocks for captured network requests
+              <span className="ml-1 text-text-subtle">(page.route)</span>
+            </span>
+          </label>
           <div className="flex gap-2">
             <button
               onClick={generateCode}

@@ -7,6 +7,11 @@ export interface AdapterMetadata {
   packageName: string
 }
 
+/** Render-time options forwarded by the orchestrator (e.g. include mocks). */
+export interface RenderOptions {
+  includeMocks?: boolean
+}
+
 export interface FrameworkAdapter {
   readonly id: FrameworkId
   readonly displayName: string
@@ -17,6 +22,8 @@ export interface FrameworkAdapter {
   renderScenario(scenario: IRScenario): GeneratedFile
   renderScaffold(): GeneratedFile[]
   postProcess?(files: GeneratedFile[]): GeneratedFile[]
+  /** Optional hook invoked once before rendering — adapters use this to read flags like `includeMocks`. */
+  applyOptions?(options: RenderOptions): void
 }
 
 export const ADAPTER_REGISTRY: Record<FrameworkId, FrameworkAdapter | undefined> = {

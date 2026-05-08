@@ -15,6 +15,20 @@ export type ActionType =
   | 'wait'
   | 'screenshot'
   | 'manual-coordinate'
+  | 'network'
+
+/** Payload shape for `type: 'network'` recorded actions. */
+export interface NetworkPayload {
+  method: string
+  url: string
+  status?: number
+  contentType?: string
+  /** Response body (truncated to NETWORK_BODY_MAX_BYTES). */
+  responseBody?: string
+  /** Request body when present and serialisable. */
+  requestBody?: string
+  durationMs?: number
+}
 
 export type AssertionType = 'visible' | 'hidden' | 'text' | 'value' | 'attribute' | 'count'
 

@@ -1,6 +1,18 @@
-import type { RecordedAction, ElementSnapshot, AssertionType } from '@shared/types/action'
+import type {
+  RecordedAction,
+  ElementSnapshot,
+  AssertionType,
+  NetworkPayload,
+} from '@shared/types/action'
 import type { Locator, ShadowContext, FrameContext } from '@shared/types/locator'
-import type { IRStep, IRElement, AssertionDetail, IRElementSnapshot, IRFallback } from '../ir/types'
+import type {
+  IRStep,
+  IRElement,
+  AssertionDetail,
+  IRElementSnapshot,
+  IRFallback,
+  IRNetworkInfo,
+} from '../ir/types'
 import { normalizeUrl } from './url-normalizer'
 import { nameElement } from '../planner/element-namer'
 
@@ -30,6 +42,12 @@ function toIrFallbacks(fallbacks: Locator[] | undefined): IRFallback[] {
   return fallbacks.map((l) => ({ strategy: l.strategy, locatorValue: rawSelector(l) }))
 }
 
+function extractInputType(snapshot: ElementSnapshot): string | undefined {
+  if (snapshot.tagName !== 'input') return undefined
+  const t = snapshot.attributes?.type
+  return t ? t.toLowerCase() : 'text'
+}
+
 function buildElement(
   snapshot: ElementSnapshot,
   primaryLocator: Locator,
@@ -43,6 +61,7 @@ function buildElement(
   const key = rawSelector(primaryLocator)
   const irFallbacks = toIrFallbacks(fallbackLocators)
   const elementSnapshot = summarizeSnapshot(snapshot)
+  const inputType = extractInputType(snapshot)
   const existing = locatorToName.get(key)
   if (existing) {
     return {
@@ -51,6 +70,7 @@ function buildElement(
       locatorValue: key,
       fallbackLocators: irFallbacks.length ? irFallbacks : undefined,
       tagName: snapshot.tagName,
+      inputType,
       elementSnapshot,
       shadowContext,
       shadowClosed,
@@ -66,6 +86,7 @@ function buildElement(
     locatorValue: key,
     fallbackLocators: irFallbacks.length ? irFallbacks : undefined,
     tagName: snapshot.tagName,
+    inputType,
     elementSnapshot,
     shadowContext,
     shadowClosed,
@@ -133,6 +154,20 @@ export function normalizeActions(actions: RecordedAction[]): NormalizedActions {
       }
 
       steps.push(step)
+      continue
+    }
+
+    if (type === 'network') {
+      const np = (payload ?? {}) as Partial<NetworkPayload>
+      if (!np.url || !np.method) continue
+      const network: IRNetworkInfo = {
+        method: np.method,
+        url: np.url,
+        status: np.status,
+        contentType: np.contentType,
+        responseBody: np.responseBody,
+      }
+      steps.push({ id, action: 'network', network, annotation })
       continue
     }
 

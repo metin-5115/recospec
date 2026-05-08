@@ -4,12 +4,59 @@ import type {
   IRStep,
   IRScenario,
   IRFallback,
+  IRNetworkInfo,
   InferredMethod,
   GeneratedFile,
   AssertionDetail,
 } from '../../ir/types'
 import { registerAdapter, type FrameworkAdapter } from '../registry'
 import { PLAYWRIGHT_SELF_HEALING_TS } from '../../scaffold/self-healing'
+
+// Module-scoped mock toggle. The orchestrator flips it before each render via
+// the FrameworkAdapter.options field; defaulting to false keeps existing
+// snapshot tests stable.
+let RENDER_MOCKS = false
+function setRenderMocks(value: boolean): void {
+  RENDER_MOCKS = value
+}
+
+function urlPattern(rawUrl: string): string {
+  try {
+    const u = new URL(rawUrl)
+    return `**${u.pathname}${u.search}`
+  } catch {
+    return rawUrl
+  }
+}
+
+function safeJsonExpression(body: string | undefined): string {
+  if (!body) return `''`
+  const trimmed = body.trim()
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    try {
+      JSON.parse(trimmed)
+      return trimmed
+    } catch {
+      // fall through to string fallback
+    }
+  }
+  return JSON.stringify(body)
+}
+
+function renderMockBlock(net: IRNetworkInfo, indent: string): string {
+  const pattern = urlPattern(net.url)
+  const status = net.status ?? 200
+  const contentType = net.contentType ?? 'application/json'
+  const isJson = contentType.includes('json')
+  const bodyExpr = isJson
+    ? `JSON.stringify(${safeJsonExpression(net.responseBody)})`
+    : JSON.stringify(net.responseBody ?? '')
+  return `${indent}await page.route(${JSON.stringify(pattern)}, (route) => route.fulfill({
+${indent}  status: ${status},
+${indent}  contentType: ${JSON.stringify(contentType)},
+${indent}  body: ${bodyExpr},
+${indent}}));`
+}
 
 // ---------------------------------------------------------------------------
 // Locator rendering
@@ -121,6 +168,11 @@ function renderStepInMethod(step: IRStep, indent: string): string {
     }
     return `${indent}// assert: ${step.annotation ?? ''}`
   }
+  if (step.action === 'network' && step.network) {
+    if (!RENDER_MOCKS) return ''
+    // Page-object methods receive `this.page`; rewrite the helper accordingly.
+    return renderMockBlock(step.network, indent).replace(/\bpage\.route\(/g, 'this.page.route(')
+  }
   return ''
 }
 
@@ -143,6 +195,10 @@ function renderStepInSpec(step: IRStep, indent: string): string {
     }
     return `${indent}// assert: ${step.annotation ?? ''}`
   }
+  if (step.action === 'network' && step.network) {
+    if (!RENDER_MOCKS) return ''
+    return renderMockBlock(step.network, indent)
+  }
   return ''
 }
 
@@ -150,23 +206,28 @@ function renderStepInSpec(step: IRStep, indent: string): string {
 // Method rendering (inferred)
 // ---------------------------------------------------------------------------
 
+const PARAM_SUFFIX_REGEX = /Input$|Button$|Btn$|Link$|Select$|Field$|Box$|Toggle$|Checkbox$|Radio$/
+
+function paramSlugFromElement(name: string): string {
+  const stripped = name.replace(PARAM_SUFFIX_REGEX, '')
+  return stripped.charAt(0).toLowerCase() + stripped.slice(1)
+}
+
 function renderInferredMethod(method: InferredMethod): string {
-  const paramList = method.params.map((p) => `${p}: string`).join(', ')
+  const types = method.paramTypes ?? method.params.map(() => 'string')
+  const paramList = method.params.map((p, i) => `${p}: ${types[i] ?? 'string'}`).join(', ')
   const bodyLines = method.steps
     .map((s) => {
-      // For fill steps in inferred methods, use param name instead of hard-coded value
+      // Substitute the param name into fill calls when the slug matches.
       if (s.action === 'fill' && s.element) {
-        const paramIdx = method.params.findIndex(
-          (p) =>
-            p ===
-            s
-              .element!.name.replace(/Input$|Button$|Link$|Select$/, '')
-              .charAt(0)
-              .toLowerCase() +
-              s.element!.name.replace(/Input$|Button$|Link$|Select$/, '').slice(1),
-        )
+        const slug = paramSlugFromElement(s.element.name)
+        const paramIdx = method.params.findIndex((p) => p === slug)
         if (paramIdx !== -1) {
-          return `    await this.${s.element.name}.fill(${method.params[paramIdx]});`
+          const ref =
+            types[paramIdx] === 'string'
+              ? method.params[paramIdx]
+              : `String(${method.params[paramIdx]})`
+          return `    await this.${s.element.name}.fill(${ref});`
         }
       }
       return renderStepInMethod(s, '    ')
@@ -325,6 +386,9 @@ export const playwrightTsAdapter: FrameworkAdapter = {
     language: 'TypeScript',
     testRunner: '@playwright/test',
     packageName: '@playwright/test',
+  },
+  applyOptions(options) {
+    setRenderMocks(Boolean(options.includeMocks))
   },
   renderPageObject(page) {
     return { filename: `${page.className}.ts`, content: renderPageObject(page) }

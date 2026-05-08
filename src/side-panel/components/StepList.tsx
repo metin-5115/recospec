@@ -1,6 +1,7 @@
 import { useState, type ComponentType, type SVGProps } from 'react'
 import {
   CheckCircle2,
+  Globe,
   Keyboard,
   MousePointerClick,
   MoveVertical,
@@ -10,7 +11,7 @@ import {
   Video,
   X,
 } from 'lucide-react'
-import type { RecordedAction, ActionType } from '@shared/types/action'
+import type { RecordedAction, ActionType, NetworkPayload } from '@shared/types/action'
 
 type IconComponent = ComponentType<SVGProps<SVGSVGElement>>
 
@@ -33,9 +34,24 @@ function actionIcon(type: ActionType): IconComponent {
       return MoveVertical
     case 'assert':
       return CheckCircle2
+    case 'network':
+      return Globe
     default:
       return Play
   }
+}
+
+function networkLabel(step: RecordedAction): string {
+  const np = (step.payload ?? {}) as Partial<NetworkPayload>
+  if (!np.url) return 'network'
+  const status = np.status ? ` ${np.status}` : ''
+  let path = np.url
+  try {
+    path = new URL(np.url).pathname
+  } catch {
+    /* keep raw url */
+  }
+  return `${(np.method ?? 'GET').toUpperCase()} ${path}${status}`
 }
 
 interface FallbackDropdownProps {
@@ -92,13 +108,15 @@ export function StepList({ steps, onDeleteStep }: StepListProps) {
     <ol className="divide-y divide-border">
       {steps.map((step, index) => {
         const snapshot = step.target?.elementSnapshot ?? step.elementSnapshot
-        const locatorLabel =
-          typeof step.target?.primaryLocator.selector === 'string'
+        const isNetwork = step.type === 'network'
+        const locatorLabel = isNetwork
+          ? networkLabel(step)
+          : typeof step.target?.primaryLocator.selector === 'string'
             ? step.target.primaryLocator.selector
             : snapshot
               ? `<${snapshot.tagName}>`
               : step.type
-        const strategy = step.target?.primaryLocator.strategy
+        const strategy = isNetwork ? undefined : step.target?.primaryLocator.strategy
         const fallbacks = (step.target?.fallbackLocators ?? []).map((l) => ({
           strategy: l.strategy,
           selector: typeof l.selector === 'string' ? l.selector : JSON.stringify(l.selector),

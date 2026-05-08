@@ -1,10 +1,27 @@
-import type { IRStep, IRElement, InferredMethod } from '../ir/types'
+import type { IRStep, IRElement, InferredMethod, IRParamType } from '../ir/types'
+
+// ---------------------------------------------------------------------------
+// Element classification helpers
+// ---------------------------------------------------------------------------
+
+const SUFFIX_REGEX = /Input$|Button$|Btn$|Link$|Select$|Field$|Box$|Toggle$|Checkbox$|Radio$/
+
+function stripElementSuffix(name: string): string {
+  return name.replace(SUFFIX_REGEX, '')
+}
 
 function paramName(element: IRElement | undefined, defaultName: string): string {
   if (!element) return defaultName
-  const name = element.name.replace(/Input$|Button$|Link$|Select$/, '')
-  const lower = name.charAt(0).toLowerCase() + name.slice(1)
-  return lower || defaultName
+  const stripped = stripElementSuffix(element.name)
+  if (!stripped) return defaultName
+  return stripped.charAt(0).toLowerCase() + stripped.slice(1)
+}
+
+function paramTypeFor(el: IRElement | undefined): IRParamType {
+  const t = el?.inputType?.toLowerCase()
+  if (t === 'number' || t === 'range') return 'number'
+  if (t === 'checkbox' || t === 'radio') return 'boolean'
+  return 'string'
 }
 
 function isSubmitLike(el: IRElement | undefined): boolean {
@@ -14,9 +31,14 @@ function isSubmitLike(el: IRElement | undefined): boolean {
     n.includes('submit') ||
     n.includes('login') ||
     n.includes('signin') ||
+    n.includes('signup') ||
+    n.includes('register') ||
     n.includes('save') ||
     n.includes('confirm') ||
     n.includes('send') ||
+    n.includes('apply') ||
+    n.includes('continue') ||
+    n.includes('search') ||
     el.tagName === 'button'
   )
 }
@@ -33,112 +55,309 @@ function isMenuLike(el: IRElement | undefined): boolean {
   )
 }
 
+function isCheckboxLike(el: IRElement | undefined): boolean {
+  const t = el?.inputType?.toLowerCase()
+  return t === 'checkbox' || t === 'radio'
+}
+
+function isPasswordField(el: IRElement | undefined): boolean {
+  return el?.inputType?.toLowerCase() === 'password' || /password|pwd/i.test(el?.name ?? '')
+}
+
+function isRegistrationContext(els: (IRElement | undefined)[]): boolean {
+  return els.some((el) => /register|signup|sign-?up|create.?account/i.test(el?.name ?? ''))
+}
+
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
+// ---------------------------------------------------------------------------
+// Default method naming for unmatched steps
+// ---------------------------------------------------------------------------
+
+interface MethodDraft {
+  name: string
+  params: string[]
+  paramTypes: IRParamType[]
+  steps: IRStep[]
+}
+
+function defaultDraft(step: IRStep): MethodDraft {
+  if (step.action === 'click' && step.element) {
+    return {
+      name: `click${capitalize(stripElementSuffix(step.element.name) || 'Element')}`,
+      params: [],
+      paramTypes: [],
+      steps: [step],
+    }
+  }
+  if (step.action === 'fill' && step.element) {
+    const param = paramName(step.element, 'value')
+    return {
+      name: `fill${capitalize(stripElementSuffix(step.element.name) || 'Field')}`,
+      params: [param],
+      paramTypes: [paramTypeFor(step.element)],
+      steps: [step],
+    }
+  }
+  if (step.action === 'keypress' && step.key) {
+    return {
+      name: `press${capitalize(step.key.toLowerCase())}`,
+      params: [],
+      paramTypes: [],
+      steps: [step],
+    }
+  }
+  if (step.action === 'assert') {
+    const target = step.element ? capitalize(stripElementSuffix(step.element.name)) : 'State'
+    return { name: `verify${target || 'State'}`, params: [], paramTypes: [], steps: [step] }
+  }
+  if (step.action === 'network') {
+    return { name: 'awaitNetwork', params: [], paramTypes: [], steps: [step] }
+  }
+  return { name: 'doAction', params: [], paramTypes: [], steps: [step] }
+}
+
+// ---------------------------------------------------------------------------
+// Pattern matching
+// ---------------------------------------------------------------------------
+
 /**
  * Infers semantic methods from a sequence of IRSteps.
  *
- * Patterns (in priority order):
- * 1. fill + keypress:Enter              → search(query)
- * 2. fill + fill + click(submit-like)   → login(email, password)
- * 3. fill(s) + click                    → submitForm(params...)
- * 4. click + navigate                   → openItem(name)
- * 5. click(menu-like) + click           → selectFromMenu(option)
+ * Patterns (priority order, longest match wins):
  *
- * Unrecognised steps become doAction{N} raw methods.
+ *  1. fill + Enter                                → search(query)
+ *  2. fill + click(submit-like, search-named)     → search(query)
+ *  3. 2× fill + click(submit-like)                → login(email, password) /
+ *                                                    register(...) when names hint signup
+ *  4. N× fill + click                             → submitForm(...)
+ *  5. N× fill (terminal, no click)                → fillForm(...)
+ *  6. click(checkbox|radio) + click(submit-like)  → acceptAndSubmit(consent)
+ *  7. click(menu-like) + click + navigate         → navigateFromMenu(option)
+ *  8. click(menu-like) + click                    → selectFromMenu(option)
+ *  9. click + navigate                            → openItem(name)
+ * 10. click + click(submit-like)                  → confirmAction(name)
+ *
+ * Anything else falls back to a best-effort name (clickX / fillX / pressY / verifyX).
+ * Network steps are kept inline (they are not user actions) so they still appear in
+ * the method body and feed the mock generator.
+ *
+ * Method names collide-resolve per page: duplicates get numeric suffixes.
  */
 export function inferMethods(steps: IRStep[]): InferredMethod[] {
-  const methods: InferredMethod[] = []
+  // Strip out network steps for matching but stitch them back into the matched
+  // method body so the adapter can render mocks alongside the user actions.
+  const userSteps = steps.filter((s) => s.action !== 'network')
+  const networkSteps = steps.filter((s) => s.action === 'network')
+
+  const drafts: MethodDraft[] = []
   let i = 0
-  let rawIndex = 0
 
-  while (i < steps.length) {
-    const s0 = steps[i]
-    const s1 = steps[i + 1]
-    const s2 = steps[i + 2]
+  while (i < userSteps.length) {
+    const s0 = userSteps[i]
+    const s1 = userSteps[i + 1]
+    const s2 = userSteps[i + 2]
 
-    // Skip lone navigate steps — they are not interactive user actions
+    // Skip lone navigate steps — handled by Page Object goto()
     if (s0?.action === 'navigate') {
       i++
       continue
     }
 
-    // Pattern 1: fill + keypress:Enter → search(query)
+    // 1: fill + Enter → search
     if (s0?.action === 'fill' && s1?.action === 'keypress' && s1.key === 'Enter') {
-      methods.push({
+      drafts.push({
         name: 'search',
         params: [paramName(s0.element, 'query')],
+        paramTypes: [paramTypeFor(s0.element)],
         steps: [s0, s1],
       })
       i += 2
       continue
     }
 
-    // Pattern 2: fill + fill + click(submit-like) → login(email, password)
+    // 2: fill + click(search button) → search
+    if (
+      s0?.action === 'fill' &&
+      s1?.action === 'click' &&
+      isSubmitLike(s1.element) &&
+      /search|find|lookup/i.test(s0.element?.name ?? '')
+    ) {
+      drafts.push({
+        name: 'search',
+        params: [paramName(s0.element, 'query')],
+        paramTypes: [paramTypeFor(s0.element)],
+        steps: [s0, s1],
+      })
+      i += 2
+      continue
+    }
+
+    // 3: 2× fill + click(submit-like) → login / register
     if (
       s0?.action === 'fill' &&
       s1?.action === 'fill' &&
       s2?.action === 'click' &&
       isSubmitLike(s2.element)
     ) {
-      methods.push({
-        name: 'login',
+      const looksLikeLogin = isPasswordField(s1.element)
+      const looksLikeRegister = isRegistrationContext([s0.element, s1.element, s2.element])
+      const name = looksLikeRegister ? 'register' : looksLikeLogin ? 'login' : 'submitForm'
+      drafts.push({
+        name,
         params: [paramName(s0.element, 'email'), paramName(s1.element, 'password')],
+        paramTypes: [paramTypeFor(s0.element), paramTypeFor(s1.element)],
         steps: [s0, s1, s2],
       })
       i += 3
       continue
     }
 
-    // Pattern 3: one or more fills followed by a click → submitForm(...)
+    // 4 / 5: N× fill (+ optional submit click)
     if (s0?.action === 'fill') {
       const fillSteps: IRStep[] = []
       let j = i
-      while (j < steps.length && steps[j]?.action === 'fill') {
-        fillSteps.push(steps[j]!)
+      while (j < userSteps.length && userSteps[j]?.action === 'fill') {
+        fillSteps.push(userSteps[j]!)
         j++
       }
-      const clickStep = steps[j]
-      if (fillSteps.length >= 1 && clickStep?.action === 'click') {
-        methods.push({
+      const next = userSteps[j]
+      if (fillSteps.length >= 1 && next?.action === 'click') {
+        drafts.push({
           name: 'submitForm',
           params: fillSteps.map((s, idx) => paramName(s.element, `field${idx + 1}`)),
-          steps: [...fillSteps, clickStep],
+          paramTypes: fillSteps.map((s) => paramTypeFor(s.element)),
+          steps: [...fillSteps, next],
         })
         i = j + 1
         continue
       }
+      if (fillSteps.length >= 2) {
+        drafts.push({
+          name: 'fillForm',
+          params: fillSteps.map((s, idx) => paramName(s.element, `field${idx + 1}`)),
+          paramTypes: fillSteps.map((s) => paramTypeFor(s.element)),
+          steps: fillSteps,
+        })
+        i = j
+        continue
+      }
+      // single trailing fill — fall through to default naming
     }
 
-    // Pattern 4: click + navigate → openItem(name)
-    if (s0?.action === 'click' && s1?.action === 'navigate') {
-      methods.push({
-        name: 'openItem',
-        params: [paramName(s0.element, 'itemName')],
+    // 6: checkbox + click(submit) → acceptAndSubmit
+    if (
+      s0?.action === 'click' &&
+      isCheckboxLike(s0.element) &&
+      s1?.action === 'click' &&
+      isSubmitLike(s1.element)
+    ) {
+      drafts.push({
+        name: 'acceptAndSubmit',
+        params: [paramName(s0.element, 'consent')],
+        paramTypes: ['boolean'],
         steps: [s0, s1],
       })
       i += 2
       continue
     }
 
-    // Pattern 5: click(menu-like) + click → selectFromMenu(option)
-    if (s0?.action === 'click' && s1?.action === 'click' && isMenuLike(s0.element)) {
-      methods.push({
+    // 7: menu + click + navigate → navigateFromMenu
+    if (
+      s0?.action === 'click' &&
+      isMenuLike(s0.element) &&
+      s1?.action === 'click' &&
+      s2?.action === 'navigate'
+    ) {
+      drafts.push({
+        name: 'navigateFromMenu',
+        params: [paramName(s1.element, 'option')],
+        paramTypes: ['string'],
+        steps: [s0, s1, s2],
+      })
+      i += 3
+      continue
+    }
+
+    // 8: menu + click → selectFromMenu
+    if (s0?.action === 'click' && isMenuLike(s0.element) && s1?.action === 'click') {
+      drafts.push({
         name: 'selectFromMenu',
         params: [paramName(s1.element, 'option')],
+        paramTypes: ['string'],
         steps: [s0, s1],
       })
       i += 2
       continue
     }
 
-    // Fallback: raw single-step method
-    rawIndex++
-    methods.push({
-      name: `doAction${rawIndex}`,
-      params: [],
-      steps: [s0],
-    })
+    // 9: click + navigate → openItem
+    if (s0?.action === 'click' && s1?.action === 'navigate') {
+      drafts.push({
+        name: 'openItem',
+        params: [paramName(s0.element, 'itemName')],
+        paramTypes: ['string'],
+        steps: [s0, s1],
+      })
+      i += 2
+      continue
+    }
+
+    // 10: click + click(submit-like) → confirmAction
+    if (s0?.action === 'click' && s1?.action === 'click' && isSubmitLike(s1.element)) {
+      drafts.push({
+        name: 'confirmAction',
+        params: [paramName(s0.element, 'target')],
+        paramTypes: ['string'],
+        steps: [s0, s1],
+      })
+      i += 2
+      continue
+    }
+
+    // Fallback — best-effort default naming
+    if (s0) drafts.push(defaultDraft(s0))
     i++
   }
 
-  return methods
+  // Re-thread network steps next to the closest preceding user step in the same method.
+  // For simplicity we append all network steps to the method whose last step's
+  // index in the original `steps` array is just before the network step. If no
+  // user method precedes it, we drop them into the first method (or create one).
+  if (networkSteps.length > 0) {
+    const indexOf = new Map<IRStep, number>()
+    steps.forEach((s, idx) => indexOf.set(s, idx))
+    for (const net of networkSteps) {
+      const netIdx = indexOf.get(net) ?? 0
+      let owner: MethodDraft | undefined
+      for (const d of drafts) {
+        const lastIdx = indexOf.get(d.steps[d.steps.length - 1]!) ?? -1
+        if (lastIdx <= netIdx) owner = d
+      }
+      if (!owner) {
+        owner = drafts[0]
+      }
+      if (owner) owner.steps.push(net)
+      else drafts.push({ name: 'awaitNetwork', params: [], paramTypes: [], steps: [net] })
+    }
+  }
+
+  // Collision resolution — append numeric suffixes when names repeat.
+  const used = new Set<string>()
+  return drafts.map((d) => {
+    let candidate = d.name
+    let n = 2
+    while (used.has(candidate)) {
+      candidate = `${d.name}${n++}`
+    }
+    used.add(candidate)
+    return {
+      name: candidate,
+      params: d.params,
+      paramTypes: d.paramTypes,
+      steps: d.steps,
+    }
+  })
 }
