@@ -53,12 +53,12 @@ export function AssertionBuilder({
       role="dialog"
       aria-modal="true"
       aria-label="Add Assertion"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm"
+      className="animate-backdrop-in fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm"
       onClick={(e) => {
         if (e.target === e.currentTarget) onCancel()
       }}
     >
-      <div className="w-80 overflow-hidden rounded-2xl border border-border bg-bg shadow-2xl">
+      <div className="animate-modal-in w-80 overflow-hidden rounded-2xl border border-border bg-bg shadow-2xl">
         <div className="flex items-start justify-between border-b border-border px-5 py-4">
           <div className="flex items-start gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-accent shadow-accent-glow">

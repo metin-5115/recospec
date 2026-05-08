@@ -1,7 +1,8 @@
+import { CircleDot, PanelRightOpen } from 'lucide-react'
 import { useSession } from '../side-panel/hooks/useSession'
 
 export function PopupApp() {
-  const { isRecording } = useSession()
+  const { isRecording, isPaused } = useSession()
 
   async function openSidePanel() {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
@@ -10,29 +11,39 @@ export function PopupApp() {
     }
   }
 
+  const label = isRecording ? 'REC' : isPaused ? 'PAUSE' : 'IDLE'
+  const palette = isRecording
+    ? 'bg-danger-soft text-danger'
+    : isPaused
+      ? 'bg-warning-soft text-warning'
+      : 'bg-bg-muted text-text-muted'
+  const dotPalette = isRecording
+    ? 'fill-danger text-danger animate-pulse'
+    : isPaused
+      ? 'fill-warning text-warning'
+      : 'fill-text-subtle text-text-subtle'
+
   return (
-    <div className="w-64 p-4">
+    <div className="w-72 space-y-4 bg-bg p-5 text-text">
       <div className="flex items-center justify-between">
-        <h1 className="text-base font-bold text-gray-900">PlayForge</h1>
+        <h1 className="text-base font-semibold tracking-tight text-gradient-accent">PlayForge</h1>
         <span
-          className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold tracking-wide ${
-            isRecording ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-500'
-          }`}
+          className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${palette}`}
         >
-          <span
-            className={`h-1.5 w-1.5 rounded-full ${
-              isRecording ? 'animate-pulse bg-white' : 'bg-gray-400'
-            }`}
-          />
-          {isRecording ? 'REC' : 'IDLE'}
+          <CircleDot className={`h-2.5 w-2.5 ${dotPalette}`} aria-hidden="true" />
+          {label}
         </span>
       </div>
+
       <button
         onClick={openSidePanel}
-        className="mt-4 w-full rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+        className="group inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-accent px-3.5 py-2.5 text-sm font-semibold text-white shadow-accent-glow transition-all hover:scale-[1.01] active:scale-[0.99]"
       >
+        <PanelRightOpen className="h-4 w-4" aria-hidden="true" />
         Open Side Panel
       </button>
+
+      <p className="text-center text-[11px] text-text-subtle">v0.1.0 · MIT</p>
     </div>
   )
 }

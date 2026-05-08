@@ -259,8 +259,8 @@ Bu projede Claude Code'dan beklenen davranış:
 > Bu bölümü her milestone sonrasında güncelle.
 
 **Faz:** Faz 2 — Hardening (Hafta 6+)
-**Mevcut Hafta:** Hafta 6.5 — UI Modernizasyon (Faz 2/4: içerik komponentleri)
-**Sonraki Görev:** Hafta 6.5 — UI Modernizasyon Faz 3 (popup + cila)
+**Mevcut Hafta:** Hafta 6.5 — UI Modernizasyon (TAMAMLANDI)
+**Sonraki Görev:** Hafta 7 — Selenium Python adapter (Pytest)
 
 **Tamamlananlar:**
 
@@ -273,5 +273,6 @@ Bu projede Claude Code'dan beklenen davranış:
 - [x] Hafta 6.5 Faz 0 — Tasarım sistemi (Inter font, lucide-react, design tokens, dark mode)
 - [x] Hafta 6.5 Faz 1 — Side panel chrome (gradient header, pill tabs, gradient CTA, lucide ikonlar)
 - [x] Hafta 6.5 Faz 2 — İçerik komponentleri (StepList, SessionList, FrameworkPicker, AssertionBuilder, CodePreview)
+- [x] Hafta 6.5 Faz 3 — Popup refresh, modal animasyonları, a11y (aria-label, reduced-motion guard)
 
 > Bütün haftalık görevler için: `ROADMAP.md`
