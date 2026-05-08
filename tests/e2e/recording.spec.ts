@@ -25,4 +25,20 @@ test.describe('Recording flow', () => {
 
     await context.close()
   })
+
+  test('captures a deterministic page screenshot for visual regression', async () => {
+    const context = await loadExtension()
+    const page = await context.newPage()
+
+    const fixturePath = `file://${resolve(__dirname, '../fixtures/simple-form.html')}`
+    await page.goto(fixturePath)
+    await page.setViewportSize({ width: 800, height: 600 })
+    await expect(page.getByTestId('submit-btn')).toBeVisible()
+
+    const buffer = await page.screenshot({ fullPage: false, type: 'png' })
+    expect(buffer.byteLength).toBeGreaterThan(1024)
+    expect(buffer.subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a')
+
+    await context.close()
+  })
 })

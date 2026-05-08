@@ -21,17 +21,3 @@ export class LoginPage {
 }
 "
 `;
-
-exports[`renderScenario > matches snapshot 1`] = `
-"import { test, expect } from '@playwright/test';
-import { LoginPage } from './LoginPage';
-
-test.describe('Login flow', () => {
-  test('full flow', async ({ page }) => {
-    await page.goto("/login");
-    await page.getByTestId("username-input").fill("admin");
-    await page.getByTestId("submit-btn").click();
-  });
-});
-"
-`;

@@ -93,6 +93,13 @@ describe('buildZipExport', () => {
     expect(actual).toBe(content)
   })
 
+  it('README.md mentions visual regression instructions', async () => {
+    const blob = await buildZipExport(makeSession(), makeCode([]))
+    const readme = await readZipFile(blob, 'README.md')
+    expect(readme).toContain('Visual regression')
+    expect(readme).toContain('toHaveScreenshot')
+  })
+
   it('handles a full set of generated files correctly', async () => {
     const code = makeCode([
       { filename: 'HomePage.ts', content: 'class HomePage {}' },

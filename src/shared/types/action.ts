@@ -14,21 +14,52 @@ export type ActionType =
   | 'assert'
   | 'wait'
   | 'screenshot'
+  | 'manual-coordinate'
+  | 'network'
 
-export type AssertionType = 'visible' | 'hidden' | 'text' | 'value' | 'attribute' | 'count'
+/** Payload shape for `type: 'network'` recorded actions. */
+export interface NetworkPayload {
+  method: string
+  url: string
+  status?: number
+  contentType?: string
+  /** Response body (truncated to NETWORK_BODY_MAX_BYTES). */
+  responseBody?: string
+  /** Request body when present and serialisable. */
+  requestBody?: string
+  durationMs?: number
+}
+
+export type AssertionType =
+  | 'visible'
+  | 'hidden'
+  | 'text'
+  | 'value'
+  | 'attribute'
+  | 'count'
+  | 'screenshot'
 
 export interface AssertionSuggestion {
   type: AssertionType
   label: string
   expected?: string | number
   attribute?: string
+  /** Default screenshot file name (slugified page title). Only set when `type === 'screenshot'`. */
+  name?: string
+  /** Default failure threshold (0..1). Only set when `type === 'screenshot'`. */
+  threshold?: number
 }
 
 export interface AssertionSpec {
   type: AssertionType
-  target: Locator
+  /** Required for element-scoped assertions; omitted for page-level (`screenshot`). */
+  target?: Locator
   expected?: string | number
   attribute?: string
+  /** Screenshot output file name (without extension). */
+  name?: string
+  /** Screenshot failure threshold (0..1). */
+  threshold?: number
 }
 
 export interface ElementSnapshot {

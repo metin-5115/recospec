@@ -17,6 +17,7 @@ interface AssertionContext {
   locatorBundle: LocatorBundle | null
   elementSnapshot: ElementSnapshot
   pageMetadata: { url: string; title: string }
+  screenshotDataUrl?: string
 }
 
 const MAX_RETRIES = 3
@@ -28,6 +29,7 @@ export function useSession() {
     generatedCode,
     codeGenError,
     sessions,
+    selectedFramework,
     setActiveSession,
     appendStep,
     deleteStep,
@@ -37,10 +39,17 @@ export function useSession() {
     setSessions,
     upsertSession,
     removeSession,
+    setSelectedFramework,
   } = useSessionStore()
 
   const [isProbeActive, setIsProbeActive] = useState(false)
   const [assertionContext, setAssertionContext] = useState<AssertionContext | null>(null)
+  const [includeMocks, setIncludeMocks] = useState(false)
+  const [methodRenames, setMethodRenames] = useState<Record<string, string>>({})
+
+  const renameMethod = useCallback((key: string, value: string) => {
+    setMethodRenames((prev) => ({ ...prev, [key]: value }))
+  }, [])
 
   // Load session list from DB on mount
   useEffect(() => {
@@ -71,6 +80,7 @@ export function useSession() {
           locatorBundle: message.locatorBundle,
           elementSnapshot: message.elementSnapshot,
           pageMetadata: message.pageMetadata,
+          screenshotDataUrl: message.screenshotDataUrl,
         })
       }
     })
@@ -185,7 +195,9 @@ export function useSession() {
         await sendToBackground({
           type: 'CODE_GENERATE',
           sessionId: activeSession.sessionId,
-          framework: 'playwright-ts',
+          framework: selectedFramework,
+          includeMocks,
+          methodRenames,
         })
         return
       } catch {
@@ -196,7 +208,7 @@ export function useSession() {
         }
       }
     }
-  }, [activeSession, setCodeGenError])
+  }, [activeSession, selectedFramework, includeMocks, methodRenames, setCodeGenError])
 
   const handleDeleteSession = useCallback(
     async (sessionId: string) => {
@@ -243,13 +255,13 @@ export function useSession() {
       const session = sessions.find((s) => s.sessionId === sessionId)
       if (!session) return
       try {
-        const code = await generate(sessionId, 'playwright-ts')
+        const code = await generate(sessionId, selectedFramework, { includeMocks, methodRenames })
         await downloadZipExport(session, code)
       } catch (err) {
         setCodeGenError(err instanceof Error ? err.message : 'ZIP export failed')
       }
     },
-    [sessions, setCodeGenError],
+    [sessions, selectedFramework, includeMocks, methodRenames, setCodeGenError],
   )
 
   const isRecording = activeSession?.state === 'recording'
@@ -266,6 +278,12 @@ export function useSession() {
     codeGenError,
     isProbeActive,
     assertionContext,
+    selectedFramework,
+    setSelectedFramework,
+    includeMocks,
+    setIncludeMocks,
+    methodRenames,
+    renameMethod,
     startRecording,
     stopRecording,
     pauseRecording,

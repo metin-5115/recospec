@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Check, Copy, Download } from 'lucide-react'
 import type { GeneratedCode } from '@shared/types/generated'
 
 interface CodePreviewProps {
@@ -30,15 +31,17 @@ export function CodePreview({ code }: CodePreviewProps) {
   }
 
   return (
-    <div className="flex flex-col border-t border-gray-200">
-      <div className="flex items-center justify-between bg-gray-50 px-4 py-2">
+    <div className="flex flex-col">
+      <div className="flex items-center justify-between gap-2 bg-bg-muted px-3 py-2">
         <div className="flex gap-1 overflow-x-auto">
           {code.files.map((file, i) => (
             <button
               key={file.filename}
               onClick={() => setActiveIndex(i)}
-              className={`shrink-0 rounded px-2 py-1 text-xs font-mono transition-colors ${
-                i === activeIndex ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-200'
+              className={`shrink-0 rounded-md px-2.5 py-1 font-mono text-xs transition-colors ${
+                i === activeIndex
+                  ? 'bg-bg text-text shadow-sm'
+                  : 'text-text-muted hover:bg-bg/60 hover:text-text'
               }`}
             >
               {file.filename}
@@ -48,19 +51,31 @@ export function CodePreview({ code }: CodePreviewProps) {
         <div className="ml-2 flex shrink-0 gap-1">
           <button
             onClick={handleDownload}
-            className="rounded px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-200"
+            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-text-muted transition-colors hover:bg-bg hover:text-text"
+            aria-label="Download file"
           >
-            Download
+            <Download className="h-3 w-3" aria-hidden="true" />
+            <span className="hidden sm:inline">Download</span>
           </button>
           <button
             onClick={handleCopy}
-            className="rounded px-2 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-200"
+            className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+              copied
+                ? 'bg-success-soft text-success'
+                : 'text-text-muted hover:bg-bg hover:text-text'
+            }`}
+            aria-label="Copy file contents"
           >
+            {copied ? (
+              <Check className="h-3 w-3" aria-hidden="true" />
+            ) : (
+              <Copy className="h-3 w-3" aria-hidden="true" />
+            )}
             {copied ? 'Copied!' : 'Copy'}
           </button>
         </div>
       </div>
-      <pre className="max-h-64 overflow-auto bg-gray-900 p-4 text-xs text-green-300 font-mono leading-relaxed">
+      <pre className="max-h-72 overflow-auto bg-slate-950 p-4 font-mono text-xs leading-relaxed text-slate-100">
         <code>{activeFile?.content ?? ''}</code>
       </pre>
     </div>

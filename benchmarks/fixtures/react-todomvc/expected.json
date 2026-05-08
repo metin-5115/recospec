@@ -1,0 +1,38 @@
+{
+  "version": 2,
+  "description": "TodoMVC React snapshot — placeholder, role+name, and aria-label drive primaries; xpath must never win.",
+  "entries": [
+    {
+      "name": "newTodoInput",
+      "querySelector": "input.new-todo",
+      "minScore": 60,
+      "forbiddenPrimaryStrategies": ["xpath"]
+    },
+    {
+      "name": "toggleAllCheckbox",
+      "querySelector": "#toggle-all",
+      "minScore": 60,
+      "forbiddenPrimaryStrategies": ["xpath", "css"]
+    },
+    {
+      "name": "firstTodoLabel",
+      "querySelector": ".todo-list > li:nth-child(1) .view label",
+      "minScore": 60,
+      "forbiddenPrimaryStrategies": ["xpath"]
+    },
+    {
+      "name": "firstTodoDestroyButton",
+      "querySelector": ".todo-list > li:nth-child(1) button.destroy",
+      "expectedStrategy": "aria-label",
+      "minScore": 70,
+      "forbiddenPrimaryStrategies": ["xpath", "css"]
+    },
+    {
+      "name": "clearCompletedButton",
+      "querySelector": "button.clear-completed",
+      "expectedStrategy": "role-name",
+      "minScore": 60,
+      "forbiddenPrimaryStrategies": ["xpath"]
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`cypress renderScenario > matches snapshot 1`] = `
+"import { LoginPage } from '../pages/LoginPage';
+
+describe('Login flow', () => {
+  it('full flow', () => {
+    cy.visit("/login");
+    cy.get("[data-testid=\\"login-email\\"]").clear().type("foo@bar.com");
+    cy.findByRole('button', { name: 'Submit' }).click();
+  });
+});
+"
+`;

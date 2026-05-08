@@ -106,4 +106,103 @@ describe('normalizeActions', () => {
     expect(flatSteps).toHaveLength(1)
     expect(flatSteps[0].action).toBe('click')
   })
+
+  it('captures elementSnapshot summary on the IRElement', () => {
+    const action = makeAction({
+      actionId: 'click-1',
+      type: 'click',
+      target: {
+        primaryLocator: {
+          strategy: 'testid',
+          selector: '[data-testid="submit"]',
+          framework: {},
+        },
+        fallbackLocators: [],
+        elementSnapshot: {
+          tagName: 'button',
+          attributes: {
+            'data-testid': 'submit',
+            id: 'main-submit',
+            class: 'btn primary',
+            role: 'button',
+          },
+          textContent: 'Sign In',
+        },
+      },
+    })
+
+    const { flatSteps } = normalizeActions([action])
+    const snap = flatSteps[0].element?.elementSnapshot
+    expect(snap).toBeDefined()
+    expect(snap).toEqual({
+      localName: 'button',
+      textContent: 'Sign In',
+      id: 'main-submit',
+      className: 'btn primary',
+      testId: 'submit',
+      role: 'button',
+    })
+  })
+
+  it('omits absent snapshot fields rather than setting them to empty', () => {
+    const action = makeAction({
+      actionId: 'click-1',
+      type: 'click',
+      target: {
+        primaryLocator: {
+          strategy: 'testid',
+          selector: '[data-testid="submit"]',
+          framework: {},
+        },
+        fallbackLocators: [],
+        elementSnapshot: {
+          tagName: 'button',
+          attributes: { 'data-testid': 'submit' },
+          textContent: '',
+        },
+      },
+    })
+
+    const snap = normalizeActions([action]).flatSteps[0].element?.elementSnapshot
+    expect(snap).toEqual({ localName: 'button', testId: 'submit' })
+    expect(snap).not.toHaveProperty('textContent')
+    expect(snap).not.toHaveProperty('id')
+    expect(snap).not.toHaveProperty('className')
+    expect(snap).not.toHaveProperty('role')
+  })
+
+  it('propagates fallback locators with strategy + value', () => {
+    const action = makeAction({
+      actionId: 'click-1',
+      type: 'click',
+      target: {
+        primaryLocator: {
+          strategy: 'testid',
+          selector: '[data-testid="email"]',
+          framework: {},
+        },
+        fallbackLocators: [
+          { strategy: 'aria-label', selector: '[aria-label="Email"]', framework: {} },
+          {
+            strategy: 'role-name',
+            selector: `'textbox', { name: 'Email' }`,
+            framework: {},
+          },
+        ],
+        elementSnapshot: { tagName: 'input', attributes: {}, textContent: '' },
+      },
+    })
+
+    const fallbacks = normalizeActions([action]).flatSteps[0].element?.fallbackLocators
+    expect(fallbacks).toEqual([
+      { strategy: 'aria-label', locatorValue: '[aria-label="Email"]' },
+      { strategy: 'role-name', locatorValue: `'textbox', { name: 'Email' }` },
+    ])
+  })
+
+  it('leaves fallbackLocators undefined when none are recorded', () => {
+    const action = makeClickAction('click-1', 'btn')
+    const element = normalizeActions([action]).flatSteps[0].element
+    expect(element?.fallbackLocators).toBeUndefined()
+  })
 })

@@ -152,4 +152,56 @@ describe('AssertionBuilder', () => {
     )
     expect(screen.queryByPlaceholderText('Custom value (optional)')).toBeNull()
   })
+
+  it('renders screenshot panel with thumbnail and name input when Screenshot is picked', () => {
+    const screenshotSuggestion: AssertionSuggestion = {
+      type: 'screenshot',
+      label: 'Screenshot match',
+      name: 'home',
+      threshold: 0.2,
+    }
+    render(
+      <AssertionBuilder
+        suggestions={[...suggestions, screenshotSuggestion]}
+        locatorBundle={null}
+        elementSnapshot={snapshot}
+        pageMetadata={pageMetadata}
+        screenshotDataUrl="data:image/png;base64,iVBORw0KGgo="
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    )
+    fireEvent.click(screen.getByText('Screenshot match'))
+    expect(screen.getByPlaceholderText('Snapshot name')).toBeTruthy()
+    expect(screen.getByAltText('Page snapshot preview')).toBeTruthy()
+  })
+
+  it('forwards the snapshot name as customExpected on confirm', () => {
+    const onConfirm = vi.fn()
+    const screenshotSuggestion: AssertionSuggestion = {
+      type: 'screenshot',
+      label: 'Screenshot match',
+      name: 'home',
+      threshold: 0.2,
+    }
+    render(
+      <AssertionBuilder
+        suggestions={[...suggestions, screenshotSuggestion]}
+        locatorBundle={null}
+        elementSnapshot={snapshot}
+        pageMetadata={pageMetadata}
+        screenshotDataUrl="data:image/png;base64,iVBORw0KGgo="
+        onConfirm={onConfirm}
+        onCancel={vi.fn()}
+      />,
+    )
+    fireEvent.click(screen.getByText('Screenshot match'))
+    fireEvent.change(screen.getByPlaceholderText('Snapshot name'), {
+      target: { value: 'login-page' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Add Assertion' }))
+    const args = onConfirm.mock.calls[0] as unknown[]
+    expect((args[0] as AssertionSuggestion).type).toBe('screenshot')
+    expect(args[4]).toBe('login-page')
+  })
 })

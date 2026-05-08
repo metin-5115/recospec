@@ -1,9 +1,11 @@
+export type FrameworkId = 'playwright-ts' | 'cypress'
+
 export interface GeneratedFile {
   filename: string
   content: string
 }
 
 export interface GeneratedCode {
-  framework: 'playwright-ts'
+  framework: FrameworkId
   files: GeneratedFile[]
 }

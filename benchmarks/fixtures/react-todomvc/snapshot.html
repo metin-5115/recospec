@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>React • TodoMVC Snapshot</title>
+  </head>
+  <body>
+    <section class="todoapp" id="root">
+      <header class="header">
+        <h1>todos</h1>
+        <input class="new-todo" placeholder="What needs to be done?" autofocus="" value="" />
+      </header>
+      <section class="main">
+        <input id="toggle-all" class="toggle-all" type="checkbox" />
+        <label for="toggle-all">Mark all as complete</label>
+        <ul class="todo-list">
+          <li class="todo">
+            <div class="view">
+              <input class="toggle" type="checkbox" />
+              <label>Buy groceries</label>
+              <button class="destroy" aria-label="Delete todo Buy groceries"></button>
+            </div>
+            <input class="edit" value="Buy groceries" />
+          </li>
+          <li class="todo completed">
+            <div class="view">
+              <input class="toggle" type="checkbox" checked="" />
+              <label>Walk the dog</label>
+              <button class="destroy" aria-label="Delete todo Walk the dog"></button>
+            </div>
+            <input class="edit" value="Walk the dog" />
+          </li>
+        </ul>
+      </section>
+      <footer class="footer">
+        <span class="todo-count"><strong>1</strong> item left</span>
+        <ul class="filters">
+          <li><a href="#/" class="selected">All</a></li>
+          <li><a href="#/active">Active</a></li>
+          <li><a href="#/completed">Completed</a></li>
+        </ul>
+        <button class="clear-completed">Clear completed</button>
+      </footer>
+    </section>
+  </body>
+</html>

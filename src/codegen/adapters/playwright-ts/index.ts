@@ -3,10 +3,60 @@ import type {
   IRElement,
   IRStep,
   IRScenario,
+  IRFallback,
+  IRNetworkInfo,
   InferredMethod,
   GeneratedFile,
   AssertionDetail,
 } from '../../ir/types'
+import { registerAdapter, type FrameworkAdapter } from '../registry'
+import { PLAYWRIGHT_SELF_HEALING_TS } from '../../scaffold/self-healing'
+
+// Module-scoped mock toggle. The orchestrator flips it before each render via
+// the FrameworkAdapter.options field; defaulting to false keeps existing
+// snapshot tests stable.
+let RENDER_MOCKS = false
+function setRenderMocks(value: boolean): void {
+  RENDER_MOCKS = value
+}
+
+function urlPattern(rawUrl: string): string {
+  try {
+    const u = new URL(rawUrl)
+    return `**${u.pathname}${u.search}`
+  } catch {
+    return rawUrl
+  }
+}
+
+function safeJsonExpression(body: string | undefined): string {
+  if (!body) return `''`
+  const trimmed = body.trim()
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    try {
+      JSON.parse(trimmed)
+      return trimmed
+    } catch {
+      // fall through to string fallback
+    }
+  }
+  return JSON.stringify(body)
+}
+
+function renderMockBlock(net: IRNetworkInfo, indent: string): string {
+  const pattern = urlPattern(net.url)
+  const status = net.status ?? 200
+  const contentType = net.contentType ?? 'application/json'
+  const isJson = contentType.includes('json')
+  const bodyExpr = isJson
+    ? `JSON.stringify(${safeJsonExpression(net.responseBody)})`
+    : JSON.stringify(net.responseBody ?? '')
+  return `${indent}await page.route(${JSON.stringify(pattern)}, (route) => route.fulfill({
+${indent}  status: ${status},
+${indent}  contentType: ${JSON.stringify(contentType)},
+${indent}  body: ${bodyExpr},
+${indent}}));`
+}
 
 // ---------------------------------------------------------------------------
 // Locator rendering
@@ -47,16 +97,31 @@ function renderLocator(el: IRElement): string {
   return renderInnerLocator(el, root)
 }
 
+function renderFallbackExpr(f: IRFallback): string {
+  const val = f.locatorValue
+  switch (f.strategy) {
+    case 'testid':
+      return `getByTestId(${JSON.stringify(val.replace(/^\[data-testid="(.+)"\]$/, '$1'))})`
+    case 'aria-label':
+      return `getByLabel(${JSON.stringify(val.replace(/^\[aria-label="(.+)"\]$/, '$1'))})`
+    case 'role-name':
+      return `getByRole(${val})`
+    case 'text':
+      return `getByText(${JSON.stringify(val)})`
+    default:
+      return `locator(${JSON.stringify(val)})`
+  }
+}
+
 function renderElementGetter(el: IRElement): string {
   const shadowWarning = el.shadowClosed
     ? `  // WARNING: element is inside a closed shadow root — locator may be unreliable\n`
     : ''
   const primary = `${shadowWarning}  get ${el.name}() { return ${renderLocator(el)}; }`
   if (!el.fallbackLocators?.length) return primary
-  const fallbacks = el.fallbackLocators
-    .map((f) => `  // fallback: page.locator(${JSON.stringify(f)})`)
-    .join('\n')
-  return `${primary}\n${fallbacks}`
+  const exprs = el.fallbackLocators.map(renderFallbackExpr).join(', ')
+  const fallbackComment = `  // Fallbacks: ${exprs}`
+  return `${primary}\n${fallbackComment}`
 }
 
 // ---------------------------------------------------------------------------
@@ -77,6 +142,11 @@ function renderAssertionMatcher(d: AssertionDetail, locator: string, indent: str
       return `${indent}await expect(${locator}).toHaveAttribute(${JSON.stringify(d.attribute ?? '')}, ${JSON.stringify(d.expected ?? '')});`
     case 'count':
       return `${indent}await expect(${locator}).toHaveCount(${Number(d.expected ?? 0)});`
+    case 'screenshot': {
+      const file = `${d.name ?? 'snapshot'}.png`
+      const threshold = d.threshold ?? 0.2
+      return `${indent}await expect(${locator}).toHaveScreenshot(${JSON.stringify(file)}, { threshold: ${threshold} });`
+    }
   }
 }
 
@@ -98,10 +168,19 @@ function renderStepInMethod(step: IRStep, indent: string): string {
     return `${indent}await this.page.keyboard.press(${JSON.stringify(step.key)});`
   }
   if (step.action === 'assert') {
-    if (step.assertionDetail && step.element) {
-      return renderAssertionMatcher(step.assertionDetail, `this.${step.element.name}`, indent)
+    if (step.assertionDetail) {
+      const target =
+        step.assertionDetail.type === 'screenshot' || !step.element
+          ? 'this.page'
+          : `this.${step.element.name}`
+      return renderAssertionMatcher(step.assertionDetail, target, indent)
     }
     return `${indent}// assert: ${step.annotation ?? ''}`
+  }
+  if (step.action === 'network' && step.network) {
+    if (!RENDER_MOCKS) return ''
+    // Page-object methods receive `this.page`; rewrite the helper accordingly.
+    return renderMockBlock(step.network, indent).replace(/\bpage\.route\(/g, 'this.page.route(')
   }
   return ''
 }
@@ -120,10 +199,18 @@ function renderStepInSpec(step: IRStep, indent: string): string {
     return `${indent}await page.keyboard.press(${JSON.stringify(step.key)});`
   }
   if (step.action === 'assert') {
-    if (step.assertionDetail && step.element) {
-      return renderAssertionMatcher(step.assertionDetail, renderLocator(step.element), indent)
+    if (step.assertionDetail) {
+      const target =
+        step.assertionDetail.type === 'screenshot' || !step.element
+          ? 'page'
+          : renderLocator(step.element)
+      return renderAssertionMatcher(step.assertionDetail, target, indent)
     }
     return `${indent}// assert: ${step.annotation ?? ''}`
+  }
+  if (step.action === 'network' && step.network) {
+    if (!RENDER_MOCKS) return ''
+    return renderMockBlock(step.network, indent)
   }
   return ''
 }
@@ -132,23 +219,28 @@ function renderStepInSpec(step: IRStep, indent: string): string {
 // Method rendering (inferred)
 // ---------------------------------------------------------------------------
 
+const PARAM_SUFFIX_REGEX = /Input$|Button$|Btn$|Link$|Select$|Field$|Box$|Toggle$|Checkbox$|Radio$/
+
+function paramSlugFromElement(name: string): string {
+  const stripped = name.replace(PARAM_SUFFIX_REGEX, '')
+  return stripped.charAt(0).toLowerCase() + stripped.slice(1)
+}
+
 function renderInferredMethod(method: InferredMethod): string {
-  const paramList = method.params.map((p) => `${p}: string`).join(', ')
+  const types = method.paramTypes ?? method.params.map(() => 'string')
+  const paramList = method.params.map((p, i) => `${p}: ${types[i] ?? 'string'}`).join(', ')
   const bodyLines = method.steps
     .map((s) => {
-      // For fill steps in inferred methods, use param name instead of hard-coded value
+      // Substitute the param name into fill calls when the slug matches.
       if (s.action === 'fill' && s.element) {
-        const paramIdx = method.params.findIndex(
-          (p) =>
-            p ===
-            s
-              .element!.name.replace(/Input$|Button$|Link$|Select$/, '')
-              .charAt(0)
-              .toLowerCase() +
-              s.element!.name.replace(/Input$|Button$|Link$|Select$/, '').slice(1),
-        )
+        const slug = paramSlugFromElement(s.element.name)
+        const paramIdx = method.params.findIndex((p) => p === slug)
         if (paramIdx !== -1) {
-          return `    await this.${s.element.name}.fill(${method.params[paramIdx]});`
+          const ref =
+            types[paramIdx] === 'string'
+              ? method.params[paramIdx]
+              : `String(${method.params[paramIdx]})`
+          return `    await this.${s.element.name}.fill(${ref});`
         }
       }
       return renderStepInMethod(s, '    ')
@@ -291,5 +383,36 @@ export default defineConfig({
     { filename: 'package.json', content: packageJson },
     { filename: 'playwright.config.ts', content: playwrightConfig },
     { filename: 'tsconfig.json', content: tsConfig },
+    { filename: 'utils/locator.ts', content: PLAYWRIGHT_SELF_HEALING_TS },
+    { filename: 'tests/scenario.spec.ts-snapshots/.gitkeep', content: '' },
   ]
 }
+
+// ---------------------------------------------------------------------------
+// Adapter SDK registration
+// ---------------------------------------------------------------------------
+
+export const playwrightTsAdapter: FrameworkAdapter = {
+  id: 'playwright-ts',
+  displayName: 'Playwright TS',
+  fileExtension: 'ts',
+  metadata: {
+    language: 'TypeScript',
+    testRunner: '@playwright/test',
+    packageName: '@playwright/test',
+  },
+  applyOptions(options) {
+    setRenderMocks(Boolean(options.includeMocks))
+  },
+  renderPageObject(page) {
+    return { filename: `${page.className}.ts`, content: renderPageObject(page) }
+  },
+  renderScenario(scenario) {
+    return { filename: 'scenario.spec.ts', content: renderScenario(scenario) }
+  },
+  renderScaffold() {
+    return renderScaffold()
+  },
+}
+
+registerAdapter(playwrightTsAdapter)

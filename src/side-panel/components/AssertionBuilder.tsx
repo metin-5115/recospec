@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { CheckCircle2, X, Camera } from 'lucide-react'
 import type { AssertionSuggestion } from '@shared/types/action'
 import type { LocatorBundle } from '@shared/types/locator'
 import type { ElementSnapshot } from '@shared/types/action'
@@ -10,6 +11,7 @@ interface AssertionBuilderProps {
   locatorBundle: LocatorBundle | null
   elementSnapshot: ElementSnapshot
   pageMetadata: { url: string; title: string }
+  screenshotDataUrl?: string
   onConfirm: (
     suggestion: AssertionSuggestion,
     locatorBundle: LocatorBundle | null,
@@ -25,19 +27,27 @@ export function AssertionBuilder({
   locatorBundle,
   elementSnapshot,
   pageMetadata,
+  screenshotDataUrl,
   onConfirm,
   onCancel,
 }: AssertionBuilderProps) {
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [customValue, setCustomValue] = useState('')
+  const [screenshotName, setScreenshotName] = useState('')
 
   const selected = suggestions[selectedIndex]
+  const isScreenshot = selected.type === 'screenshot'
   const needsValue = NEEDS_VALUE.includes(selected.type)
   const previewLabel =
     elementSnapshot.tagName +
     (elementSnapshot.textContent ? ` "${elementSnapshot.textContent.slice(0, 40)}"` : '')
 
   function handleConfirm() {
+    if (isScreenshot) {
+      const name = screenshotName.trim() || selected.name
+      onConfirm(selected, locatorBundle, elementSnapshot, pageMetadata, name)
+      return
+    }
     const customExpected = customValue !== '' ? customValue : undefined
     onConfirm(selected, locatorBundle, elementSnapshot, pageMetadata, customExpected)
   }
@@ -45,6 +55,10 @@ export function AssertionBuilder({
   function handleSelect(index: number) {
     setSelectedIndex(index)
     setCustomValue('')
+    const next = suggestions[index]
+    if (next.type === 'screenshot') {
+      setScreenshotName(next.name ?? '')
+    }
   }
 
   return (
@@ -52,30 +66,42 @@ export function AssertionBuilder({
       role="dialog"
       aria-modal="true"
       aria-label="Add Assertion"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/20"
+      className="animate-backdrop-in fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm"
       onClick={(e) => {
         if (e.target === e.currentTarget) onCancel()
       }}
     >
-      <div className="w-72 rounded-lg border border-gray-200 bg-white shadow-xl">
-        <div className="border-b border-gray-100 px-4 py-3">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
-            Add Assertion
-          </p>
-          <p className="mt-0.5 truncate text-xs text-gray-600" title={previewLabel}>
-            {previewLabel}
-          </p>
+      <div className="animate-modal-in w-80 overflow-hidden rounded-2xl border border-border bg-bg shadow-2xl">
+        <div className="flex items-start justify-between border-b border-border px-5 py-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-accent shadow-accent-glow">
+              <CheckCircle2 className="h-5 w-5 text-white" aria-hidden="true" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-text">Add Assertion</p>
+              <p className="mt-0.5 truncate text-xs text-text-muted" title={previewLabel}>
+                {previewLabel}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onCancel}
+            className="ml-2 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-text-subtle transition-colors hover:bg-bg-muted hover:text-text"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
         </div>
 
-        <div className="space-y-1 px-4 py-3">
+        <div className="space-y-1 px-3 py-3">
           {suggestions.map((s, i) => (
             <button
               key={i}
               onClick={() => handleSelect(i)}
-              className={`w-full rounded px-3 py-2 text-left text-sm transition-colors ${
+              className={`w-full rounded-lg border px-3 py-2 text-left text-sm transition-all ${
                 i === selectedIndex
-                  ? 'bg-blue-50 font-medium text-blue-700'
-                  : 'text-gray-700 hover:bg-gray-50'
+                  ? 'border-accent bg-accent-soft font-medium text-accent shadow-sm'
+                  : 'border-transparent text-text hover:border-border hover:bg-bg-elevated'
               }`}
             >
               {s.label}
@@ -88,21 +114,51 @@ export function AssertionBuilder({
               placeholder="Custom value (optional)"
               value={customValue}
               onChange={(e) => setCustomValue(e.target.value)}
-              className="mt-2 w-full rounded border border-gray-200 px-3 py-1.5 text-sm focus:border-blue-400 focus:outline-none"
+              className="mt-2 w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
             />
+          )}
+
+          {isScreenshot && (
+            <div className="mt-2 space-y-2 rounded-lg border border-border bg-bg-elevated/40 p-3">
+              <div className="flex items-center gap-2 text-xs font-medium text-text-muted">
+                <Camera className="h-3.5 w-3.5" aria-hidden="true" />
+                Visual snapshot
+              </div>
+              {screenshotDataUrl ? (
+                <img
+                  src={screenshotDataUrl}
+                  alt="Page snapshot preview"
+                  className="block max-h-28 w-full rounded-md border border-border bg-bg object-contain"
+                />
+              ) : (
+                <div className="flex h-20 items-center justify-center rounded-md border border-dashed border-border bg-bg text-[11px] text-text-subtle">
+                  Preview unavailable
+                </div>
+              )}
+              <input
+                type="text"
+                placeholder="Snapshot name"
+                value={screenshotName}
+                onChange={(e) => setScreenshotName(e.target.value)}
+                className="w-full rounded-md border border-border bg-bg px-2.5 py-1.5 text-xs text-text placeholder:text-text-subtle focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+              />
+              <p className="text-[11px] text-text-subtle">
+                Threshold: {(selected.threshold ?? 0.2).toFixed(2)}
+              </p>
+            </div>
           )}
         </div>
 
-        <div className="flex gap-2 border-t border-gray-100 px-4 py-3">
+        <div className="flex gap-2 border-t border-border bg-bg-elevated/40 px-4 py-3">
           <button
             onClick={onCancel}
-            className="flex-1 rounded border border-gray-200 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
+            className="flex-1 rounded-lg border border-border bg-bg px-3 py-2 text-sm font-medium text-text-muted transition-colors hover:bg-bg-muted hover:text-text"
           >
             Cancel
           </button>
           <button
             onClick={handleConfirm}
-            className="flex-1 rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+            className="flex-1 rounded-lg bg-gradient-accent px-3 py-2 text-sm font-semibold text-white shadow-accent-glow transition-all hover:scale-[1.01] active:scale-[0.99]"
           >
             Add Assertion
           </button>

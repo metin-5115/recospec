@@ -35,4 +35,24 @@ describe('TextStrategy', () => {
     el.textContent = '   '
     expect(strategy.evaluate(el, doc)).toBeNull()
   })
+
+  it('accepts text at exactly the 100-character boundary', () => {
+    const el = document.createElement('p')
+    el.textContent = 'a'.repeat(100)
+    const result = strategy.evaluate(el, doc)
+    expect(result).not.toBeNull()
+  })
+
+  it('rejects text one character past the boundary', () => {
+    const el = document.createElement('p')
+    el.textContent = 'b'.repeat(101)
+    expect(strategy.evaluate(el, doc)).toBeNull()
+  })
+
+  it('rejects realistic long article paragraphs', () => {
+    const el = document.createElement('p')
+    el.textContent =
+      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus lacinia odio vitae vestibulum vestibulum auctor.'
+    expect(strategy.evaluate(el, doc)).toBeNull()
+  })
 })

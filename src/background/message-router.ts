@@ -56,9 +56,10 @@ export function initMessageRouter(): void {
         )
 
       case 'CODE_GENERATE':
-        return handleCodeGenerate(message.sessionId, message.framework).catch((err) =>
-          logger.error('[BG] CODE_GENERATE failed', err),
-        )
+        return handleCodeGenerate(message.sessionId, message.framework, {
+          includeMocks: message.includeMocks,
+          methodRenames: message.methodRenames,
+        }).catch((err) => logger.error('[BG] CODE_GENERATE failed', err))
 
       case 'ASSERTION_PROBE_START':
         return handleAssertionProbeStart(message.sessionId).catch((err) =>

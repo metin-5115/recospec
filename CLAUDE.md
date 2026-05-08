@@ -72,6 +72,7 @@ playforge/
 ```
 
 **Klasör seçimi kararı:**
+
 - Pure logic (no DOM, no browser API) → `locator-engine/`, `codegen/`
 - Browser API kullanıyor → `background/`, `content/`, `storage/`
 - React component → `popup/` veya `side-panel/`
@@ -84,6 +85,7 @@ playforge/
 ## 5. Naming Convention'ları
 
 ### Dosya İsimleri
+
 - React component: `PascalCase.tsx` (örn. `StepList.tsx`)
 - Hook: `useXxx.ts` (örn. `useSession.ts`)
 - Zustand store: `xxxStore.ts` (örn. `sessionStore.ts`)
@@ -91,12 +93,14 @@ playforge/
 - Test: yanına `.test.ts` (unit) veya `.spec.ts` (e2e)
 
 ### Sembol İsimleri
+
 - Type/Interface/Class: `PascalCase`
 - Fonksiyon: `camelCase`
 - Const (enum-like): `SCREAMING_SNAKE_CASE`
 - Boolean: `is/has/should` prefix'i (örn. `isDynamic`, `hasShadowRoot`)
 
 ### Path Alias'lar (tsconfig.json)
+
 ```
 @/*          → src/*
 @locator/*   → src/locator-engine/*
@@ -137,6 +141,7 @@ Conventional Commits formatı kullanılır. Husky pre-commit hook bunu zorunlu k
 **Format:** `type(scope): subject`
 
 **Type'lar:**
+
 - `feat` — yeni özellik
 - `fix` — bug fix
 - `docs` — sadece dokümantasyon
@@ -148,6 +153,7 @@ Conventional Commits formatı kullanılır. Husky pre-commit hook bunu zorunlu k
 **Scope'lar:** `locator`, `codegen`, `ui`, `storage`, `bg` (background), `content`, `build`, `deps`
 
 **Örnekler:**
+
 ```
 feat(locator): add aria-describedby strategy
 fix(codegen): handle empty page title gracefully
@@ -160,22 +166,26 @@ chore(deps): bump dexie to 4.0.0
 ## 8. Test Yazma Kuralları
 
 ### Genel Prensipler
+
 - **Coverage hedefi:** Genel %75+, locator-engine ve codegen %85+
 - **TDD önerilir:** Önce test yaz, fail ettiğini doğrula, sonra implementasyon
 - **Hız hedefi:** Unit suite <10sn, integration <30sn
 
 ### Locator Engine Testleri
+
 - Her strateji ayrı test dosyasında (`testid.test.ts`, `aria-label.test.ts`...)
 - jsdom kullan, gerçek Chrome çalıştırma
 - Her strateji için minimum: 1 positive, 1 negative, 2 edge case
 - Fixture testleri için `benchmarks/fixtures/` altında HTML + `expected.json`
 
 ### Codegen Testleri
+
 - **Snapshot testing** kullan (Vitest `toMatchSnapshot`)
 - Her adapter için fixture IR girdisi → beklenen kod çıktısı
 - Üretilen kod **gerçekten compile/parse edilebilmeli** (smoke validation)
 
 ### E2E Testleri
+
 - Playwright `chromium.launchPersistentContext` ile extension yükle
 - Senaryolar `tests/e2e/` altında, `.spec.ts` uzantısı
 - Slow markası: `describe('@slow ...')` — CI'da nightly çalışır
@@ -208,24 +218,24 @@ Bu kararlar verilmiştir, **yeniden tartışma**:
 
 Claude Code'un detaya ihtiyacı olduğunda hangi bölüme bakmalı:
 
-| Konu | Bölüm |
-|---|---|
-| Bileşen mimarisi, mesaj kontratları | 4 |
-| IndexedDB şeması | 4.5 |
-| Manifest V3 kısıtlamaları | 4.6 |
-| Locator strateji algoritmaları | 5.2 |
-| Stability scoring detayı | 5.3 |
-| Dinamik class tespiti | 5.4 |
-| Shadow DOM / iframe handling | 5.5 |
-| IR (Intermediate Representation) spec | 6.2 |
-| Page Object grouping algoritması | 6.3 |
-| Method inference pattern'leri | 6.4 |
-| Framework adapter örnek çıktıları | 6.6 |
-| Adapter SDK (yeni framework ekleme) | 6.7 |
-| Yol haritası ve milestone'lar | 8 |
-| Repo yapısı detayı | 12 |
-| Test stratejisi detayı | 13 |
-| Glossary | 15 |
+| Konu                                  | Bölüm |
+| ------------------------------------- | ----- |
+| Bileşen mimarisi, mesaj kontratları   | 4     |
+| IndexedDB şeması                      | 4.5   |
+| Manifest V3 kısıtlamaları             | 4.6   |
+| Locator strateji algoritmaları        | 5.2   |
+| Stability scoring detayı              | 5.3   |
+| Dinamik class tespiti                 | 5.4   |
+| Shadow DOM / iframe handling          | 5.5   |
+| IR (Intermediate Representation) spec | 6.2   |
+| Page Object grouping algoritması      | 6.3   |
+| Method inference pattern'leri         | 6.4   |
+| Framework adapter örnek çıktıları     | 6.6   |
+| Adapter SDK (yeni framework ekleme)   | 6.7   |
+| Yol haritası ve milestone'lar         | 8     |
+| Repo yapısı detayı                    | 12    |
+| Test stratejisi detayı                | 13    |
+| Glossary                              | 15    |
 
 ---
 
@@ -248,16 +258,29 @@ Bu projede Claude Code'dan beklenen davranış:
 
 > Bu bölümü her milestone sonrasında güncelle.
 
-**Faz:** Faz 1 — MVP (Hafta 1-4)
-**Mevcut Hafta:** Hafta 0 — Kurulum
-**Sonraki Görev:** Vite + CRXJS iskelet kurulumu, manifest.json, ilk Hello World
+**Faz:** Faz 2 — TAMAMLANDI · v0.5.0 release atıldı (8 Mayıs 2026)
+**Mevcut Hafta:** Hafta 10 — v0.5 Release (TAMAMLANDI)
+**Sonraki Görev:** Faz 3 Hafta 11–12 — Selenium Python (Pytest) adapter + project scaffold
 
 **Tamamlananlar:**
+
 - [x] Teknik tasarım dokümanı v1.0
 - [x] CLAUDE.md
-- [ ] GitHub repo (private)
-- [ ] Proje iskeleti
-- [ ] İlk dist/ build
-- [ ] Chrome'a yüklenip açılan extension
+- [x] GitHub repo (private) + v0.1.0 release
+- [x] Proje iskeleti, dist/ build, Chrome'a yüklenip açılan extension
+- [x] Hafta 5 — Locator Engine production kalitesi (9 strateji)
+- [x] Hafta 6 — Cypress Adapter + Adapter SDK (FrameworkAdapter / ADAPTER_REGISTRY)
+- [x] Hafta 6.5 Faz 0 — Tasarım sistemi (Inter font, lucide-react, design tokens, dark mode)
+- [x] Hafta 6.5 Faz 1 — Side panel chrome (gradient header, pill tabs, gradient CTA, lucide ikonlar)
+- [x] Hafta 6.5 Faz 2 — İçerik komponentleri (StepList, SessionList, FrameworkPicker, AssertionBuilder, CodePreview)
+- [x] Hafta 6.5 Faz 3 — Popup refresh, modal animasyonları, a11y (aria-label, reduced-motion guard)
+- [x] Hafta 7 — Self-Healing Locator: IR'a `IRFallback[]` + `IRElementSnapshot`; her element üstüne idiomatic `// Fallbacks: ...` yorumu; scaffold'a `utils/locator.ts` (Playwright `selfHealingLocator`) + `cypress/support/locator.js` (`cy.selfHealing`); side panel badge "{N} fallback(s)"; README ve zip README'sine "Self-healing locators" bölümü
+- [x] Hafta 8 — Method Inference v2: 10 pattern (search, login/register, submitForm, fillForm, acceptAndSubmit, navigateFromMenu, selectFromMenu, openItem, confirmAction + fallback) · `IRElement.inputType` + parametre tipi çıkarımı (`number`, `boolean`) · sayfa içi method ismi çakışmaları numerik suffix ile çözülür · default isim stratejisi (`click<Name>`, `fill<Name>`, `press<Key>`, `verify<Name>`)
+- [x] Hafta 8 — Network Request Capture: yeni izin yok, MAIN-world content script (`src/content/network-proxy.ts`, `world: "MAIN"`, `run_at: "document_start"`) `window.fetch` ve `XMLHttpRequest`'i sarmalar; ISOLATED CS `playforge:network` CustomEvent'ini `EVENT_CAPTURED` olarak background'a iletir; response body cap = `NETWORK_BODY_MAX_BYTES` (50 KB)
+- [x] Hafta 8 — IR'a `IRActionType: 'network'` + `IRStep.network: IRNetworkInfo`; step listesinde `Globe` ikonu ile `METHOD path STATUS` etiketi
+- [x] Hafta 8 — Playwright adapter mock üretimi (`page.route(... route.fulfill(...))`); JSON body live JSON olarak kalır (`JSON.stringify(...)`), text body string literal'e dönüşür; opsiyonel `Generate` checkbox: "Include mocks for captured network requests"
+- [x] Hafta 8 — Side panel `MethodPreview`: çıkarılan methodları sayfa-bazlı listeler, kullanıcı method ismini düzenleyebilir; `methodRenames: Record<"PageClass.oldName", string>` `CODE_GENERATE` mesajıyla aktarılır, codegen pipeline `applyRenames` ile uygular
+- [x] Hafta 9 — Visual Regression: `AssertionType`'a `screenshot` eklendi (`AssertionSpec` & `AssertionDetail` `name` + `threshold` ile genişledi); content script suggester her elemana "Screenshot match" suggestion'u ekler; background `handleAssertionSuggestion` `chrome.tabs.captureVisibleTab` ile thumbnail çeker, `ASSERTION_SUGGESTIONS` mesajına `screenshotDataUrl` koyar; `AssertionBuilder` thumbnail + `Snapshot name` input + threshold gösterir; Playwright adapter `await expect(...).toHaveScreenshot('name.png', { threshold })` üretir, Cypress adapter `cy.matchImageSnapshot('name', { failureThreshold, failureThresholdType: 'percent' })`; Cypress scaffold `cypress-image-snapshot` dependency + plugin/command wiring + `cypress/screenshots/.gitkeep`; Playwright scaffold `tests/scenario.spec.ts-snapshots/.gitkeep`; ZIP README'de "Visual regression" bölümü
+- [x] Hafta 10 — v0.5 Release: package.json `0.5.0`, CHANGELOG v0.5.0 girişi (added/performance/changed/known-limitations), README Cypress "✅ Stable" + perf tablosu (single p99 1.33ms, 1000-elem max 130ms, bundle ~478KB) + v0.5.0 badge'i, `docs/linkedin-w10-post.md` (IR mimarisi teması), git tag `v0.5.0`. `pnpm test` 248/248 passing, `pnpm build` clean. Bug bash atlandı (interaktif), GitHub release web UI'dan kullanıcı tarafından yayınlanacak.
 
 > Bütün haftalık görevler için: `ROADMAP.md`

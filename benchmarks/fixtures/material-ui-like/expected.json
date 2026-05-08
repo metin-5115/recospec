@@ -1,5 +1,24 @@
 {
-  "username": { "minScore": 50, "forbiddenPrimaryStrategies": ["css", "xpath"] },
-  "email": { "minScore": 50, "forbiddenPrimaryStrategies": ["css", "xpath"] },
-  "submitButton": { "minScore": 50, "forbiddenPrimaryStrategies": ["css", "xpath"] }
+  "version": 2,
+  "description": "MUI-style snapshot with dynamic css-* classes — engine must reject css/xpath as primary.",
+  "entries": [
+    {
+      "name": "username",
+      "querySelector": "input[name='username']",
+      "minScore": 50,
+      "forbiddenPrimaryStrategies": ["css", "xpath"]
+    },
+    {
+      "name": "email",
+      "querySelector": "input[name='email']",
+      "minScore": 50,
+      "forbiddenPrimaryStrategies": ["css", "xpath"]
+    },
+    {
+      "name": "submitButton",
+      "querySelector": "button[type='submit']",
+      "minScore": 50,
+      "forbiddenPrimaryStrategies": ["css", "xpath"]
+    }
+  ]
 }
