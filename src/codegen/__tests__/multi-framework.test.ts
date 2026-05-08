@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import '../adapters/playwright-ts'
 import '../adapters/cypress'
 import '../adapters/selenium-py'
+import '../adapters/selenium-java'
 import { getAdapter, listAdapters } from '../adapters/registry'
 import type { IRPage, IRScenario, IRElement } from '../ir/types'
 
@@ -34,11 +35,12 @@ const loginPage: IRPage = {
 const scenario: IRScenario = { name: 'Login flow', pages: [loginPage] }
 
 describe('adapter registry', () => {
-  it('registers playwright-ts, cypress, and selenium-py adapters', () => {
+  it('registers playwright-ts, cypress, selenium-py, and selenium-java adapters', () => {
     const ids = listAdapters().map((a) => a.id)
     expect(ids).toContain('playwright-ts')
     expect(ids).toContain('cypress')
     expect(ids).toContain('selenium-py')
+    expect(ids).toContain('selenium-java')
   })
 
   it('throws for unknown framework', () => {
@@ -104,6 +106,38 @@ describe('same IR → different framework outputs', () => {
     const conftest = files.find((f) => f.filename === 'conftest.py')!.content
     expect(conftest).toContain('def driver(request):')
     expect(conftest).toContain('--headed')
+  })
+
+  it('selenium-java produces .java files with @FindBy annotations', () => {
+    const adapter = getAdapter('selenium-java')
+    const page = adapter.renderPageObject(loginPage)
+    const spec = adapter.renderScenario(scenario)
+    expect(page.filename).toBe('LoginPage.java')
+    expect(spec.filename).toBe('TestLoginFlow.java')
+    expect(page.content).toContain('package pages;')
+    expect(page.content).toContain('public class LoginPage {')
+    expect(page.content).toContain('@FindBy(css = "[data-testid=\\"login-email\\"]")')
+    expect(page.content).toContain('PageFactory.initElements(driver, this);')
+    expect(spec.content).toContain('package tests;')
+    expect(spec.content).toContain('@BeforeMethod')
+    expect(spec.content).toContain('@Test')
+    expect(spec.content).toContain('@AfterMethod')
+    expect(spec.content).toContain('public void loginFlow()')
+  })
+
+  it('selenium-java scaffold includes pom.xml and testng.xml', () => {
+    const files = getAdapter('selenium-java').renderScaffold()
+    const names = files.map((f) => f.filename)
+    expect(names).toContain('pom.xml')
+    expect(names).toContain('testng.xml')
+
+    const pom = files.find((f) => f.filename === 'pom.xml')!.content
+    expect(pom).toContain('<artifactId>selenium-java</artifactId>')
+    expect(pom).toContain('<artifactId>testng</artifactId>')
+
+    const suite = files.find((f) => f.filename === 'testng.xml')!.content
+    expect(suite).toContain('<suite ')
+    expect(suite).toContain('<package name="tests"/>')
   })
 })
 

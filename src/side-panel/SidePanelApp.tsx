@@ -207,8 +207,10 @@ export function SidePanelApp() {
                 {selectedFramework === 'cypress'
                   ? 'Cypress'
                   : selectedFramework === 'selenium-py'
-                    ? 'Selenium'
-                    : 'Playwright'}
+                    ? 'Selenium Py'
+                    : selectedFramework === 'selenium-java'
+                      ? 'Selenium Java'
+                      : 'Playwright'}
               </span>
               <ChevronRight
                 className="h-4 w-4 transition-transform group-hover:translate-x-0.5"

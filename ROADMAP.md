@@ -127,8 +127,8 @@
 
 **Hedef:** Selenium adapter'ları, self-healing, network mocking, visual regression, Chrome Web Store yayını. `v1.0` release.
 
-- [ ] **Hafta 11–12** — Selenium Python (Pytest) adapter'ı + project scaffold
-- [ ] **Hafta 13–14** — Selenium Java (TestNG) adapter'ı + project scaffold
+- [x] **Hafta 11–12** — Selenium Python (Pytest) adapter'ı + project scaffold
+- [x] **Hafta 13–14** — Selenium Java (TestNG) adapter'ı + project scaffold
 - [ ] **Hafta 15** — Self-healing locator'lar (fallback zinciri koda ekleniyor)
 - [ ] **Hafta 16** — Network request capture + opsiyonel mock üretimi
 - [ ] **Hafta 17** — Visual regression entegrasyonu (açık kaynak araç)

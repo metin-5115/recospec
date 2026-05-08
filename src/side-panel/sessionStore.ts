@@ -27,7 +27,12 @@ const FRAMEWORK_STORAGE_KEY = 'playforge.selectedFramework'
 function loadInitialFramework(): FrameworkId {
   try {
     const stored = window.localStorage.getItem(FRAMEWORK_STORAGE_KEY)
-    if (stored === 'cypress' || stored === 'playwright-ts' || stored === 'selenium-py')
+    if (
+      stored === 'cypress' ||
+      stored === 'playwright-ts' ||
+      stored === 'selenium-py' ||
+      stored === 'selenium-java'
+    )
       return stored
   } catch {
     /* localStorage unavailable in some test envs */
