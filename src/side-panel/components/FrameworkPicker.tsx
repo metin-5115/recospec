@@ -20,7 +20,7 @@ export function FrameworkPicker({ value, onChange }: FrameworkPickerProps) {
     <div
       role="tablist"
       aria-label="Output framework"
-      className="flex overflow-hidden rounded border border-gray-300"
+      className="flex gap-1 rounded-lg bg-bg-muted p-1"
     >
       {OPTIONS.map((opt) => {
         const active = opt.id === value
@@ -30,8 +30,8 @@ export function FrameworkPicker({ value, onChange }: FrameworkPickerProps) {
             role="tab"
             aria-selected={active}
             onClick={() => onChange(opt.id)}
-            className={`flex-1 px-3 py-1.5 text-xs font-medium transition-colors ${
-              active ? 'bg-emerald-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+            className={`flex-1 rounded-md px-3 py-1.5 text-xs font-semibold transition-all ${
+              active ? 'bg-bg text-text shadow-sm' : 'text-text-muted hover:text-text'
             }`}
           >
             {opt.label}

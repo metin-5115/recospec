@@ -1,27 +1,40 @@
-import { useState } from 'react'
+import { useState, type ComponentType, type SVGProps } from 'react'
+import {
+  CheckCircle2,
+  Keyboard,
+  MousePointerClick,
+  MoveVertical,
+  Navigation,
+  Pencil,
+  Play,
+  Video,
+  X,
+} from 'lucide-react'
 import type { RecordedAction, ActionType } from '@shared/types/action'
 
-function actionIcon(type: ActionType): string {
+type IconComponent = ComponentType<SVGProps<SVGSVGElement>>
+
+function actionIcon(type: ActionType): IconComponent {
   switch (type) {
     case 'click':
     case 'dblclick':
     case 'hover':
-      return '👆'
+      return MousePointerClick
     case 'fill':
     case 'select':
     case 'check':
     case 'uncheck':
-      return '✏️'
+      return Pencil
     case 'navigate':
-      return '🧭'
+      return Navigation
     case 'keypress':
-      return '⌨️'
+      return Keyboard
     case 'scroll':
-      return '↕'
+      return MoveVertical
     case 'assert':
-      return '✓'
+      return CheckCircle2
     default:
-      return '▶'
+      return Play
   }
 }
 
@@ -34,18 +47,18 @@ function FallbackDropdown({ fallbacks, onClose }: FallbackDropdownProps) {
   if (fallbacks.length === 0) return null
   return (
     <div
-      className="absolute left-0 top-full z-10 mt-1 min-w-[200px] rounded border border-gray-200 bg-white py-1 shadow-lg"
+      className="absolute left-0 top-full z-10 mt-1 min-w-[220px] rounded-xl border border-border bg-bg py-1.5 shadow-lg"
       onMouseLeave={onClose}
     >
-      <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+      <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-text-subtle">
         Fallback locators
       </p>
       {fallbacks.map((f, i) => (
         <div key={i} className="px-3 py-1">
-          <span className="mr-1 rounded bg-gray-100 px-1 py-0.5 text-[10px] font-medium text-gray-500">
+          <span className="mr-1.5 rounded-md bg-bg-muted px-1.5 py-0.5 text-[10px] font-medium text-text-muted">
             {f.strategy}
           </span>
-          <span className="text-[10px] text-gray-600 font-mono truncate">{f.selector}</span>
+          <span className="font-mono text-[10px] text-text-muted">{f.selector}</span>
         </div>
       ))}
     </div>
@@ -62,16 +75,21 @@ export function StepList({ steps, onDeleteStep }: StepListProps) {
 
   if (steps.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
-        <div className="mb-3 text-4xl">🎬</div>
-        <p className="mb-1 text-sm font-medium text-gray-600">Start recording to capture steps</p>
-        <p className="text-xs text-gray-400">Open a page and click "Start Recording"</p>
+      <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent-soft">
+          <Video className="h-7 w-7 text-accent" aria-hidden="true" />
+        </div>
+        <p className="mb-1 text-base font-semibold text-text">No steps yet</p>
+        <p className="text-sm text-text-muted">
+          Open a page and click <span className="font-medium text-text">Record</span> to capture
+          interactions.
+        </p>
       </div>
     )
   }
 
   return (
-    <ol className="divide-y divide-gray-100">
+    <ol className="divide-y divide-border">
       {steps.map((step, index) => {
         const snapshot = step.target?.elementSnapshot ?? step.elementSnapshot
         const locatorLabel =
@@ -87,28 +105,27 @@ export function StepList({ steps, onDeleteStep }: StepListProps) {
         }))
         const hasFallbacks = fallbacks.length > 0
         const isOpen = openFallbackId === step.actionId
+        const Icon = actionIcon(step.type)
 
         return (
           <li
             key={step.actionId}
-            className="group flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50"
+            className="group flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-bg-elevated"
           >
-            <span className="w-5 shrink-0 text-right text-xs font-mono text-gray-400">
+            <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-bg-muted text-[10px] font-mono font-semibold text-text-subtle">
               {index + 1}
             </span>
-            <span className="shrink-0 text-base leading-none" title={step.type}>
-              {actionIcon(step.type)}
-            </span>
+            <Icon className="h-4 w-4 shrink-0 text-text-muted" aria-hidden="true" />
             <span className="relative min-w-0 flex-1">
-              <span className="block truncate text-gray-700" title={locatorLabel}>
+              <span className="block truncate font-mono text-[13px] text-text" title={locatorLabel}>
                 {locatorLabel}
               </span>
               {strategy && (
                 <button
-                  className={`mt-0.5 inline-flex items-center gap-1 rounded px-1 py-0.5 text-[10px] font-medium opacity-0 transition-opacity group-hover:opacity-100 ${
+                  className={`mt-1 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium opacity-0 transition-opacity group-hover:opacity-100 ${
                     hasFallbacks
-                      ? 'cursor-pointer bg-blue-50 text-blue-600 hover:bg-blue-100'
-                      : 'cursor-default bg-blue-50 text-blue-600'
+                      ? 'cursor-pointer bg-accent-soft text-accent hover:bg-accent hover:text-white'
+                      : 'cursor-default bg-accent-soft text-accent'
                   }`}
                   onClick={() =>
                     hasFallbacks ? setOpenFallbackId(isOpen ? null : step.actionId) : undefined
@@ -119,7 +136,7 @@ export function StepList({ steps, onDeleteStep }: StepListProps) {
                 >
                   {strategy}
                   {hasFallbacks && (
-                    <span className="rounded-full bg-blue-200 px-1 text-blue-700">
+                    <span className="rounded-full bg-white/30 px-1 text-[9px]">
                       +{fallbacks.length}
                     </span>
                   )}
@@ -131,10 +148,11 @@ export function StepList({ steps, onDeleteStep }: StepListProps) {
             </span>
             <button
               onClick={() => onDeleteStep(step.actionId)}
-              className="ml-auto shrink-0 px-1 text-gray-300 opacity-0 transition-all hover:text-red-500 group-hover:opacity-100"
+              className="ml-auto inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-text-subtle opacity-0 transition-all hover:bg-danger-soft hover:text-danger group-hover:opacity-100"
+              aria-label="Remove step"
               title="Remove step"
             >
-              ×
+              <X className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
           </li>
         )

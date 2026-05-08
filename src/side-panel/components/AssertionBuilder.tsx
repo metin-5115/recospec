@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { CheckCircle2, X } from 'lucide-react'
 import type { AssertionSuggestion } from '@shared/types/action'
 import type { LocatorBundle } from '@shared/types/locator'
 import type { ElementSnapshot } from '@shared/types/action'
@@ -52,30 +53,42 @@ export function AssertionBuilder({
       role="dialog"
       aria-modal="true"
       aria-label="Add Assertion"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/20"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm"
       onClick={(e) => {
         if (e.target === e.currentTarget) onCancel()
       }}
     >
-      <div className="w-72 rounded-lg border border-gray-200 bg-white shadow-xl">
-        <div className="border-b border-gray-100 px-4 py-3">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
-            Add Assertion
-          </p>
-          <p className="mt-0.5 truncate text-xs text-gray-600" title={previewLabel}>
-            {previewLabel}
-          </p>
+      <div className="w-80 overflow-hidden rounded-2xl border border-border bg-bg shadow-2xl">
+        <div className="flex items-start justify-between border-b border-border px-5 py-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-accent shadow-accent-glow">
+              <CheckCircle2 className="h-5 w-5 text-white" aria-hidden="true" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-text">Add Assertion</p>
+              <p className="mt-0.5 truncate text-xs text-text-muted" title={previewLabel}>
+                {previewLabel}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onCancel}
+            className="ml-2 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-text-subtle transition-colors hover:bg-bg-muted hover:text-text"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
         </div>
 
-        <div className="space-y-1 px-4 py-3">
+        <div className="space-y-1 px-3 py-3">
           {suggestions.map((s, i) => (
             <button
               key={i}
               onClick={() => handleSelect(i)}
-              className={`w-full rounded px-3 py-2 text-left text-sm transition-colors ${
+              className={`w-full rounded-lg border px-3 py-2 text-left text-sm transition-all ${
                 i === selectedIndex
-                  ? 'bg-blue-50 font-medium text-blue-700'
-                  : 'text-gray-700 hover:bg-gray-50'
+                  ? 'border-accent bg-accent-soft font-medium text-accent shadow-sm'
+                  : 'border-transparent text-text hover:border-border hover:bg-bg-elevated'
               }`}
             >
               {s.label}
@@ -88,21 +101,21 @@ export function AssertionBuilder({
               placeholder="Custom value (optional)"
               value={customValue}
               onChange={(e) => setCustomValue(e.target.value)}
-              className="mt-2 w-full rounded border border-gray-200 px-3 py-1.5 text-sm focus:border-blue-400 focus:outline-none"
+              className="mt-2 w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
             />
           )}
         </div>
 
-        <div className="flex gap-2 border-t border-gray-100 px-4 py-3">
+        <div className="flex gap-2 border-t border-border bg-bg-elevated/40 px-4 py-3">
           <button
             onClick={onCancel}
-            className="flex-1 rounded border border-gray-200 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
+            className="flex-1 rounded-lg border border-border bg-bg px-3 py-2 text-sm font-medium text-text-muted transition-colors hover:bg-bg-muted hover:text-text"
           >
             Cancel
           </button>
           <button
             onClick={handleConfirm}
-            className="flex-1 rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+            className="flex-1 rounded-lg bg-gradient-accent px-3 py-2 text-sm font-semibold text-white shadow-accent-glow transition-all hover:scale-[1.01] active:scale-[0.99]"
           >
             Add Assertion
           </button>
