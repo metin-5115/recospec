@@ -65,6 +65,25 @@
   }
 }
 
+@layer utilities {
+  .bg-gradient-accent {
+    background-image: var(--gradient-accent);
+  }
+
+  .text-gradient-accent {
+    background-image: var(--gradient-accent);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+
+  .shadow-accent-glow {
+    box-shadow:
+      0 10px 25px -10px rgb(99 102 241 / 0.45),
+      0 4px 12px -6px rgb(139 92 246 / 0.35);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -1,4 +1,19 @@
 import { useState } from 'react'
+import {
+  AlertCircle,
+  ChevronRight,
+  Circle,
+  CircleDot,
+  Code2,
+  Download,
+  FileJson,
+  Loader2,
+  Pause,
+  Play,
+  Sparkles,
+  Square,
+  CheckCircle2,
+} from 'lucide-react'
 import { useSession } from './hooks/useSession'
 import { StepList } from './components/StepList'
 import { SessionList } from './components/SessionList'
@@ -43,26 +58,13 @@ export function SidePanelApp() {
   const isActive = isRecording || isPaused
 
   return (
-    <div className="flex h-screen flex-col bg-white">
-      <header className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-        <div className="flex items-center gap-2">
-          <span className="text-base font-bold text-gray-900">PlayForge</span>
-          <span
-            className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold tracking-wide ${
-              isRecording
-                ? 'bg-red-100 text-red-700'
-                : isPaused
-                  ? 'bg-amber-100 text-amber-700'
-                  : 'bg-gray-100 text-gray-500'
-            }`}
-          >
-            <span
-              className={`h-1.5 w-1.5 rounded-full ${
-                isRecording ? 'animate-pulse bg-red-500' : isPaused ? 'bg-amber-500' : 'bg-gray-400'
-              }`}
-            />
-            {isRecording ? 'REC' : isPaused ? 'PAUSE' : 'IDLE'}
+    <div className="flex h-screen flex-col bg-bg text-text">
+      <header className="flex items-center justify-between border-b border-border px-5 py-4">
+        <div className="flex items-center gap-3">
+          <span className="text-base font-semibold tracking-tight text-gradient-accent">
+            PlayForge
           </span>
+          <StatusBadge isRecording={isRecording} isPaused={isPaused} />
         </div>
 
         <div className="flex items-center gap-2">
@@ -72,13 +74,14 @@ export function SidePanelApp() {
               title={
                 isProbeActive ? 'Cancel assertion mode' : 'Add assertion by clicking an element'
               }
-              className={`rounded px-3 py-1.5 text-sm font-medium transition-colors ${
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                 isProbeActive
-                  ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-warning-soft text-warning'
+                  : 'bg-bg-muted text-text-muted hover:bg-bg-elevated hover:text-text'
               }`}
             >
-              {isProbeActive ? '✓ Pick element…' : '✓ Assert'}
+              <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+              {isProbeActive ? 'Pick element…' : 'Assert'}
             </button>
           )}
 
@@ -87,22 +90,25 @@ export function SidePanelApp() {
               {isRecording ? (
                 <button
                   onClick={pauseRecording}
-                  className="rounded px-3 py-1.5 text-sm font-medium text-amber-700 bg-amber-100 hover:bg-amber-200 transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-bg-muted px-3 py-1.5 text-xs font-medium text-text-muted transition-colors hover:bg-bg-elevated hover:text-text"
                 >
+                  <Pause className="h-3.5 w-3.5" aria-hidden="true" />
                   Pause
                 </button>
               ) : (
                 <button
                   onClick={resumeRecording}
-                  className="rounded px-3 py-1.5 text-sm font-medium text-green-700 bg-green-100 hover:bg-green-200 transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-success/10 px-3 py-1.5 text-xs font-medium text-success transition-colors hover:bg-success/20"
                 >
+                  <Play className="h-3.5 w-3.5" aria-hidden="true" />
                   Resume
                 </button>
               )}
               <button
                 onClick={stopRecording}
-                className="rounded px-3 py-1.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-danger px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-rose-500"
               >
+                <Square className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
                 Stop
               </button>
             </>
@@ -112,46 +118,37 @@ export function SidePanelApp() {
             <button
               onClick={startRecording}
               disabled={isStarting}
-              className="rounded px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-danger px-3.5 py-1.5 text-xs font-medium text-white shadow-sm transition-all hover:bg-rose-500 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isStarting ? 'Starting…' : 'Start Recording'}
+              {isStarting ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                  Starting…
+                </>
+              ) : (
+                <>
+                  <Circle className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
+                  Record
+                </>
+              )}
             </button>
           )}
         </div>
       </header>
 
-      {/* Tab bar */}
-      <div className="flex border-b border-gray-200">
-        <button
+      <div className="flex gap-1 border-b border-border bg-bg-elevated/40 px-3 pb-0 pt-2">
+        <TabButton
+          label="Recording"
+          count={steps.length}
+          active={activeTab === 'recording'}
           onClick={() => setActiveTab('recording')}
-          className={`flex-1 py-2 text-sm font-medium transition-colors ${
-            activeTab === 'recording'
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          Recording
-          {steps.length > 0 && (
-            <span className="ml-1.5 rounded-full bg-gray-200 px-1.5 py-0.5 text-xs text-gray-600">
-              {steps.length}
-            </span>
-          )}
-        </button>
-        <button
+        />
+        <TabButton
+          label="History"
+          count={sessions.length}
+          active={activeTab === 'history'}
           onClick={() => setActiveTab('history')}
-          className={`flex-1 py-2 text-sm font-medium transition-colors ${
-            activeTab === 'history'
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          History
-          {sessions.length > 0 && (
-            <span className="ml-1.5 rounded-full bg-gray-200 px-1.5 py-0.5 text-xs text-gray-600">
-              {sessions.length}
-            </span>
-          )}
-        </button>
+        />
       </div>
 
       <main className="flex-1 overflow-y-auto">
@@ -174,40 +171,53 @@ export function SidePanelApp() {
       </main>
 
       {activeTab === 'recording' && steps.length > 0 && !isActive && (
-        <div className="space-y-2 border-t border-gray-200 px-4 py-3">
+        <div className="space-y-3 border-t border-border bg-bg-elevated/40 px-5 py-4">
           <FrameworkPicker value={selectedFramework} onChange={setSelectedFramework} />
           <div className="flex gap-2">
             <button
               onClick={generateCode}
-              className="flex-1 rounded bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
+              className="group inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-gradient-accent px-3.5 py-2.5 text-sm font-semibold text-white shadow-accent-glow transition-all hover:scale-[1.01] active:scale-[0.99]"
             >
-              Generate {selectedFramework === 'cypress' ? 'Cypress' : 'Playwright TS'} Code
+              <Sparkles className="h-4 w-4" aria-hidden="true" />
+              <span>Generate {selectedFramework === 'cypress' ? 'Cypress' : 'Playwright'}</span>
+              <ChevronRight
+                className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+                aria-hidden="true"
+              />
             </button>
             {activeSession && (
               <button
                 onClick={() => void exportJson(activeSession.sessionId)}
-                className="rounded border border-gray-300 px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-bg px-3 py-2 text-sm font-medium text-text-muted transition-colors hover:border-border-strong hover:bg-bg-muted hover:text-text"
                 title="Export raw session data as JSON"
               >
+                <FileJson className="h-4 w-4" aria-hidden="true" />
                 JSON
               </button>
             )}
           </div>
           {codeGenError && (
-            <p className="rounded bg-red-50 px-2 py-1.5 text-xs text-red-600">{codeGenError}</p>
+            <p className="flex items-start gap-1.5 rounded-lg bg-danger-soft px-3 py-2 text-xs text-danger">
+              <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <span>{codeGenError}</span>
+            </p>
           )}
         </div>
       )}
 
       {generatedCode && activeTab === 'recording' && (
-        <div className="border-t border-gray-200">
-          <div className="flex items-center justify-between px-4 py-2">
-            <span className="text-xs font-medium text-gray-500">Generated Code</span>
+        <div className="border-t border-border">
+          <div className="flex items-center justify-between bg-bg-elevated/40 px-5 py-2.5">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-text-muted">
+              <Code2 className="h-3.5 w-3.5" aria-hidden="true" />
+              Generated Code
+            </span>
             {activeSession && (
               <button
                 onClick={() => void exportZip(activeSession.sessionId)}
-                className="rounded bg-blue-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-blue-700"
+                className="inline-flex items-center gap-1.5 rounded-md bg-bg px-2.5 py-1 text-xs font-medium text-text-muted shadow-sm transition-colors hover:bg-accent hover:text-white"
               >
+                <Download className="h-3 w-3" aria-hidden="true" />
                 Export ZIP
               </button>
             )}
@@ -217,7 +227,7 @@ export function SidePanelApp() {
       )}
 
       {activeTab === 'recording' && steps.length > 0 && (
-        <footer className="border-t border-gray-100 px-4 py-2 text-xs text-gray-400">
+        <footer className="border-t border-border px-5 py-2 text-xs text-text-subtle">
           {steps.length} step{steps.length !== 1 ? 's' : ''} recorded
         </footer>
       )}
@@ -233,5 +243,63 @@ export function SidePanelApp() {
         />
       )}
     </div>
+  )
+}
+
+interface StatusBadgeProps {
+  isRecording: boolean
+  isPaused: boolean
+}
+
+function StatusBadge({ isRecording, isPaused }: StatusBadgeProps) {
+  const label = isRecording ? 'REC' : isPaused ? 'PAUSE' : 'IDLE'
+  const palette = isRecording
+    ? 'bg-danger-soft text-danger'
+    : isPaused
+      ? 'bg-warning-soft text-warning'
+      : 'bg-bg-muted text-text-muted'
+  const dotPalette = isRecording
+    ? 'fill-danger text-danger animate-pulse'
+    : isPaused
+      ? 'fill-warning text-warning'
+      : 'fill-text-subtle text-text-subtle'
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${palette}`}
+    >
+      <CircleDot className={`h-2.5 w-2.5 ${dotPalette}`} aria-hidden="true" />
+      {label}
+    </span>
+  )
+}
+
+interface TabButtonProps {
+  label: string
+  count: number
+  active: boolean
+  onClick: () => void
+}
+
+function TabButton({ label, count, active, onClick }: TabButtonProps) {
+  return (
+    <button
+      onClick={onClick}
+      className={`relative flex flex-1 items-center justify-center gap-1.5 rounded-t-lg px-3 py-2 text-sm font-medium transition-all ${
+        active
+          ? 'bg-bg text-text shadow-[0_-2px_0_0_var(--color-accent)_inset]'
+          : 'text-text-muted hover:bg-bg/60 hover:text-text'
+      }`}
+    >
+      {label}
+      {count > 0 && (
+        <span
+          className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+            active ? 'bg-accent-soft text-accent' : 'bg-bg-muted text-text-muted'
+          }`}
+        >
+          {count}
+        </span>
+      )}
+    </button>
   )
 }

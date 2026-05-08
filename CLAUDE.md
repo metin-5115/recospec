@@ -259,8 +259,8 @@ Bu projede Claude Code'dan beklenen davranış:
 > Bu bölümü her milestone sonrasında güncelle.
 
 **Faz:** Faz 2 — Hardening (Hafta 6+)
-**Mevcut Hafta:** Hafta 6.5 — UI Modernizasyon (Faz 0/4: tasarım sistemi temeli)
-**Sonraki Görev:** Hafta 6.5 — UI Modernizasyon Faz 1 (Side panel chrome refresh)
+**Mevcut Hafta:** Hafta 6.5 — UI Modernizasyon (Faz 1/4: side panel chrome)
+**Sonraki Görev:** Hafta 6.5 — UI Modernizasyon Faz 2 (içerik komponentleri)
 
 **Tamamlananlar:**
 
@@ -271,5 +271,6 @@ Bu projede Claude Code'dan beklenen davranış:
 - [x] Hafta 5 — Locator Engine production kalitesi (9 strateji)
 - [x] Hafta 6 — Cypress Adapter + Adapter SDK (FrameworkAdapter / ADAPTER_REGISTRY)
 - [x] Hafta 6.5 Faz 0 — Tasarım sistemi (Inter font, lucide-react, design tokens, dark mode)
+- [x] Hafta 6.5 Faz 1 — Side panel chrome (gradient header, pill tabs, gradient CTA, lucide ikonlar)
 
 > Bütün haftalık görevler için: `ROADMAP.md`
