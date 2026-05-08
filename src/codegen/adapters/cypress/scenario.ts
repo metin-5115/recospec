@@ -15,6 +15,11 @@ function renderAssertion(d: AssertionDetail, chain: string, indent: string): str
       return `${indent}${chain}.should('have.attr', ${JSON.stringify(d.attribute ?? '')}, ${JSON.stringify(d.expected ?? '')});`
     case 'count':
       return `${indent}${chain}.should('have.length', ${Number(d.expected ?? 0)});`
+    case 'screenshot': {
+      const name = d.name ?? 'snapshot'
+      const pct = Math.round((d.threshold ?? 0.02) * 100) / 100
+      return `${indent}${chain}.matchImageSnapshot(${JSON.stringify(name)}, { failureThreshold: ${pct}, failureThresholdType: 'percent' });`
+    }
   }
 }
 
@@ -32,8 +37,12 @@ function renderStepInSpec(step: IRStep, indent: string): string {
     return `${indent}cy.focused().type(${JSON.stringify(`{${step.key.toLowerCase()}}`)});`
   }
   if (step.action === 'assert') {
-    if (step.assertionDetail && step.element) {
-      return renderAssertion(step.assertionDetail, renderLocator(step.element), indent)
+    if (step.assertionDetail) {
+      const chain =
+        step.assertionDetail.type === 'screenshot' || !step.element
+          ? 'cy'
+          : renderLocator(step.element)
+      return renderAssertion(step.assertionDetail, chain, indent)
     }
     return `${indent}// assert: ${step.annotation ?? ''}`
   }

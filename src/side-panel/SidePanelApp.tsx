@@ -261,6 +261,7 @@ export function SidePanelApp() {
           locatorBundle={assertionContext.locatorBundle}
           elementSnapshot={assertionContext.elementSnapshot}
           pageMetadata={assertionContext.pageMetadata}
+          screenshotDataUrl={assertionContext.screenshotDataUrl}
           onConfirm={addAssertion}
           onCancel={cancelAssertionBuilder}
         />

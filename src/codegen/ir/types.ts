@@ -43,9 +43,13 @@ export interface IRElement {
 }
 
 export interface AssertionDetail {
-  type: 'visible' | 'hidden' | 'text' | 'value' | 'attribute' | 'count'
+  type: 'visible' | 'hidden' | 'text' | 'value' | 'attribute' | 'count' | 'screenshot'
   expected?: string | number
   attribute?: string
+  /** Screenshot file name (no extension). Only set when `type === 'screenshot'`. */
+  name?: string
+  /** Screenshot failure threshold (0..1). Only set when `type === 'screenshot'`. */
+  threshold?: number
 }
 
 /**

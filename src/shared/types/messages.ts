@@ -43,6 +43,8 @@ export type BackgroundToUIMessage =
       elementSnapshot: ElementSnapshot
       suggestions: AssertionSuggestion[]
       pageMetadata: { url: string; title: string }
+      /** PNG data URL of the visible tab; populated when a `screenshot` suggestion is offered. */
+      screenshotDataUrl?: string
     }
 
 export type ContentToBackgroundMessage =

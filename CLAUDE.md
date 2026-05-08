@@ -259,7 +259,7 @@ Bu projede Claude Code'dan beklenen davranış:
 > Bu bölümü her milestone sonrasında güncelle.
 
 **Faz:** Faz 2 — Hardening (Hafta 7+)
-**Mevcut Hafta:** Hafta 8 — Method Inference v2 + Temel Network Capture (TAMAMLANDI)
+**Mevcut Hafta:** Hafta 9 — Visual Regression Entegrasyonu (TAMAMLANDI)
 **Sonraki Görev:** Selenium Python adapter (Pytest) ya da Faz 3 sıradaki milestone
 
 **Tamamlananlar:**
@@ -280,5 +280,6 @@ Bu projede Claude Code'dan beklenen davranış:
 - [x] Hafta 8 — IR'a `IRActionType: 'network'` + `IRStep.network: IRNetworkInfo`; step listesinde `Globe` ikonu ile `METHOD path STATUS` etiketi
 - [x] Hafta 8 — Playwright adapter mock üretimi (`page.route(... route.fulfill(...))`); JSON body live JSON olarak kalır (`JSON.stringify(...)`), text body string literal'e dönüşür; opsiyonel `Generate` checkbox: "Include mocks for captured network requests"
 - [x] Hafta 8 — Side panel `MethodPreview`: çıkarılan methodları sayfa-bazlı listeler, kullanıcı method ismini düzenleyebilir; `methodRenames: Record<"PageClass.oldName", string>` `CODE_GENERATE` mesajıyla aktarılır, codegen pipeline `applyRenames` ile uygular
+- [x] Hafta 9 — Visual Regression: `AssertionType`'a `screenshot` eklendi (`AssertionSpec` & `AssertionDetail` `name` + `threshold` ile genişledi); content script suggester her elemana "Screenshot match" suggestion'u ekler; background `handleAssertionSuggestion` `chrome.tabs.captureVisibleTab` ile thumbnail çeker, `ASSERTION_SUGGESTIONS` mesajına `screenshotDataUrl` koyar; `AssertionBuilder` thumbnail + `Snapshot name` input + threshold gösterir; Playwright adapter `await expect(...).toHaveScreenshot('name.png', { threshold })` üretir, Cypress adapter `cy.matchImageSnapshot('name', { failureThreshold, failureThresholdType: 'percent' })`; Cypress scaffold `cypress-image-snapshot` dependency + plugin/command wiring + `cypress/screenshots/.gitkeep`; Playwright scaffold `tests/scenario.spec.ts-snapshots/.gitkeep`; ZIP README'de "Visual regression" bölümü
 
 > Bütün haftalık görevler için: `ROADMAP.md`

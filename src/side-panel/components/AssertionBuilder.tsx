@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CheckCircle2, X } from 'lucide-react'
+import { CheckCircle2, X, Camera } from 'lucide-react'
 import type { AssertionSuggestion } from '@shared/types/action'
 import type { LocatorBundle } from '@shared/types/locator'
 import type { ElementSnapshot } from '@shared/types/action'
@@ -11,6 +11,7 @@ interface AssertionBuilderProps {
   locatorBundle: LocatorBundle | null
   elementSnapshot: ElementSnapshot
   pageMetadata: { url: string; title: string }
+  screenshotDataUrl?: string
   onConfirm: (
     suggestion: AssertionSuggestion,
     locatorBundle: LocatorBundle | null,
@@ -26,19 +27,27 @@ export function AssertionBuilder({
   locatorBundle,
   elementSnapshot,
   pageMetadata,
+  screenshotDataUrl,
   onConfirm,
   onCancel,
 }: AssertionBuilderProps) {
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [customValue, setCustomValue] = useState('')
+  const [screenshotName, setScreenshotName] = useState('')
 
   const selected = suggestions[selectedIndex]
+  const isScreenshot = selected.type === 'screenshot'
   const needsValue = NEEDS_VALUE.includes(selected.type)
   const previewLabel =
     elementSnapshot.tagName +
     (elementSnapshot.textContent ? ` "${elementSnapshot.textContent.slice(0, 40)}"` : '')
 
   function handleConfirm() {
+    if (isScreenshot) {
+      const name = screenshotName.trim() || selected.name
+      onConfirm(selected, locatorBundle, elementSnapshot, pageMetadata, name)
+      return
+    }
     const customExpected = customValue !== '' ? customValue : undefined
     onConfirm(selected, locatorBundle, elementSnapshot, pageMetadata, customExpected)
   }
@@ -46,6 +55,10 @@ export function AssertionBuilder({
   function handleSelect(index: number) {
     setSelectedIndex(index)
     setCustomValue('')
+    const next = suggestions[index]
+    if (next.type === 'screenshot') {
+      setScreenshotName(next.name ?? '')
+    }
   }
 
   return (
@@ -103,6 +116,36 @@ export function AssertionBuilder({
               onChange={(e) => setCustomValue(e.target.value)}
               className="mt-2 w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
             />
+          )}
+
+          {isScreenshot && (
+            <div className="mt-2 space-y-2 rounded-lg border border-border bg-bg-elevated/40 p-3">
+              <div className="flex items-center gap-2 text-xs font-medium text-text-muted">
+                <Camera className="h-3.5 w-3.5" aria-hidden="true" />
+                Visual snapshot
+              </div>
+              {screenshotDataUrl ? (
+                <img
+                  src={screenshotDataUrl}
+                  alt="Page snapshot preview"
+                  className="block max-h-28 w-full rounded-md border border-border bg-bg object-contain"
+                />
+              ) : (
+                <div className="flex h-20 items-center justify-center rounded-md border border-dashed border-border bg-bg text-[11px] text-text-subtle">
+                  Preview unavailable
+                </div>
+              )}
+              <input
+                type="text"
+                placeholder="Snapshot name"
+                value={screenshotName}
+                onChange={(e) => setScreenshotName(e.target.value)}
+                className="w-full rounded-md border border-border bg-bg px-2.5 py-1.5 text-xs text-text placeholder:text-text-subtle focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+              />
+              <p className="text-[11px] text-text-subtle">
+                Threshold: {(selected.threshold ?? 0.2).toFixed(2)}
+              </p>
+            </div>
           )}
         </div>
 

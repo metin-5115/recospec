@@ -9,6 +9,7 @@ PlayForge is an open-source Chrome extension that records your browser interacti
 - **Self-healing locators** — every element ships with ranked fallbacks (inline comment) and the generated project includes a `selfHealingLocator` / `cy.selfHealing` helper that walks the chain at runtime.
 - **Multi-framework export** — Playwright (TypeScript) and Cypress (JavaScript), more on the way.
 - **Assertions UI** — point-and-click visibility / text / value / attribute / count assertions.
+- **Visual regression** — capture page snapshots during recording; generated tests use Playwright's built-in `toHaveScreenshot()` or Cypress with `cypress-image-snapshot`. Baselines land under `tests/scenario.spec.ts-snapshots/` (Playwright) or `cypress/screenshots/` (Cypress) — commit them on first run.
 - **Privacy-first** — no telemetry, all session data stored locally in IndexedDB.
 
 ## Tech Stack

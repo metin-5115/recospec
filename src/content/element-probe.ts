@@ -23,6 +23,15 @@ function buildSnapshot(el: Element): ElementSnapshot {
   }
 }
 
+function slugifyTitle(title: string): string {
+  const slug = title
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+  return slug || 'snapshot'
+}
+
 function buildSuggestions(el: Element, snapshot: ElementSnapshot): AssertionSuggestion[] {
   const suggestions: AssertionSuggestion[] = [{ type: 'visible', label: 'Expect visible' }]
 
@@ -42,6 +51,12 @@ function buildSuggestions(el: Element, snapshot: ElementSnapshot): AssertionSugg
   }
 
   suggestions.push({ type: 'hidden', label: 'Expect hidden' })
+  suggestions.push({
+    type: 'screenshot',
+    label: 'Screenshot match',
+    name: slugifyTitle(document.title),
+    threshold: 0.2,
+  })
 
   return suggestions
 }

@@ -17,6 +17,7 @@ interface AssertionContext {
   locatorBundle: LocatorBundle | null
   elementSnapshot: ElementSnapshot
   pageMetadata: { url: string; title: string }
+  screenshotDataUrl?: string
 }
 
 const MAX_RETRIES = 3
@@ -79,6 +80,7 @@ export function useSession() {
           locatorBundle: message.locatorBundle,
           elementSnapshot: message.elementSnapshot,
           pageMetadata: message.pageMetadata,
+          screenshotDataUrl: message.screenshotDataUrl,
         })
       }
     })

@@ -111,6 +111,47 @@ describe('assertion codegen — renderPageObject', () => {
   })
 })
 
+describe('assertion codegen — screenshot', () => {
+  const screenshotPage: IRPage = {
+    name: 'Home',
+    className: 'HomePage',
+    normalizedUrl: '/',
+    elements: [],
+    steps: [
+      { id: 's1', action: 'navigate', url: '/' },
+      {
+        id: 's2',
+        action: 'assert',
+        assertionDetail: { type: 'screenshot', name: 'home', threshold: 0.3 },
+      },
+    ],
+  }
+
+  it('renders toHaveScreenshot in page object using this.page', () => {
+    const out = renderPageObject(screenshotPage)
+    expect(out).toContain(
+      `await expect(this.page).toHaveScreenshot("home.png", { threshold: 0.3 });`,
+    )
+  })
+
+  it('renders toHaveScreenshot in spec using page', () => {
+    const scenario: IRScenario = { name: 'Visual flow', pages: [screenshotPage] }
+    const out = renderScenario(scenario)
+    expect(out).toContain(`await expect(page).toHaveScreenshot("home.png", { threshold: 0.3 });`)
+  })
+
+  it('falls back to default name and threshold when not provided', () => {
+    const page: IRPage = {
+      ...screenshotPage,
+      steps: [{ id: 'x', action: 'assert', assertionDetail: { type: 'screenshot' } }],
+    }
+    const out = renderPageObject(page)
+    expect(out).toContain(
+      `await expect(this.page).toHaveScreenshot("snapshot.png", { threshold: 0.2 });`,
+    )
+  })
+})
+
 describe('assertion codegen — renderScenario', () => {
   it('matches snapshot', () => {
     const scenario: IRScenario = { name: 'Assertion flow', pages: [pageWithAssertions] }

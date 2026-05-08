@@ -179,6 +179,8 @@ export function normalizeActions(actions: RecordedAction[]): NormalizedActions {
               expected:
                 payload.expected !== undefined ? (payload.expected as string | number) : undefined,
               attribute: payload.attribute !== undefined ? String(payload.attribute) : undefined,
+              name: payload.name !== undefined ? String(payload.name) : undefined,
+              threshold: payload.threshold !== undefined ? Number(payload.threshold) : undefined,
             }
           : undefined
 

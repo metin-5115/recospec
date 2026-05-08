@@ -6,6 +6,16 @@ import { appendAction } from '@storage/action-repo'
 import { getActionsBySession } from '@storage/action-repo'
 import { logger } from '@shared/logger'
 
+async function captureVisibleTabSafe(): Promise<string | undefined> {
+  try {
+    const dataUrl = await chrome.tabs.captureVisibleTab({ format: 'png' })
+    return dataUrl ?? undefined
+  } catch (err) {
+    logger.warn('[BG] captureVisibleTab failed', err)
+    return undefined
+  }
+}
+
 export async function handleAssertionProbeStart(sessionId: string): Promise<void> {
   const tabId = getActiveTabId()
   if (tabId === null) {
@@ -28,12 +38,15 @@ export async function handleAssertionSuggestion(
   suggestions: AssertionSuggestion[],
   pageMetadata: { url: string; title: string },
 ): Promise<void> {
+  const hasScreenshot = suggestions.some((s) => s.type === 'screenshot')
+  const screenshotDataUrl = hasScreenshot ? await captureVisibleTabSafe() : undefined
   await broadcastToUI({
     type: 'ASSERTION_SUGGESTIONS',
     locatorBundle,
     elementSnapshot,
     suggestions,
     pageMetadata,
+    screenshotDataUrl,
   })
   logger.debug('[BG] Assertion suggestions forwarded to UI', suggestions.length)
 }
@@ -49,8 +62,23 @@ export async function handleAssertionAdd(
   const existing = await getActionsBySession(sessionId)
   const sequenceNumber = existing.length
 
+  const isScreenshot = suggestion.type === 'screenshot'
   const expected =
     customExpected !== undefined && customExpected !== '' ? customExpected : suggestion.expected
+
+  const payload: Record<string, unknown> = {
+    assertionType: suggestion.type,
+  }
+  if (isScreenshot) {
+    payload.name =
+      customExpected !== undefined && customExpected !== ''
+        ? customExpected
+        : (suggestion.name ?? 'snapshot')
+    payload.threshold = suggestion.threshold ?? 0.2
+  } else {
+    payload.expected = expected
+    payload.attribute = suggestion.attribute
+  }
 
   const action = {
     actionId: crypto.randomUUID(),
@@ -60,19 +88,16 @@ export async function handleAssertionAdd(
     timestamp: Date.now(),
     pageUrl: pageMetadata.url,
     pageTitle: pageMetadata.title || undefined,
-    target: locatorBundle
-      ? {
-          primaryLocator: locatorBundle.primary,
-          fallbackLocators: locatorBundle.fallbacks,
-          elementSnapshot,
-        }
-      : undefined,
+    target:
+      !isScreenshot && locatorBundle
+        ? {
+            primaryLocator: locatorBundle.primary,
+            fallbackLocators: locatorBundle.fallbacks,
+            elementSnapshot,
+          }
+        : undefined,
     elementSnapshot,
-    payload: {
-      assertionType: suggestion.type,
-      expected,
-      attribute: suggestion.attribute,
-    },
+    payload,
     annotation: suggestion.label,
   }
 

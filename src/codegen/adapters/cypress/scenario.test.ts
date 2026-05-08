@@ -68,4 +68,23 @@ describe('cypress renderScenario', () => {
     const out = renderScenario(scenario)
     expect(out).toContain('// assert: manual check')
   })
+
+  it('emits cy.matchImageSnapshot for screenshot assertions', () => {
+    const page: IRPage = {
+      ...loginPage,
+      steps: [
+        { id: 's1', action: 'navigate', url: '/login' },
+        {
+          id: 's2',
+          action: 'assert',
+          assertionDetail: { type: 'screenshot', name: 'login', threshold: 0.05 },
+        },
+      ],
+    }
+    const scenario: IRScenario = { name: 'Visual flow', pages: [page] }
+    const out = renderScenario(scenario)
+    expect(out).toContain(
+      `cy.matchImageSnapshot("login", { failureThreshold: 0.05, failureThresholdType: 'percent' });`,
+    )
+  })
 })

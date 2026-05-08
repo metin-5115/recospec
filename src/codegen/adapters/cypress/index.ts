@@ -21,6 +21,7 @@ export function renderScaffold(): GeneratedFile[] {
       devDependencies: {
         cypress: '^13.6.0',
         '@testing-library/cypress': '^10.0.1',
+        'cypress-image-snapshot': '^4.0.1',
       },
     },
     null,
@@ -28,18 +29,31 @@ export function renderScaffold(): GeneratedFile[] {
   )
 
   const cypressConfig = `import { defineConfig } from 'cypress';
+import { addMatchImageSnapshotPlugin } from 'cypress-image-snapshot/plugin';
 
 export default defineConfig({
   e2e: {
     baseUrl: 'http://localhost:3000',
     supportFile: 'cypress/support/e2e.js',
     specPattern: 'cypress/e2e/**/*.cy.js',
+    setupNodeEvents(on, config) {
+      addMatchImageSnapshotPlugin(on, config);
+      return config;
+    },
   },
 });
 `
 
   const supportFile = `import '@testing-library/cypress/add-commands';
+import { addMatchImageSnapshotCommand } from 'cypress-image-snapshot/command';
 import './locator';
+
+addMatchImageSnapshotCommand({
+  failureThreshold: 0.02,
+  failureThresholdType: 'percent',
+  customDiffDir: 'cypress/screenshots/__diff_output__',
+  customSnapshotsDir: 'cypress/screenshots',
+});
 `
 
   return [
@@ -47,6 +61,7 @@ import './locator';
     { filename: 'cypress.config.js', content: cypressConfig },
     { filename: 'cypress/support/e2e.js', content: supportFile },
     { filename: 'cypress/support/locator.js', content: CYPRESS_SELF_HEALING_JS },
+    { filename: 'cypress/screenshots/.gitkeep', content: '' },
   ]
 }
 

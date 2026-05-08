@@ -157,3 +157,26 @@ describe('cypress renderPageObject — assertions', () => {
     expect(renderPageObject(page)).toContain(`should('have.length', 1)`)
   })
 })
+
+describe('cypress renderPageObject — screenshot', () => {
+  it('renders cy.matchImageSnapshot for screenshot assertion', () => {
+    const page: IRPage = {
+      name: 'Home',
+      className: 'HomePage',
+      normalizedUrl: '/',
+      elements: [],
+      steps: [
+        { id: 's1', action: 'navigate', url: '/' },
+        {
+          id: 's2',
+          action: 'assert',
+          assertionDetail: { type: 'screenshot', name: 'home', threshold: 0.05 },
+        },
+      ],
+    }
+    const out = renderPageObject(page)
+    expect(out).toContain(
+      `cy.matchImageSnapshot("home", { failureThreshold: 0.05, failureThresholdType: 'percent' });`,
+    )
+  })
+})

@@ -142,6 +142,11 @@ function renderAssertionMatcher(d: AssertionDetail, locator: string, indent: str
       return `${indent}await expect(${locator}).toHaveAttribute(${JSON.stringify(d.attribute ?? '')}, ${JSON.stringify(d.expected ?? '')});`
     case 'count':
       return `${indent}await expect(${locator}).toHaveCount(${Number(d.expected ?? 0)});`
+    case 'screenshot': {
+      const file = `${d.name ?? 'snapshot'}.png`
+      const threshold = d.threshold ?? 0.2
+      return `${indent}await expect(${locator}).toHaveScreenshot(${JSON.stringify(file)}, { threshold: ${threshold} });`
+    }
   }
 }
 
@@ -163,8 +168,12 @@ function renderStepInMethod(step: IRStep, indent: string): string {
     return `${indent}await this.page.keyboard.press(${JSON.stringify(step.key)});`
   }
   if (step.action === 'assert') {
-    if (step.assertionDetail && step.element) {
-      return renderAssertionMatcher(step.assertionDetail, `this.${step.element.name}`, indent)
+    if (step.assertionDetail) {
+      const target =
+        step.assertionDetail.type === 'screenshot' || !step.element
+          ? 'this.page'
+          : `this.${step.element.name}`
+      return renderAssertionMatcher(step.assertionDetail, target, indent)
     }
     return `${indent}// assert: ${step.annotation ?? ''}`
   }
@@ -190,8 +199,12 @@ function renderStepInSpec(step: IRStep, indent: string): string {
     return `${indent}await page.keyboard.press(${JSON.stringify(step.key)});`
   }
   if (step.action === 'assert') {
-    if (step.assertionDetail && step.element) {
-      return renderAssertionMatcher(step.assertionDetail, renderLocator(step.element), indent)
+    if (step.assertionDetail) {
+      const target =
+        step.assertionDetail.type === 'screenshot' || !step.element
+          ? 'page'
+          : renderLocator(step.element)
+      return renderAssertionMatcher(step.assertionDetail, target, indent)
     }
     return `${indent}// assert: ${step.annotation ?? ''}`
   }
@@ -371,6 +384,7 @@ export default defineConfig({
     { filename: 'playwright.config.ts', content: playwrightConfig },
     { filename: 'tsconfig.json', content: tsConfig },
     { filename: 'utils/locator.ts', content: PLAYWRIGHT_SELF_HEALING_TS },
+    { filename: 'tests/scenario.spec.ts-snapshots/.gitkeep', content: '' },
   ]
 }
 

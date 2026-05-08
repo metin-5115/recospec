@@ -30,20 +30,36 @@ export interface NetworkPayload {
   durationMs?: number
 }
 
-export type AssertionType = 'visible' | 'hidden' | 'text' | 'value' | 'attribute' | 'count'
+export type AssertionType =
+  | 'visible'
+  | 'hidden'
+  | 'text'
+  | 'value'
+  | 'attribute'
+  | 'count'
+  | 'screenshot'
 
 export interface AssertionSuggestion {
   type: AssertionType
   label: string
   expected?: string | number
   attribute?: string
+  /** Default screenshot file name (slugified page title). Only set when `type === 'screenshot'`. */
+  name?: string
+  /** Default failure threshold (0..1). Only set when `type === 'screenshot'`. */
+  threshold?: number
 }
 
 export interface AssertionSpec {
   type: AssertionType
-  target: Locator
+  /** Required for element-scoped assertions; omitted for page-level (`screenshot`). */
+  target?: Locator
   expected?: string | number
   attribute?: string
+  /** Screenshot output file name (without extension). */
+  name?: string
+  /** Screenshot failure threshold (0..1). */
+  threshold?: number
 }
 
 export interface ElementSnapshot {
