@@ -1,0 +1,50 @@
+{
+  "version": 2,
+  "description": "Bootstrap 5 registration form — accessible-name strategies (label / role-name / id / aria-label) must beat css/xpath.",
+  "entries": [
+    {
+      "name": "firstName",
+      "querySelector": "#firstName",
+      "minScore": 70,
+      "forbiddenPrimaryStrategies": ["xpath", "css", "text"]
+    },
+    {
+      "name": "lastName",
+      "querySelector": "#lastName",
+      "minScore": 70,
+      "forbiddenPrimaryStrategies": ["xpath", "css", "text"]
+    },
+    {
+      "name": "emailAddress",
+      "querySelector": "#emailAddress",
+      "minScore": 70,
+      "forbiddenPrimaryStrategies": ["xpath", "css", "text"]
+    },
+    {
+      "name": "country",
+      "querySelector": "#country",
+      "minScore": 70,
+      "forbiddenPrimaryStrategies": ["xpath", "css", "text"]
+    },
+    {
+      "name": "termsAccept",
+      "querySelector": "#termsAccept",
+      "minScore": 70,
+      "forbiddenPrimaryStrategies": ["xpath", "css", "text"]
+    },
+    {
+      "name": "submitButton",
+      "querySelector": "button[type='submit']",
+      "expectedStrategy": "role-name",
+      "minScore": 70,
+      "forbiddenPrimaryStrategies": ["xpath", "css", "text"]
+    },
+    {
+      "name": "cancelButton",
+      "querySelector": "button[aria-label='Cancel registration']",
+      "expectedStrategy": "aria-label",
+      "minScore": 70,
+      "forbiddenPrimaryStrategies": ["xpath", "css", "text"]
+    }
+  ]
+}

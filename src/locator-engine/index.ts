@@ -16,11 +16,28 @@ import { XPathStrategy } from './strategies/xpath'
 import { score } from './scoring/stability-scorer'
 import { LocatorSelector } from './selector'
 import type { LocatorStrategy } from './strategies/base'
+import { detectEdgeCases, isCanvasLikeElement } from './edge-cases'
 
 export interface ShadowOptions {
   shadowContext?: ShadowContext
   shadowClosed?: boolean
   frameContext?: FrameContext
+}
+
+function buildCanvasLocator(el: Element): ScoredLocator {
+  const tag = el.tagName.toLowerCase()
+  const selector = el.id ? `${tag}#${el.id}` : tag
+  return {
+    strategy: 'css',
+    selector,
+    score: 0,
+    warning: 'manual-coordinate-required',
+    framework: {
+      playwright: `page.locator(${JSON.stringify(selector)})`,
+      cypress: `cy.get(${JSON.stringify(selector)})`,
+      seleniumPy: `driver.find_element(By.CSS_SELECTOR, ${JSON.stringify(selector)})`,
+    },
+  }
 }
 
 export class LocatorEngine {
@@ -39,6 +56,21 @@ export class LocatorEngine {
   private readonly selector = new LocatorSelector()
 
   evaluate(element: Element, doc: Document, options?: ShadowOptions): LocatorBundle | null {
+    const edgeCases = detectEdgeCases(element, doc)
+
+    if (isCanvasLikeElement(element)) {
+      const synthetic = buildCanvasLocator(element)
+      return {
+        primary: synthetic,
+        fallbacks: [],
+        rejected: [],
+        shadowContext: options?.shadowContext,
+        shadowClosed: options?.shadowClosed,
+        frameContext: options?.frameContext,
+        edgeCases,
+      }
+    }
+
     const candidates: ScoredLocator[] = []
 
     for (const strategy of this.strategies) {
@@ -55,6 +87,7 @@ export class LocatorEngine {
       shadowContext: options?.shadowContext,
       shadowClosed: options?.shadowClosed,
       frameContext: options?.frameContext,
+      ...(edgeCases.length > 0 && { edgeCases }),
     }
   }
 }

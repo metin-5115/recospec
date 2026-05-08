@@ -42,6 +42,13 @@ export interface FrameContext {
   frameChain: string[]
 }
 
+export type LocatorEdgeCaseKind = 'canvas' | 'hover-only' | 'portal'
+
+export interface LocatorEdgeCase {
+  kind: LocatorEdgeCaseKind
+  message: string
+}
+
 export interface LocatorBundle {
   primary: ScoredLocator
   fallbacks: ScoredLocator[]
@@ -52,4 +59,6 @@ export interface LocatorBundle {
   shadowClosed?: boolean
   /** Present when the element lives inside an iframe. */
   frameContext?: FrameContext
+  /** Detected DOM-level edge cases (canvas, portal, hover-only) — guidance for codegen. */
+  edgeCases?: LocatorEdgeCase[]
 }

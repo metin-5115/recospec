@@ -1,0 +1,50 @@
+{
+  "version": 2,
+  "description": "Tailwind utility-class checkout form — semantic strategies must dominate even when classes are utility-named.",
+  "entries": [
+    {
+      "name": "cardholderName",
+      "querySelector": "#cardholderName",
+      "minScore": 70,
+      "forbiddenPrimaryStrategies": ["xpath", "css", "text"]
+    },
+    {
+      "name": "cardNumber",
+      "querySelector": "#cardNumber",
+      "minScore": 70,
+      "forbiddenPrimaryStrategies": ["xpath", "css", "text"]
+    },
+    {
+      "name": "expiry",
+      "querySelector": "#expiry",
+      "minScore": 70,
+      "forbiddenPrimaryStrategies": ["xpath", "css", "text"]
+    },
+    {
+      "name": "cvc",
+      "querySelector": "#cvc",
+      "minScore": 70,
+      "forbiddenPrimaryStrategies": ["xpath", "css", "text"]
+    },
+    {
+      "name": "saveCard",
+      "querySelector": "#saveCard",
+      "minScore": 70,
+      "forbiddenPrimaryStrategies": ["xpath", "css", "text"]
+    },
+    {
+      "name": "submitButton",
+      "querySelector": "[data-testid='checkout-submit']",
+      "expectedStrategy": "testid",
+      "minScore": 80,
+      "forbiddenPrimaryStrategies": ["xpath", "css"]
+    },
+    {
+      "name": "backButton",
+      "querySelector": "form button[type='button']",
+      "expectedStrategy": "role-name",
+      "minScore": 60,
+      "forbiddenPrimaryStrategies": ["xpath"]
+    }
+  ]
+}

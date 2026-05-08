@@ -14,6 +14,7 @@ export type ActionType =
   | 'assert'
   | 'wait'
   | 'screenshot'
+  | 'manual-coordinate'
 
 export type AssertionType = 'visible' | 'hidden' | 'text' | 'value' | 'attribute' | 'count'
 

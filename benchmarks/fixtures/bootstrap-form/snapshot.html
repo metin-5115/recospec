@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Bootstrap Form Fixture</title>
+  </head>
+  <body>
+    <main class="container py-5">
+      <form id="register-form" class="needs-validation" novalidate="">
+        <div class="mb-3">
+          <label for="firstName" class="form-label">First name</label>
+          <input
+            type="text"
+            class="form-control"
+            id="firstName"
+            name="firstName"
+            placeholder="Jane"
+            required=""
+          />
+        </div>
+        <div class="mb-3">
+          <label for="lastName" class="form-label">Last name</label>
+          <input
+            type="text"
+            class="form-control"
+            id="lastName"
+            name="lastName"
+            placeholder="Doe"
+            required=""
+          />
+        </div>
+        <div class="mb-3">
+          <label for="emailAddress" class="form-label">Email address</label>
+          <input
+            type="email"
+            class="form-control"
+            id="emailAddress"
+            name="email"
+            aria-describedby="emailHelp"
+            placeholder="name@example.com"
+            required=""
+          />
+          <div id="emailHelp" class="form-text">We will never share your email.</div>
+        </div>
+        <div class="mb-3">
+          <label for="country" class="form-label">Country</label>
+          <select id="country" name="country" class="form-select" required="">
+            <option value="">Choose…</option>
+            <option value="us">United States</option>
+            <option value="tr">Türkiye</option>
+            <option value="de">Germany</option>
+          </select>
+        </div>
+        <div class="form-check mb-3">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            id="termsAccept"
+            name="terms"
+            required=""
+          />
+          <label class="form-check-label" for="termsAccept">
+            I accept the terms and conditions
+          </label>
+        </div>
+        <button type="submit" class="btn btn-primary">Register</button>
+        <button type="button" class="btn btn-link" aria-label="Cancel registration">Cancel</button>
+      </form>
+    </main>
+  </body>
+</html>

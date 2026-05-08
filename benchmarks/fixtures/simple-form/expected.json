@@ -1,5 +1,26 @@
 {
-  "email": { "selector": "[data-testid='login-email']", "strategy": "testid" },
-  "password": { "selector": "[data-testid='login-password']", "strategy": "testid" },
-  "submitButton": { "strategy": "testid" }
+  "version": 2,
+  "description": "Login form with explicit data-testid attributes on every interactive element.",
+  "entries": [
+    {
+      "name": "email",
+      "querySelector": "[data-testid='login-email']",
+      "expectedStrategy": "testid",
+      "expectedSelector": "login-email",
+      "minScore": 80
+    },
+    {
+      "name": "password",
+      "querySelector": "[data-testid='login-password']",
+      "expectedStrategy": "testid",
+      "expectedSelector": "login-password",
+      "minScore": 80
+    },
+    {
+      "name": "submitButton",
+      "querySelector": "[data-testid='login-submit']",
+      "expectedStrategy": "testid",
+      "minScore": 80
+    }
+  ]
 }

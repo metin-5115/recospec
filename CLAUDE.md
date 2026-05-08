@@ -72,6 +72,7 @@ playforge/
 ```
 
 **Klasör seçimi kararı:**
+
 - Pure logic (no DOM, no browser API) → `locator-engine/`, `codegen/`
 - Browser API kullanıyor → `background/`, `content/`, `storage/`
 - React component → `popup/` veya `side-panel/`
@@ -84,6 +85,7 @@ playforge/
 ## 5. Naming Convention'ları
 
 ### Dosya İsimleri
+
 - React component: `PascalCase.tsx` (örn. `StepList.tsx`)
 - Hook: `useXxx.ts` (örn. `useSession.ts`)
 - Zustand store: `xxxStore.ts` (örn. `sessionStore.ts`)
@@ -91,12 +93,14 @@ playforge/
 - Test: yanına `.test.ts` (unit) veya `.spec.ts` (e2e)
 
 ### Sembol İsimleri
+
 - Type/Interface/Class: `PascalCase`
 - Fonksiyon: `camelCase`
 - Const (enum-like): `SCREAMING_SNAKE_CASE`
 - Boolean: `is/has/should` prefix'i (örn. `isDynamic`, `hasShadowRoot`)
 
 ### Path Alias'lar (tsconfig.json)
+
 ```
 @/*          → src/*
 @locator/*   → src/locator-engine/*
@@ -137,6 +141,7 @@ Conventional Commits formatı kullanılır. Husky pre-commit hook bunu zorunlu k
 **Format:** `type(scope): subject`
 
 **Type'lar:**
+
 - `feat` — yeni özellik
 - `fix` — bug fix
 - `docs` — sadece dokümantasyon
@@ -148,6 +153,7 @@ Conventional Commits formatı kullanılır. Husky pre-commit hook bunu zorunlu k
 **Scope'lar:** `locator`, `codegen`, `ui`, `storage`, `bg` (background), `content`, `build`, `deps`
 
 **Örnekler:**
+
 ```
 feat(locator): add aria-describedby strategy
 fix(codegen): handle empty page title gracefully
@@ -160,22 +166,26 @@ chore(deps): bump dexie to 4.0.0
 ## 8. Test Yazma Kuralları
 
 ### Genel Prensipler
+
 - **Coverage hedefi:** Genel %75+, locator-engine ve codegen %85+
 - **TDD önerilir:** Önce test yaz, fail ettiğini doğrula, sonra implementasyon
 - **Hız hedefi:** Unit suite <10sn, integration <30sn
 
 ### Locator Engine Testleri
+
 - Her strateji ayrı test dosyasında (`testid.test.ts`, `aria-label.test.ts`...)
 - jsdom kullan, gerçek Chrome çalıştırma
 - Her strateji için minimum: 1 positive, 1 negative, 2 edge case
 - Fixture testleri için `benchmarks/fixtures/` altında HTML + `expected.json`
 
 ### Codegen Testleri
+
 - **Snapshot testing** kullan (Vitest `toMatchSnapshot`)
 - Her adapter için fixture IR girdisi → beklenen kod çıktısı
 - Üretilen kod **gerçekten compile/parse edilebilmeli** (smoke validation)
 
 ### E2E Testleri
+
 - Playwright `chromium.launchPersistentContext` ile extension yükle
 - Senaryolar `tests/e2e/` altında, `.spec.ts` uzantısı
 - Slow markası: `describe('@slow ...')` — CI'da nightly çalışır
@@ -208,24 +218,24 @@ Bu kararlar verilmiştir, **yeniden tartışma**:
 
 Claude Code'un detaya ihtiyacı olduğunda hangi bölüme bakmalı:
 
-| Konu | Bölüm |
-|---|---|
-| Bileşen mimarisi, mesaj kontratları | 4 |
-| IndexedDB şeması | 4.5 |
-| Manifest V3 kısıtlamaları | 4.6 |
-| Locator strateji algoritmaları | 5.2 |
-| Stability scoring detayı | 5.3 |
-| Dinamik class tespiti | 5.4 |
-| Shadow DOM / iframe handling | 5.5 |
-| IR (Intermediate Representation) spec | 6.2 |
-| Page Object grouping algoritması | 6.3 |
-| Method inference pattern'leri | 6.4 |
-| Framework adapter örnek çıktıları | 6.6 |
-| Adapter SDK (yeni framework ekleme) | 6.7 |
-| Yol haritası ve milestone'lar | 8 |
-| Repo yapısı detayı | 12 |
-| Test stratejisi detayı | 13 |
-| Glossary | 15 |
+| Konu                                  | Bölüm |
+| ------------------------------------- | ----- |
+| Bileşen mimarisi, mesaj kontratları   | 4     |
+| IndexedDB şeması                      | 4.5   |
+| Manifest V3 kısıtlamaları             | 4.6   |
+| Locator strateji algoritmaları        | 5.2   |
+| Stability scoring detayı              | 5.3   |
+| Dinamik class tespiti                 | 5.4   |
+| Shadow DOM / iframe handling          | 5.5   |
+| IR (Intermediate Representation) spec | 6.2   |
+| Page Object grouping algoritması      | 6.3   |
+| Method inference pattern'leri         | 6.4   |
+| Framework adapter örnek çıktıları     | 6.6   |
+| Adapter SDK (yeni framework ekleme)   | 6.7   |
+| Yol haritası ve milestone'lar         | 8     |
+| Repo yapısı detayı                    | 12    |
+| Test stratejisi detayı                | 13    |
+| Glossary                              | 15    |
 
 ---
 
@@ -248,11 +258,12 @@ Bu projede Claude Code'dan beklenen davranış:
 
 > Bu bölümü her milestone sonrasında güncelle.
 
-**Faz:** Faz 1 — MVP (Hafta 1-4)
-**Mevcut Hafta:** Hafta 0 — Kurulum
-**Sonraki Görev:** Vite + CRXJS iskelet kurulumu, manifest.json, ilk Hello World
+**Faz:** Faz 2 — Hardening (Hafta 5+)
+**Mevcut Hafta:** Hafta 5 — Locator Engine Production Kalitesi
+**Sonraki Görev:** Hafta 6 — Codegen production kalitesi, kod kalite pipeline'ı
 
 **Tamamlananlar:**
+
 - [x] Teknik tasarım dokümanı v1.0
 - [x] CLAUDE.md
 - [ ] GitHub repo (private)
