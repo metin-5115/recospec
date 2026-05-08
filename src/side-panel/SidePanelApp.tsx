@@ -202,7 +202,14 @@ export function SidePanelApp() {
               className="group inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-gradient-accent px-3.5 py-2.5 text-sm font-semibold text-white shadow-accent-glow transition-all hover:scale-[1.01] active:scale-[0.99]"
             >
               <Sparkles className="h-4 w-4" aria-hidden="true" />
-              <span>Generate {selectedFramework === 'cypress' ? 'Cypress' : 'Playwright'}</span>
+              <span>
+                Generate{' '}
+                {selectedFramework === 'cypress'
+                  ? 'Cypress'
+                  : selectedFramework === 'selenium-py'
+                    ? 'Selenium'
+                    : 'Playwright'}
+              </span>
               <ChevronRight
                 className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
                 aria-hidden="true"

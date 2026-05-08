@@ -29,6 +29,7 @@ export interface FrameworkAdapter {
 export const ADAPTER_REGISTRY: Record<FrameworkId, FrameworkAdapter | undefined> = {
   'playwright-ts': undefined,
   cypress: undefined,
+  'selenium-py': undefined,
 }
 
 export function registerAdapter(adapter: FrameworkAdapter): void {

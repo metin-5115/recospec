@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import '../adapters/playwright-ts'
 import '../adapters/cypress'
+import '../adapters/selenium-py'
 import { getAdapter, listAdapters } from '../adapters/registry'
 import type { IRPage, IRScenario, IRElement } from '../ir/types'
 
@@ -33,10 +34,11 @@ const loginPage: IRPage = {
 const scenario: IRScenario = { name: 'Login flow', pages: [loginPage] }
 
 describe('adapter registry', () => {
-  it('registers both playwright-ts and cypress adapters', () => {
+  it('registers playwright-ts, cypress, and selenium-py adapters', () => {
     const ids = listAdapters().map((a) => a.id)
     expect(ids).toContain('playwright-ts')
     expect(ids).toContain('cypress')
+    expect(ids).toContain('selenium-py')
   })
 
   it('throws for unknown framework', () => {
@@ -73,6 +75,35 @@ describe('same IR → different framework outputs', () => {
     expect(playwrightOut).toContain('test.describe')
     expect(cypressOut).toContain('describe(')
     expect(cypressOut).not.toContain('test.describe')
+  })
+
+  it('selenium-py produces .py files with By.* tuples', () => {
+    const adapter = getAdapter('selenium-py')
+    const page = adapter.renderPageObject(loginPage)
+    const spec = adapter.renderScenario(scenario)
+    expect(page.filename).toBe('login_page.py')
+    expect(spec.filename).toBe('test_scenario.py')
+    expect(page.content).toContain('class LoginPage:')
+    expect(page.content).toContain('(By.CSS_SELECTOR,')
+    expect(spec.content).toContain('def test_login_flow(driver):')
+    expect(spec.content).toContain('from pages.login_page import LoginPage')
+  })
+
+  it('selenium-py scaffold includes requirements.txt, conftest.py, pytest.ini', () => {
+    const files = getAdapter('selenium-py').renderScaffold()
+    const names = files.map((f) => f.filename)
+    expect(names).toContain('requirements.txt')
+    expect(names).toContain('conftest.py')
+    expect(names).toContain('pytest.ini')
+
+    const reqs = files.find((f) => f.filename === 'requirements.txt')!.content
+    expect(reqs).toContain('selenium')
+    expect(reqs).toContain('pytest')
+    expect(reqs).toContain('pytest-html')
+
+    const conftest = files.find((f) => f.filename === 'conftest.py')!.content
+    expect(conftest).toContain('def driver(request):')
+    expect(conftest).toContain('--headed')
   })
 })
 

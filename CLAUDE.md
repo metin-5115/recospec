@@ -258,9 +258,9 @@ Bu projede Claude Code'dan beklenen davranış:
 
 > Bu bölümü her milestone sonrasında güncelle.
 
-**Faz:** Faz 2 — TAMAMLANDI · v0.5.0 release atıldı (8 Mayıs 2026)
-**Mevcut Hafta:** Hafta 10 — v0.5 Release (TAMAMLANDI)
-**Sonraki Görev:** Faz 3 Hafta 11–12 — Selenium Python (Pytest) adapter + project scaffold
+**Faz:** Faz 3 — devam ediyor · Selenium Python adapter eklendi (8 Mayıs 2026)
+**Mevcut Hafta:** Hafta 11–12 — Selenium Python (Pytest) Adapter (TAMAMLANDI)
+**Sonraki Görev:** Faz 3 Hafta 13–14 — Selenium Java (TestNG) adapter
 
 **Tamamlananlar:**
 
@@ -282,5 +282,6 @@ Bu projede Claude Code'dan beklenen davranış:
 - [x] Hafta 8 — Side panel `MethodPreview`: çıkarılan methodları sayfa-bazlı listeler, kullanıcı method ismini düzenleyebilir; `methodRenames: Record<"PageClass.oldName", string>` `CODE_GENERATE` mesajıyla aktarılır, codegen pipeline `applyRenames` ile uygular
 - [x] Hafta 9 — Visual Regression: `AssertionType`'a `screenshot` eklendi (`AssertionSpec` & `AssertionDetail` `name` + `threshold` ile genişledi); content script suggester her elemana "Screenshot match" suggestion'u ekler; background `handleAssertionSuggestion` `chrome.tabs.captureVisibleTab` ile thumbnail çeker, `ASSERTION_SUGGESTIONS` mesajına `screenshotDataUrl` koyar; `AssertionBuilder` thumbnail + `Snapshot name` input + threshold gösterir; Playwright adapter `await expect(...).toHaveScreenshot('name.png', { threshold })` üretir, Cypress adapter `cy.matchImageSnapshot('name', { failureThreshold, failureThresholdType: 'percent' })`; Cypress scaffold `cypress-image-snapshot` dependency + plugin/command wiring + `cypress/screenshots/.gitkeep`; Playwright scaffold `tests/scenario.spec.ts-snapshots/.gitkeep`; ZIP README'de "Visual regression" bölümü
 - [x] Hafta 10 — v0.5 Release: package.json `0.5.0`, CHANGELOG v0.5.0 girişi (added/performance/changed/known-limitations), README Cypress "✅ Stable" + perf tablosu (single p99 1.33ms, 1000-elem max 130ms, bundle ~478KB) + v0.5.0 badge'i, `docs/linkedin-w10-post.md` (IR mimarisi teması), git tag `v0.5.0`. `pnpm test` 248/248 passing, `pnpm build` clean. Bug bash atlandı (interaktif), GitHub release web UI'dan kullanıcı tarafından yayınlanacak.
+- [x] Hafta 11–12 — Selenium Python (Pytest) Adapter: `src/codegen/adapters/selenium-py/` tam implementasyon (`locator.ts` By tuple üreticisi · `page-object.ts` `class X:` + `EMAIL_INPUT = (By.CSS_SELECTOR, '...')` constants + `__init__`/`WebDriverWait`/inferred methods · `scenario.ts` `def test_<slug>(driver):` pytest function · `scaffold.ts` requirements.txt + conftest.py (`--headed` flag, webdriver-manager) + pytest.ini + `pages/__init__.py` + `tests/__init__.py`). XPath literal'leri için tek/çift tırnak + `concat()` desteği. `FrameworkId`'ye `'selenium-py'`, registry, `FrameworkPicker` ("Selenium Python"), `sessionStore` localStorage allowlist, `SidePanelApp` butonu, `zip-export` resolveZipPath + README template güncellendi. **Python AST validation:** `python-validate.ts` `spawnSync(python3|python|py, '-c', 'import ast; ast.parse(...)')`; interpreter yoksa skip — CI'da kırmıyor. Snapshot tests + AST tests + locator unit tests = 38 yeni test, toplam **286/286 passing**. `pnpm build` clean (bundle değişmedi, Python adapter pure JS string templating). LinkedIn: `docs/linkedin-w11-12-selenium-py.md`.
 
 > Bütün haftalık görevler için: `ROADMAP.md`

@@ -8,6 +8,7 @@ interface FrameworkOption {
 const OPTIONS: FrameworkOption[] = [
   { id: 'playwright-ts', label: 'Playwright TS' },
   { id: 'cypress', label: 'Cypress' },
+  { id: 'selenium-py', label: 'Selenium Python' },
 ]
 
 interface FrameworkPickerProps {
