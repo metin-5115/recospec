@@ -3,11 +3,13 @@ import type {
   IRElement,
   IRStep,
   IRScenario,
+  IRFallback,
   InferredMethod,
   GeneratedFile,
   AssertionDetail,
 } from '../../ir/types'
 import { registerAdapter, type FrameworkAdapter } from '../registry'
+import { PLAYWRIGHT_SELF_HEALING_TS } from '../../scaffold/self-healing'
 
 // ---------------------------------------------------------------------------
 // Locator rendering
@@ -48,16 +50,31 @@ function renderLocator(el: IRElement): string {
   return renderInnerLocator(el, root)
 }
 
+function renderFallbackExpr(f: IRFallback): string {
+  const val = f.locatorValue
+  switch (f.strategy) {
+    case 'testid':
+      return `getByTestId(${JSON.stringify(val.replace(/^\[data-testid="(.+)"\]$/, '$1'))})`
+    case 'aria-label':
+      return `getByLabel(${JSON.stringify(val.replace(/^\[aria-label="(.+)"\]$/, '$1'))})`
+    case 'role-name':
+      return `getByRole(${val})`
+    case 'text':
+      return `getByText(${JSON.stringify(val)})`
+    default:
+      return `locator(${JSON.stringify(val)})`
+  }
+}
+
 function renderElementGetter(el: IRElement): string {
   const shadowWarning = el.shadowClosed
     ? `  // WARNING: element is inside a closed shadow root — locator may be unreliable\n`
     : ''
   const primary = `${shadowWarning}  get ${el.name}() { return ${renderLocator(el)}; }`
   if (!el.fallbackLocators?.length) return primary
-  const fallbacks = el.fallbackLocators
-    .map((f) => `  // fallback: page.locator(${JSON.stringify(f)})`)
-    .join('\n')
-  return `${primary}\n${fallbacks}`
+  const exprs = el.fallbackLocators.map(renderFallbackExpr).join(', ')
+  const fallbackComment = `  // Fallbacks: ${exprs}`
+  return `${primary}\n${fallbackComment}`
 }
 
 // ---------------------------------------------------------------------------
@@ -292,6 +309,7 @@ export default defineConfig({
     { filename: 'package.json', content: packageJson },
     { filename: 'playwright.config.ts', content: playwrightConfig },
     { filename: 'tsconfig.json', content: tsConfig },
+    { filename: 'utils/locator.ts', content: PLAYWRIGHT_SELF_HEALING_TS },
   ]
 }
 

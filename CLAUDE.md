@@ -258,9 +258,9 @@ Bu projede Claude Code'dan beklenen davranış:
 
 > Bu bölümü her milestone sonrasında güncelle.
 
-**Faz:** Faz 2 — Hardening (Hafta 6+)
-**Mevcut Hafta:** Hafta 6.5 — UI Modernizasyon (TAMAMLANDI)
-**Sonraki Görev:** Hafta 7 — Selenium Python adapter (Pytest)
+**Faz:** Faz 2 — Hardening (Hafta 7+)
+**Mevcut Hafta:** Hafta 7 — Self-Healing Locator Desteği (TAMAMLANDI)
+**Sonraki Görev:** Selenium Python adapter (Pytest) ya da Faz 3 sıradaki milestone
 
 **Tamamlananlar:**
 
@@ -274,5 +274,6 @@ Bu projede Claude Code'dan beklenen davranış:
 - [x] Hafta 6.5 Faz 1 — Side panel chrome (gradient header, pill tabs, gradient CTA, lucide ikonlar)
 - [x] Hafta 6.5 Faz 2 — İçerik komponentleri (StepList, SessionList, FrameworkPicker, AssertionBuilder, CodePreview)
 - [x] Hafta 6.5 Faz 3 — Popup refresh, modal animasyonları, a11y (aria-label, reduced-motion guard)
+- [x] Hafta 7 — Self-Healing Locator: IR'a `IRFallback[]` + `IRElementSnapshot`; her element üstüne idiomatic `// Fallbacks: ...` yorumu; scaffold'a `utils/locator.ts` (Playwright `selfHealingLocator`) + `cypress/support/locator.js` (`cy.selfHealing`); side panel badge "{N} fallback(s)"; README ve zip README'sine "Self-healing locators" bölümü
 
 > Bütün haftalık görevler için: `ROADMAP.md`

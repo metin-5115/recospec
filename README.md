@@ -2,6 +2,15 @@
 
 PlayForge is an open-source Chrome extension that records your browser interactions and generates production-ready test automation code with smart locator strategies and automatic Page Object Model output — no manual editing required.
 
+## Features
+
+- **9-strategy locator engine** — `data-testid`, `aria-label`, role+name, label, text, id, css, xpath fallback chain.
+- **Page Object Model output** — one class per page, inferred methods (e.g. `login(email, password)`).
+- **Self-healing locators** — every element ships with ranked fallbacks (inline comment) and the generated project includes a `selfHealingLocator` / `cy.selfHealing` helper that walks the chain at runtime.
+- **Multi-framework export** — Playwright (TypeScript) and Cypress (JavaScript), more on the way.
+- **Assertions UI** — point-and-click visibility / text / value / attribute / count assertions.
+- **Privacy-first** — no telemetry, all session data stored locally in IndexedDB.
+
 ## Tech Stack
 
 React 18 · TypeScript · Vite · Tailwind CSS · Zustand · Dexie (IndexedDB) · Chrome Manifest V3

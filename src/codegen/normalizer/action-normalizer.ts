@@ -1,6 +1,6 @@
 import type { RecordedAction, ElementSnapshot, AssertionType } from '@shared/types/action'
 import type { Locator, ShadowContext, FrameContext } from '@shared/types/locator'
-import type { IRStep, IRElement, AssertionDetail } from '../ir/types'
+import type { IRStep, IRElement, AssertionDetail, IRElementSnapshot, IRFallback } from '../ir/types'
 import { normalizeUrl } from './url-normalizer'
 import { nameElement } from '../planner/element-namer'
 
@@ -13,9 +13,27 @@ function rawSelector(locator: Locator): string {
   return typeof locator.selector === 'string' ? locator.selector : JSON.stringify(locator.selector)
 }
 
+function summarizeSnapshot(snapshot: ElementSnapshot): IRElementSnapshot {
+  const attrs = snapshot.attributes ?? {}
+  const summary: IRElementSnapshot = { localName: snapshot.tagName }
+  const text = snapshot.textContent?.trim()
+  if (text) summary.textContent = text.slice(0, 120)
+  if (attrs.id) summary.id = attrs.id
+  if (attrs.class) summary.className = attrs.class
+  if (attrs['data-testid']) summary.testId = attrs['data-testid']
+  if (attrs.role) summary.role = attrs.role
+  return summary
+}
+
+function toIrFallbacks(fallbacks: Locator[] | undefined): IRFallback[] {
+  if (!fallbacks?.length) return []
+  return fallbacks.map((l) => ({ strategy: l.strategy, locatorValue: rawSelector(l) }))
+}
+
 function buildElement(
   snapshot: ElementSnapshot,
   primaryLocator: Locator,
+  fallbackLocators: Locator[] | undefined,
   usedNames: Set<string>,
   locatorToName: Map<string, string>,
   shadowContext?: ShadowContext,
@@ -23,13 +41,17 @@ function buildElement(
   frameContext?: FrameContext,
 ): IRElement {
   const key = rawSelector(primaryLocator)
+  const irFallbacks = toIrFallbacks(fallbackLocators)
+  const elementSnapshot = summarizeSnapshot(snapshot)
   const existing = locatorToName.get(key)
   if (existing) {
     return {
       name: existing,
       locatorStrategy: primaryLocator.strategy,
       locatorValue: key,
+      fallbackLocators: irFallbacks.length ? irFallbacks : undefined,
       tagName: snapshot.tagName,
+      elementSnapshot,
       shadowContext,
       shadowClosed,
       frameContext,
@@ -42,7 +64,9 @@ function buildElement(
     name,
     locatorStrategy: primaryLocator.strategy,
     locatorValue: key,
+    fallbackLocators: irFallbacks.length ? irFallbacks : undefined,
     tagName: snapshot.tagName,
+    elementSnapshot,
     shadowContext,
     shadowClosed,
     frameContext,
@@ -90,6 +114,7 @@ export function normalizeActions(actions: RecordedAction[]): NormalizedActions {
       const element = buildElement(
         action.target.elementSnapshot,
         action.target.primaryLocator,
+        action.target.fallbackLocators,
         usedNames,
         locatorToName,
         action.target.shadowContext,
@@ -126,6 +151,7 @@ export function normalizeActions(actions: RecordedAction[]): NormalizedActions {
         ? buildElement(
             action.target.elementSnapshot,
             action.target.primaryLocator,
+            action.target.fallbackLocators,
             usedNames,
             locatorToName,
             action.target.shadowContext,

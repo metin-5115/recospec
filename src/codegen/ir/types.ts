@@ -2,13 +2,36 @@ import type { ShadowContext, FrameContext } from '@shared/types/locator'
 
 export type IRActionType = 'navigate' | 'click' | 'fill' | 'assert' | 'keypress'
 
+/**
+ * Per-fallback record carried into the IR so adapters can render each one
+ * with the idiomatic call (e.g. `getByLabel(...)` instead of a raw selector).
+ */
+export interface IRFallback {
+  strategy: string
+  locatorValue: string
+}
+
+/**
+ * Snapshot of the recorded element's salient attributes at capture time.
+ * Used today to power `// Fallbacks: ...` comments and the side-panel badge;
+ * future versions will feed an AI-driven recovery layer.
+ */
+export interface IRElementSnapshot {
+  localName: string
+  textContent?: string
+  className?: string
+  id?: string
+  testId?: string
+  role?: string
+}
+
 export interface IRElement {
   name: string
   locatorStrategy: string
   locatorValue: string
-  fallbackLocators?: string[]
-  fallbackLocator?: string
+  fallbackLocators?: IRFallback[]
   tagName: string
+  elementSnapshot?: IRElementSnapshot
   shadowContext?: ShadowContext
   shadowClosed?: boolean
   frameContext?: FrameContext

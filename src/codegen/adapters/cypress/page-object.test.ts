@@ -90,6 +90,32 @@ describe('cypress renderPageObject — fallback', () => {
   })
 })
 
+describe('cypress renderPageObject — fallback comments', () => {
+  it('renders idiomatic Cypress fallbacks below the primary getter', () => {
+    const elementWithFallbacks: IRElement = {
+      name: 'emailInput',
+      locatorStrategy: 'testid',
+      locatorValue: '[data-testid="email"]',
+      tagName: 'input',
+      fallbackLocators: [
+        { strategy: 'aria-label', locatorValue: '[aria-label="Email"]' },
+        { strategy: 'role-name', locatorValue: `'textbox', { name: 'Email' }` },
+      ],
+    }
+    const page: IRPage = {
+      name: 'Login',
+      className: 'LoginPage',
+      normalizedUrl: '/login',
+      elements: [elementWithFallbacks],
+      steps: [{ id: 's1', action: 'navigate', url: '/login' }],
+    }
+    const output = renderPageObject(page)
+    expect(output).toContain(
+      `// Fallbacks: cy.findByLabelText("Email"), cy.findByRole('textbox', { name: 'Email' })`,
+    )
+  })
+})
+
 describe('cypress renderPageObject — assertions', () => {
   const page: IRPage = {
     name: 'Home',

@@ -1,9 +1,36 @@
-import type { IRPage, IRElement, IRStep, InferredMethod, AssertionDetail } from '../../ir/types'
+import type {
+  IRPage,
+  IRElement,
+  IRStep,
+  IRFallback,
+  InferredMethod,
+  AssertionDetail,
+} from '../../ir/types'
 import { renderLocator } from './locator'
 
 // ---------------------------------------------------------------------------
 // Element getters
 // ---------------------------------------------------------------------------
+
+function renderFallbackExpr(f: IRFallback): string {
+  const val = f.locatorValue
+  switch (f.strategy) {
+    case 'testid': {
+      const name = val.replace(/^\[data-testid="(.+)"\]$/, '$1')
+      return `cy.get('[data-testid="${name}"]')`
+    }
+    case 'aria-label': {
+      const label = val.replace(/^\[aria-label="(.+)"\]$/, '$1')
+      return `cy.findByLabelText(${JSON.stringify(label)})`
+    }
+    case 'role-name':
+      return `cy.findByRole(${val})`
+    case 'text':
+      return `cy.contains(${JSON.stringify(val)})`
+    default:
+      return `cy.get(${JSON.stringify(val)})`
+  }
+}
 
 function renderElementGetter(el: IRElement): string {
   const shadowWarning = el.shadowClosed
@@ -11,10 +38,9 @@ function renderElementGetter(el: IRElement): string {
     : ''
   const primary = `${shadowWarning}  ${el.name}() { return ${renderLocator(el)}; }`
   if (!el.fallbackLocators?.length) return primary
-  const fallbacks = el.fallbackLocators
-    .map((f) => `  // fallback: cy.get(${JSON.stringify(f)})`)
-    .join('\n')
-  return `${primary}\n${fallbacks}`
+  const exprs = el.fallbackLocators.map(renderFallbackExpr).join(', ')
+  const fallbackComment = `  // Fallbacks: ${exprs}`
+  return `${primary}\n${fallbackComment}`
 }
 
 // ---------------------------------------------------------------------------

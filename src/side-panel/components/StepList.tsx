@@ -136,8 +136,8 @@ export function StepList({ steps, onDeleteStep }: StepListProps) {
                 >
                   {strategy}
                   {hasFallbacks && (
-                    <span className="rounded-full bg-white/30 px-1 text-[9px]">
-                      +{fallbacks.length}
+                    <span className="rounded-full bg-white/30 px-1.5 text-[9px]">
+                      {fallbacks.length} fallback{fallbacks.length === 1 ? '' : 's'}
                     </span>
                   )}
                 </button>

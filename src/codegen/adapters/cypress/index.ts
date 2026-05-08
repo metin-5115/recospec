@@ -4,6 +4,7 @@ import { registerAdapter, type FrameworkAdapter } from '../registry'
 import { renderPageObject } from './page-object'
 import { renderScenario } from './scenario'
 import { renderLocator } from './locator'
+import { CYPRESS_SELF_HEALING_JS } from '../../scaffold/self-healing'
 
 export { renderPageObject, renderScenario, renderLocator }
 
@@ -38,12 +39,14 @@ export default defineConfig({
 `
 
   const supportFile = `import '@testing-library/cypress/add-commands';
+import './locator';
 `
 
   return [
     { filename: 'package.json', content: packageJson },
     { filename: 'cypress.config.js', content: cypressConfig },
     { filename: 'cypress/support/e2e.js', content: supportFile },
+    { filename: 'cypress/support/locator.js', content: CYPRESS_SELF_HEALING_JS },
   ]
 }
 

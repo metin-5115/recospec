@@ -119,4 +119,14 @@ describe('cypress output — syntax validation', () => {
     expect(names).toContain('cypress.config.js')
     expect(names).toContain('cypress/support/e2e.js')
   })
+
+  it('renderScaffold ships the cy.selfHealing helper in cypress/support/locator.js', () => {
+    const files = getAdapter('cypress').renderScaffold()
+    const helper = files.find((f) => f.filename === 'cypress/support/locator.js')
+    expect(helper).toBeDefined()
+    expect(helper!.content).toContain("Cypress.Commands.add('selfHealing'")
+
+    const e2e = files.find((f) => f.filename === 'cypress/support/e2e.js')
+    expect(e2e!.content).toContain("import './locator'")
+  })
 })
