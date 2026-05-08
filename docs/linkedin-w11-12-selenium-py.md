@@ -14,16 +14,15 @@ PlayForge artık Playwright TS, Cypress ve **Selenium Python (Pytest)** çıktı
 
 İlginç olan: locator stratejilerinin nötr IR'da kalması. `role-name` IR'da `'button', { name: 'Sign In' }` formatında saklanıyor; her adapter kendi idiomatic karşılığına çeviriyor:
 
-```ts
+```text
 // Playwright
 page.getByRole('button', { name: 'Sign In' })
 
 // Cypress
-cy.findByRole('button', { name: 'Sign In' })(
-  // Selenium Python
-  By.XPATH,
-  "//button[normalize-space()='Sign In']",
-)
+cy.findByRole('button', { name: 'Sign In' })
+
+# Selenium Python
+(By.XPATH, "//button[normalize-space()='Sign In']")
 ```
 
 XPath literal'lerinde tek-tırnak vs çift-tırnak kararını da adapter veriyor — hem `'` hem `"` içeren değerler için XPath'in `concat()` fonksiyonunu kullanıyoruz.
