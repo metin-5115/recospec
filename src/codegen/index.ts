@@ -2,13 +2,13 @@ import { getActionsBySession } from '@storage/action-repo'
 import { getSession } from '@storage/session-repo'
 import { normalizeActions } from './normalizer/action-normalizer'
 import { groupIntoPages } from './planner/page-grouper'
-import { renderPageObject, renderScenario, renderScaffold } from './adapters/playwright-ts'
-import type { GeneratedCode, IRDocument, IRScenario } from './ir/types'
+import './adapters/playwright-ts'
+import './adapters/cypress'
+import { getAdapter } from './adapters/registry'
+import type { FrameworkId, GeneratedCode } from '@shared/types/generated'
+import type { IRDocument, IRScenario } from './ir/types'
 
-export async function generate(
-  sessionId: string,
-  _framework: 'playwright-ts',
-): Promise<GeneratedCode> {
+export async function generate(sessionId: string, framework: FrameworkId): Promise<GeneratedCode> {
   const [actions, session] = await Promise.all([
     getActionsBySession(sessionId),
     getSession(sessionId),
@@ -30,20 +30,16 @@ export async function generate(
     generatedAt: Date.now(),
   }
 
-  const pageFiles = doc.pages.map((page) => ({
-    filename: `${page.className}.ts`,
-    content: renderPageObject(page),
-  }))
+  const adapter = getAdapter(framework)
+  const pageFiles = doc.pages.map((page) => adapter.renderPageObject(page))
+  const specFile = adapter.renderScenario(scenario)
+  const scaffoldFiles = adapter.renderScaffold()
 
-  const specFile = {
-    filename: 'scenario.spec.ts',
-    content: renderScenario(scenario),
-  }
-
-  const scaffoldFiles = renderScaffold()
+  const allFiles = [...pageFiles, specFile, ...scaffoldFiles]
+  const finalFiles = adapter.postProcess?.(allFiles) ?? allFiles
 
   return {
-    framework: 'playwright-ts',
-    files: [...pageFiles, specFile, ...scaffoldFiles],
+    framework,
+    files: finalFiles,
   }
 }

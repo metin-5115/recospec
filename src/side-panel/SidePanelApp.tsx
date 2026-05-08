@@ -4,6 +4,7 @@ import { StepList } from './components/StepList'
 import { SessionList } from './components/SessionList'
 import { CodePreview } from './components/CodePreview'
 import { AssertionBuilder } from './components/AssertionBuilder'
+import { FrameworkPicker } from './components/FrameworkPicker'
 
 type Tab = 'recording' | 'history'
 
@@ -21,6 +22,8 @@ export function SidePanelApp() {
     codeGenError,
     isProbeActive,
     assertionContext,
+    selectedFramework,
+    setSelectedFramework,
     startRecording,
     stopRecording,
     pauseRecording,
@@ -172,12 +175,13 @@ export function SidePanelApp() {
 
       {activeTab === 'recording' && steps.length > 0 && !isActive && (
         <div className="space-y-2 border-t border-gray-200 px-4 py-3">
+          <FrameworkPicker value={selectedFramework} onChange={setSelectedFramework} />
           <div className="flex gap-2">
             <button
               onClick={generateCode}
               className="flex-1 rounded bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
             >
-              Generate Playwright TS Code
+              Generate {selectedFramework === 'cypress' ? 'Cypress' : 'Playwright TS'} Code
             </button>
             {activeSession && (
               <button

@@ -258,17 +258,17 @@ Bu projede Claude Code'dan beklenen davranış:
 
 > Bu bölümü her milestone sonrasında güncelle.
 
-**Faz:** Faz 2 — Hardening (Hafta 5+)
-**Mevcut Hafta:** Hafta 5 — Locator Engine Production Kalitesi
-**Sonraki Görev:** Hafta 6 — Codegen production kalitesi, kod kalite pipeline'ı
+**Faz:** Faz 2 — Hardening (Hafta 6+)
+**Mevcut Hafta:** Hafta 6 — Cypress Adapter + Adapter SDK
+**Sonraki Görev:** Hafta 7 — Selenium Python adapter (Pytest)
 
 **Tamamlananlar:**
 
 - [x] Teknik tasarım dokümanı v1.0
 - [x] CLAUDE.md
-- [ ] GitHub repo (private)
-- [ ] Proje iskeleti
-- [ ] İlk dist/ build
-- [ ] Chrome'a yüklenip açılan extension
+- [x] GitHub repo (private) + v0.1.0 release
+- [x] Proje iskeleti, dist/ build, Chrome'a yüklenip açılan extension
+- [x] Hafta 5 — Locator Engine production kalitesi (9 strateji)
+- [x] Hafta 6 — Cypress Adapter + Adapter SDK (FrameworkAdapter / ADAPTER_REGISTRY)
 
 > Bütün haftalık görevler için: `ROADMAP.md`

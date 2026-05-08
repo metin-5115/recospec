@@ -1,11 +1,9 @@
 import { generate } from '@codegen/index'
 import { broadcastToUI } from '@shared/messaging/send'
 import { logger } from '@shared/logger'
+import type { FrameworkId } from '@shared/types/generated'
 
-export async function handleCodeGenerate(
-  sessionId: string,
-  framework: 'playwright-ts',
-): Promise<void> {
+export async function handleCodeGenerate(sessionId: string, framework: FrameworkId): Promise<void> {
   try {
     const code = await generate(sessionId, framework)
     await broadcastToUI({ type: 'CODE_GENERATED', sessionId, code })

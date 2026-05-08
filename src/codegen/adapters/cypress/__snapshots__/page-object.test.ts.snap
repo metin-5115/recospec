@@ -1,0 +1,23 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`cypress renderPageObject > matches snapshot for LoginPage with login() method 1`] = `
+"export class LoginPage {
+  emailInput() { return cy.get("[data-testid=\\"login-email\\"]"); }
+
+  passwordInput() { return cy.get("[data-testid=\\"login-password\\"]"); }
+
+  signInButton() { return cy.findByRole('button', { name: 'Sign In' }); }
+
+  visit() {
+    cy.visit("/login");
+    return this;
+  }
+
+  login(email, password) {
+    this.emailInput().clear().type(email);
+    this.passwordInput().clear().type(password);
+    this.signInButton().click();
+  }
+}
+"
+`;

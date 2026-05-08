@@ -1,6 +1,6 @@
 import type { CaptureConfig, Session, SessionMeta } from './session'
 import type { CapturedEvent, RecordedAction, AssertionSuggestion } from './action'
-import type { GeneratedCode } from './generated'
+import type { GeneratedCode, FrameworkId } from './generated'
 import type { LocatorBundle } from './locator'
 import type { ElementSnapshot } from './action'
 
@@ -11,7 +11,7 @@ export type UIToBackgroundMessage =
   | { type: 'SESSION_RESUME'; sessionId: string }
   | { type: 'SESSION_DELETE'; sessionId: string }
   | { type: 'SESSION_RENAME'; sessionId: string; name: string }
-  | { type: 'CODE_GENERATE'; sessionId: string; framework: 'playwright-ts' }
+  | { type: 'CODE_GENERATE'; sessionId: string; framework: FrameworkId }
   | { type: 'ASSERTION_PROBE_START'; sessionId: string }
   | { type: 'ASSERTION_PROBE_STOP'; sessionId: string }
   | {

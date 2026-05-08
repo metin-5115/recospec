@@ -7,6 +7,7 @@ import type {
   GeneratedFile,
   AssertionDetail,
 } from '../../ir/types'
+import { registerAdapter, type FrameworkAdapter } from '../registry'
 
 // ---------------------------------------------------------------------------
 // Locator rendering
@@ -293,3 +294,29 @@ export default defineConfig({
     { filename: 'tsconfig.json', content: tsConfig },
   ]
 }
+
+// ---------------------------------------------------------------------------
+// Adapter SDK registration
+// ---------------------------------------------------------------------------
+
+export const playwrightTsAdapter: FrameworkAdapter = {
+  id: 'playwright-ts',
+  displayName: 'Playwright TS',
+  fileExtension: 'ts',
+  metadata: {
+    language: 'TypeScript',
+    testRunner: '@playwright/test',
+    packageName: '@playwright/test',
+  },
+  renderPageObject(page) {
+    return { filename: `${page.className}.ts`, content: renderPageObject(page) }
+  },
+  renderScenario(scenario) {
+    return { filename: 'scenario.spec.ts', content: renderScenario(scenario) }
+  },
+  renderScaffold() {
+    return renderScaffold()
+  },
+}
+
+registerAdapter(playwrightTsAdapter)

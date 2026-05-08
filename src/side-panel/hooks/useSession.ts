@@ -28,6 +28,7 @@ export function useSession() {
     generatedCode,
     codeGenError,
     sessions,
+    selectedFramework,
     setActiveSession,
     appendStep,
     deleteStep,
@@ -37,6 +38,7 @@ export function useSession() {
     setSessions,
     upsertSession,
     removeSession,
+    setSelectedFramework,
   } = useSessionStore()
 
   const [isProbeActive, setIsProbeActive] = useState(false)
@@ -185,7 +187,7 @@ export function useSession() {
         await sendToBackground({
           type: 'CODE_GENERATE',
           sessionId: activeSession.sessionId,
-          framework: 'playwright-ts',
+          framework: selectedFramework,
         })
         return
       } catch {
@@ -196,7 +198,7 @@ export function useSession() {
         }
       }
     }
-  }, [activeSession, setCodeGenError])
+  }, [activeSession, selectedFramework, setCodeGenError])
 
   const handleDeleteSession = useCallback(
     async (sessionId: string) => {
@@ -243,13 +245,13 @@ export function useSession() {
       const session = sessions.find((s) => s.sessionId === sessionId)
       if (!session) return
       try {
-        const code = await generate(sessionId, 'playwright-ts')
+        const code = await generate(sessionId, selectedFramework)
         await downloadZipExport(session, code)
       } catch (err) {
         setCodeGenError(err instanceof Error ? err.message : 'ZIP export failed')
       }
     },
-    [sessions, setCodeGenError],
+    [sessions, selectedFramework, setCodeGenError],
   )
 
   const isRecording = activeSession?.state === 'recording'
@@ -266,6 +268,8 @@ export function useSession() {
     codeGenError,
     isProbeActive,
     assertionContext,
+    selectedFramework,
+    setSelectedFramework,
     startRecording,
     stopRecording,
     pauseRecording,
