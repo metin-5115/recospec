@@ -259,8 +259,8 @@ Bu projede Claude Code'dan beklenen davranış:
 > Bu bölümü her milestone sonrasında güncelle.
 
 **Faz:** Faz 2 — Hardening (Hafta 6+)
-**Mevcut Hafta:** Hafta 6 — Cypress Adapter + Adapter SDK
-**Sonraki Görev:** Hafta 7 — Selenium Python adapter (Pytest)
+**Mevcut Hafta:** Hafta 6.5 — UI Modernizasyon (Faz 0/4: tasarım sistemi temeli)
+**Sonraki Görev:** Hafta 6.5 — UI Modernizasyon Faz 1 (Side panel chrome refresh)
 
 **Tamamlananlar:**
 
@@ -270,5 +270,6 @@ Bu projede Claude Code'dan beklenen davranış:
 - [x] Proje iskeleti, dist/ build, Chrome'a yüklenip açılan extension
 - [x] Hafta 5 — Locator Engine production kalitesi (9 strateji)
 - [x] Hafta 6 — Cypress Adapter + Adapter SDK (FrameworkAdapter / ADAPTER_REGISTRY)
+- [x] Hafta 6.5 Faz 0 — Tasarım sistemi (Inter font, lucide-react, design tokens, dark mode)
 
 > Bütün haftalık görevler için: `ROADMAP.md`
