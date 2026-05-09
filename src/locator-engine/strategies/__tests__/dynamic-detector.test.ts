@@ -59,4 +59,34 @@ describe('isDynamicId', () => {
   it('detects high-entropy long id', () => {
     expect(isDynamicId('xQ9mZ2kPvRtYwNsA')).toBe(true)
   })
+
+  // Boundary: digit-suffix threshold raised to 5+. Previously (3+) misclassified
+  // semantic domain ids like BVD-135, order-1234, ticket-789 as dynamic.
+  it('accepts 3-digit semantic id (BVD-135)', () => {
+    expect(isDynamicId('BVD-135')).toBe(false)
+  })
+
+  it('accepts 3-digit ticket id', () => {
+    expect(isDynamicId('ticket-789')).toBe(false)
+  })
+
+  it('accepts 4-digit order id', () => {
+    expect(isDynamicId('order-1234')).toBe(false)
+  })
+
+  it('detects 5-digit suffix (boundary, dynamic)', () => {
+    expect(isDynamicId('widget-12345')).toBe(true)
+  })
+
+  it('detects 6-digit suffix (dynamic)', () => {
+    expect(isDynamicId('product-123456')).toBe(true)
+  })
+
+  it('detects compound numeric suffix when first group is 5+ digits', () => {
+    expect(isDynamicId('row-12345-1')).toBe(true)
+  })
+
+  it('accepts compound numeric suffix when first group is short', () => {
+    expect(isDynamicId('row-12-1')).toBe(false)
+  })
 })

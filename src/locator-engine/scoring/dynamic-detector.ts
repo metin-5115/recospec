@@ -1,4 +1,6 @@
-import { MAX_DYNAMIC_ID_ENTROPY } from '@shared/constants'
+import { MAX_DYNAMIC_ID_ENTROPY, MIN_DYNAMIC_ID_DIGIT_SUFFIX } from '@shared/constants'
+
+const NUMERIC_SUFFIX_PATTERN = new RegExp(`-\\d{${MIN_DYNAMIC_ID_DIGIT_SUFFIX},}(-\\d+)*$`)
 
 const DYNAMIC_CLASS_PATTERNS = [
   /^css-[a-z0-9]+$/i,
@@ -34,7 +36,7 @@ export function isDynamicClass(cls: string): boolean {
 
 export function isDynamicId(id: string): boolean {
   if (DYNAMIC_ID_PATTERNS.some((p) => p.test(id))) return true
-  if (/-\d{3,}(-\d+)*$/.test(id)) return true
+  if (NUMERIC_SUFFIX_PATTERN.test(id)) return true
   if (/^\d+$/.test(id)) return true
   return id.length > 10 && shannonEntropy(id) > MAX_DYNAMIC_ID_ENTROPY
 }

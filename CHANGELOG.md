@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- **Locator engine** — semantic domain ids with short numeric suffixes (`BVD-135`,
+  `order-1234`, `ticket-789`) are no longer misclassified as dynamic. The trailing
+  digit-suffix threshold is raised from 3+ to 5+ digits via
+  `MIN_DYNAMIC_ID_DIGIT_SUFFIX`. The `IdStrategy` now produces stable id locators
+  for these elements instead of falling through to css/xpath.
+
 ## [0.5.0] - 2026-05-08
 
 End of Phase 2 — "Akıllılaşma". Same recording exports to two frameworks (Playwright TS,
