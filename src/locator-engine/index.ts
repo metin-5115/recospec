@@ -14,6 +14,7 @@ import { IdStrategy } from './strategies/id'
 import { CssStrategy } from './strategies/css'
 import { XPathStrategy } from './strategies/xpath'
 import { score } from './scoring/stability-scorer'
+import { computeMatchCount } from './scoring/match-count'
 import { LocatorSelector } from './selector'
 import type { LocatorStrategy } from './strategies/base'
 import { detectEdgeCases, isCanvasLikeElement } from './edge-cases'
@@ -24,13 +25,20 @@ export interface ShadowOptions {
   frameContext?: FrameContext
 }
 
-function buildCanvasLocator(el: Element): ScoredLocator {
+function buildCanvasLocator(el: Element, doc: Document): ScoredLocator {
   const tag = el.tagName.toLowerCase()
   const selector = el.id ? `${tag}#${el.id}` : tag
+  let matchCount = 1
+  try {
+    matchCount = doc.querySelectorAll(selector).length
+  } catch {
+    /* keep default */
+  }
   return {
     strategy: 'css',
     selector,
     score: 0,
+    matchCount,
     warning: 'manual-coordinate-required',
     framework: {
       playwright: `page.locator(${JSON.stringify(selector)})`,
@@ -59,11 +67,12 @@ export class LocatorEngine {
     const edgeCases = detectEdgeCases(element, doc)
 
     if (isCanvasLikeElement(element)) {
-      const synthetic = buildCanvasLocator(element)
+      const synthetic = buildCanvasLocator(element, doc)
       return {
         primary: synthetic,
         fallbacks: [],
         rejected: [],
+        allCandidates: [synthetic],
         shadowContext: options?.shadowContext,
         shadowClosed: options?.shadowClosed,
         frameContext: options?.frameContext,
@@ -76,7 +85,12 @@ export class LocatorEngine {
     for (const strategy of this.strategies) {
       const locator = strategy.evaluate(element, doc)
       if (locator) {
-        candidates.push({ ...locator, score: score(locator, element, doc) })
+        const matchCount = computeMatchCount(locator, doc)
+        candidates.push({
+          ...locator,
+          score: score(locator, element, doc, matchCount),
+          matchCount,
+        })
       }
     }
 

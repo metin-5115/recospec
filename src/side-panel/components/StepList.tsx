@@ -12,6 +12,8 @@ import {
   X,
 } from 'lucide-react'
 import type { RecordedAction, ActionType, NetworkPayload } from '@shared/types/action'
+import type { ScoredLocator } from '@shared/types/locator'
+import { LocatorDetail } from './LocatorDetail'
 
 type IconComponent = ComponentType<SVGProps<SVGSVGElement>>
 
@@ -54,31 +56,25 @@ function networkLabel(step: RecordedAction): string {
   return `${(np.method ?? 'GET').toUpperCase()} ${path}${status}`
 }
 
-interface FallbackDropdownProps {
-  fallbacks: { strategy: string; selector: string }[]
-  onClose: () => void
+function selectorString(loc: ScoredLocator): string {
+  return typeof loc.selector === 'string' ? loc.selector : JSON.stringify(loc.selector)
 }
 
-function FallbackDropdown({ fallbacks, onClose }: FallbackDropdownProps) {
-  if (fallbacks.length === 0) return null
-  return (
-    <div
-      className="absolute left-0 top-full z-10 mt-1 min-w-[220px] rounded-xl border border-border bg-bg py-1.5 shadow-lg"
-      onMouseLeave={onClose}
-    >
-      <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-text-subtle">
-        Fallback locators
-      </p>
-      {fallbacks.map((f, i) => (
-        <div key={i} className="px-3 py-1">
-          <span className="mr-1.5 rounded-md bg-bg-muted px-1.5 py-0.5 text-[10px] font-medium text-text-muted">
-            {f.strategy}
-          </span>
-          <span className="font-mono text-[10px] text-text-muted">{f.selector}</span>
-        </div>
-      ))}
-    </div>
-  )
+function scoreColor(score: number): string {
+  if (score >= 80) return 'bg-success-soft text-success'
+  if (score >= 50) return 'bg-warning-soft text-warning'
+  return 'bg-danger-soft text-danger'
+}
+
+function snapshotChip(step: RecordedAction): string | null {
+  const snap = step.target?.elementSnapshot ?? step.elementSnapshot
+  if (!snap) return null
+  const parts: string[] = [snap.tagName.toLowerCase()]
+  const text = snap.textContent?.trim()
+  if (text) parts.push(`"${text.slice(0, 40)}${text.length > 40 ? '…' : ''}"`)
+  const id = snap.attributes.id
+  if (id) parts.push(`#${id}`)
+  return parts.join(' · ')
 }
 
 interface StepListProps {
@@ -87,7 +83,7 @@ interface StepListProps {
 }
 
 export function StepList({ steps, onDeleteStep }: StepListProps) {
-  const [openFallbackId, setOpenFallbackId] = useState<string | null>(null)
+  const [openDetailId, setOpenDetailId] = useState<string | null>(null)
 
   if (steps.length === 0) {
     return (
@@ -107,61 +103,66 @@ export function StepList({ steps, onDeleteStep }: StepListProps) {
   return (
     <ol className="divide-y divide-border">
       {steps.map((step, index) => {
-        const snapshot = step.target?.elementSnapshot ?? step.elementSnapshot
         const isNetwork = step.type === 'network'
+        const primary = step.target?.primaryLocator
+        const fallbacks = step.target?.fallbackLocators ?? []
+        const allCandidates = primary ? [primary, ...fallbacks] : []
         const locatorLabel = isNetwork
           ? networkLabel(step)
-          : typeof step.target?.primaryLocator.selector === 'string'
-            ? step.target.primaryLocator.selector
-            : snapshot
-              ? `<${snapshot.tagName}>`
-              : step.type
-        const strategy = isNetwork ? undefined : step.target?.primaryLocator.strategy
-        const fallbacks = (step.target?.fallbackLocators ?? []).map((l) => ({
-          strategy: l.strategy,
-          selector: typeof l.selector === 'string' ? l.selector : JSON.stringify(l.selector),
-        }))
-        const hasFallbacks = fallbacks.length > 0
-        const isOpen = openFallbackId === step.actionId
+          : primary
+            ? selectorString(primary)
+            : step.type
+        const snapshotLine = isNetwork ? null : snapshotChip(step)
+        const isOpen = openDetailId === step.actionId
         const Icon = actionIcon(step.type)
 
         return (
           <li
             key={step.actionId}
-            className="group flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-bg-elevated"
+            className="group flex items-start gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-bg-elevated"
           >
-            <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-bg-muted text-[10px] font-mono font-semibold text-text-subtle">
+            <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-bg-muted text-[10px] font-mono font-semibold text-text-subtle">
               {index + 1}
             </span>
-            <Icon className="h-4 w-4 shrink-0 text-text-muted" aria-hidden="true" />
+            <Icon className="mt-0.5 h-4 w-4 shrink-0 text-text-muted" aria-hidden="true" />
             <span className="relative min-w-0 flex-1">
-              <span className="block truncate font-mono text-[13px] text-text" title={locatorLabel}>
-                {locatorLabel}
-              </span>
-              {strategy && (
+              <span className="flex items-start gap-2">
                 <button
-                  className={`mt-1 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium opacity-0 transition-opacity group-hover:opacity-100 ${
-                    hasFallbacks
-                      ? 'cursor-pointer bg-accent-soft text-accent hover:bg-accent hover:text-white'
-                      : 'cursor-default bg-accent-soft text-accent'
-                  }`}
-                  onClick={() =>
-                    hasFallbacks ? setOpenFallbackId(isOpen ? null : step.actionId) : undefined
-                  }
-                  title={
-                    hasFallbacks ? `${fallbacks.length} fallback locator(s) available` : strategy
-                  }
+                  type="button"
+                  onClick={() => primary && setOpenDetailId(isOpen ? null : step.actionId)}
+                  disabled={!primary}
+                  className="min-w-0 flex-1 break-all text-left font-mono text-[13px] text-text hover:text-accent disabled:cursor-default disabled:hover:text-text"
+                  title={locatorLabel}
+                  aria-label={primary ? 'Show locator detail' : undefined}
                 >
-                  {strategy}
-                  {hasFallbacks && (
-                    <span className="rounded-full bg-white/30 px-1.5 text-[9px]">
-                      {fallbacks.length} fallback{fallbacks.length === 1 ? '' : 's'}
+                  {locatorLabel}
+                </button>
+                {primary && (
+                  <span
+                    className={`shrink-0 rounded-md px-1.5 py-0.5 font-mono text-[10px] font-semibold ${scoreColor(primary.score)}`}
+                    title={`Score ${primary.score}/100 · ${primary.matchCount} match${primary.matchCount === 1 ? '' : 'es'}`}
+                  >
+                    {primary.score}
+                  </span>
+                )}
+              </span>
+              {(snapshotLine || primary) && (
+                <span className="mt-0.5 flex items-center gap-2 text-[11px] text-text-muted">
+                  {primary && (
+                    <span className="rounded bg-accent-soft px-1.5 py-0.5 text-[10px] font-medium text-accent">
+                      {primary.strategy}
                     </span>
                   )}
-                </button>
+                  {snapshotLine && <span className="truncate font-mono">{snapshotLine}</span>}
+                </span>
               )}
-              {isOpen && (
-                <FallbackDropdown fallbacks={fallbacks} onClose={() => setOpenFallbackId(null)} />
+              {isOpen && primary && (
+                <LocatorDetail
+                  primary={primary}
+                  candidates={allCandidates}
+                  snapshot={step.target?.elementSnapshot}
+                  onClose={() => setOpenDetailId(null)}
+                />
               )}
             </span>
             <button

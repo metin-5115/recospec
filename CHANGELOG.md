@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Rich locator detail in step list** — every step now shows the strategy
+  badge, primary score (color-coded: green ≥80, amber ≥50, red <50), and a
+  one-line element snapshot (`tag · "text" · #id`). Clicking the locator opens
+  a popover that lists every strategy the engine considered with its score and
+  match count, plus an `Element snapshot` card. Frame-chain selectors render as
+  readable JSON instead of a `<tag>` placeholder.
+- `LocatorBundle.allCandidates: ScoredLocator[]` — every scored candidate the
+  engine produced, sorted by score descending. Surfaced for the new locator
+  detail UI.
+- `ScoredLocator.matchCount: number` — number of DOM elements the candidate
+  resolves to (1 = unique). Best-effort: defaults to 1 for strategies whose
+  selector is not a CSS query (`role-name`, `text`, `xpath`).
+
 ### Fixed
 
 - **Locator engine** — semantic domain ids with short numeric suffixes (`BVD-135`,
@@ -14,6 +29,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   digit-suffix threshold is raised from 3+ to 5+ digits via
   `MIN_DYNAMIC_ID_DIGIT_SUFFIX`. The `IdStrategy` now produces stable id locators
   for these elements instead of falling through to css/xpath.
+
+### Changed
+
+- `RecordedAction.target.primaryLocator` and `fallbackLocators` are typed as
+  `ScoredLocator` (was `Locator`), preserving the engine's score and matchCount
+  through to the UI.
+- `score(...)` accepts an optional precomputed match count to avoid double
+  `querySelectorAll` calls — the engine now computes match count once per
+  candidate and reuses it for both stability scoring and the UI.
 
 ## [0.5.0] - 2026-05-08
 

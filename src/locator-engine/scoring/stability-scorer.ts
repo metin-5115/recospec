@@ -10,10 +10,17 @@ const CSS_QUERYABLE: LocatorStrategyName[] = [
   'css',
 ]
 
-function getUniquenessScore(locator: Locator, doc: Document): number {
+function uniquenessFromCount(count: number): 0 | 50 | 100 {
+  if (count === 1) return 100
+  if (count <= 3) return 50
+  return 0
+}
+
+function getUniquenessScore(locator: Locator, doc: Document, matchCountHint?: number): number {
   if (locator.strategy === 'testid') return 100
   const selector = typeof locator.selector === 'string' ? locator.selector : null
   if (selector && (CSS_QUERYABLE as string[]).includes(locator.strategy)) {
+    if (matchCountHint !== undefined) return uniquenessFromCount(matchCountHint)
     return computeUniqueness(selector, doc)
   }
   return 75
@@ -30,8 +37,20 @@ function getDepthScore(selector: string): number {
   return Math.max(0, 100 - combinatorCount * 25)
 }
 
-export function score(candidate: Locator, _element: Element, doc: Document): number {
-  const uniqueness = getUniquenessScore(candidate, doc)
+/**
+ * Computes the stability score for a candidate locator.
+ *
+ * @param matchCountHint  Optional precomputed querySelectorAll count, passed
+ *   by the engine to avoid double-querying. Test callers may omit it; the
+ *   uniqueness sub-score will then be computed lazily.
+ */
+export function score(
+  candidate: Locator,
+  _element: Element,
+  doc: Document,
+  matchCountHint?: number,
+): number {
+  const uniqueness = getUniquenessScore(candidate, doc, matchCountHint)
   const semantic = getSemanticStrength(candidate.strategy)
   const stability = getStabilityScore(candidate.strategy)
   const selectorStr = typeof candidate.selector === 'string' ? candidate.selector : ''

@@ -9,6 +9,7 @@ export class LocatorSelector {
       primary: primary!,
       fallbacks: rest.slice(0, LOCATOR_FALLBACK_COUNT),
       rejected: rest.slice(LOCATOR_FALLBACK_COUNT),
+      allCandidates: sorted,
     }
   }
 }

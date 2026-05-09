@@ -1,4 +1,4 @@
-import type { Locator, LocatorBundle, ShadowContext, FrameContext } from './locator'
+import type { Locator, LocatorBundle, ScoredLocator, ShadowContext, FrameContext } from './locator'
 
 export type ActionType =
   | 'click'
@@ -77,8 +77,8 @@ export interface RecordedAction {
   pageUrl: string
   pageTitle?: string
   target?: {
-    primaryLocator: Locator
-    fallbackLocators: Locator[]
+    primaryLocator: ScoredLocator
+    fallbackLocators: ScoredLocator[]
     elementSnapshot: ElementSnapshot
     shadowContext?: ShadowContext
     shadowClosed?: boolean

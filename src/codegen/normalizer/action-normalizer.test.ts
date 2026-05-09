@@ -24,6 +24,8 @@ function makeClickAction(id: string, locatorValue: string): RecordedAction {
         strategy: 'testid',
         selector: `[data-testid="${locatorValue}"]`,
         framework: { playwright: locatorValue },
+        score: 100,
+        matchCount: 1,
       },
       fallbackLocators: [],
       elementSnapshot: {
@@ -45,6 +47,8 @@ function makeFillAction(id: string, locatorValue: string, value: string): Record
         strategy: 'testid',
         selector: `[data-testid="${locatorValue}"]`,
         framework: { playwright: locatorValue },
+        score: 100,
+        matchCount: 1,
       },
       fallbackLocators: [],
       elementSnapshot: {
@@ -116,6 +120,8 @@ describe('normalizeActions', () => {
           strategy: 'testid',
           selector: '[data-testid="submit"]',
           framework: {},
+          score: 100,
+          matchCount: 1,
         },
         fallbackLocators: [],
         elementSnapshot: {
@@ -153,6 +159,8 @@ describe('normalizeActions', () => {
           strategy: 'testid',
           selector: '[data-testid="submit"]',
           framework: {},
+          score: 100,
+          matchCount: 1,
         },
         fallbackLocators: [],
         elementSnapshot: {
@@ -180,13 +188,23 @@ describe('normalizeActions', () => {
           strategy: 'testid',
           selector: '[data-testid="email"]',
           framework: {},
+          score: 100,
+          matchCount: 1,
         },
         fallbackLocators: [
-          { strategy: 'aria-label', selector: '[aria-label="Email"]', framework: {} },
+          {
+            strategy: 'aria-label',
+            selector: '[aria-label="Email"]',
+            framework: {},
+            score: 80,
+            matchCount: 1,
+          },
           {
             strategy: 'role-name',
             selector: `'textbox', { name: 'Email' }`,
             framework: {},
+            score: 70,
+            matchCount: 1,
           },
         ],
         elementSnapshot: { tagName: 'input', attributes: {}, textContent: '' },
