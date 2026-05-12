@@ -8,13 +8,23 @@ import './adapters/selenium-py'
 import './adapters/selenium-java'
 import { getAdapter } from './adapters/registry'
 import type { FrameworkId, GeneratedCode } from '@shared/types/generated'
-import type { IRDocument, IRScenario } from './ir/types'
+import type { IRDocument, IRScenario, TestDataConfig } from './ir/types'
 
 export interface GenerateOptions {
   /** Emit `page.route(...)` mocks for any captured network actions. */
   includeMocks?: boolean
   /** Map of `${pageClassName}.${inferredName}` → user-chosen name. */
   methodRenames?: Record<string, string>
+  /**
+   * When `false`, auto-detected `wait` steps are stripped from the IR before
+   * code generation. Defaults to `true`.
+   */
+  autoWaitEnabled?: boolean
+  /**
+   * User-edited test data config — drives env-var emission for sensitive
+   * fields and which fixture/.env scaffolds adapters render.
+   */
+  testData?: TestDataConfig
 }
 
 function applyRenames(
@@ -42,7 +52,9 @@ export async function generate(
   ])
 
   const startUrl = session?.startUrl ?? 'about:blank'
-  const { flatSteps } = normalizeActions(actions)
+  const sourceActions =
+    options.autoWaitEnabled === false ? actions.filter((a) => a.type !== 'wait') : actions
+  const { flatSteps } = normalizeActions(sourceActions)
   const pages = groupIntoPages(flatSteps, startUrl)
 
   if (options.methodRenames && Object.keys(options.methodRenames).length > 0) {
@@ -62,7 +74,10 @@ export async function generate(
   }
 
   const adapter = getAdapter(framework)
-  adapter.applyOptions?.({ includeMocks: options.includeMocks })
+  adapter.applyOptions?.({
+    includeMocks: options.includeMocks,
+    testData: options.testData,
+  })
   const pageFiles = doc.pages.map((page) => adapter.renderPageObject(page))
   const specFile = adapter.renderScenario(scenario)
   const scaffoldFiles = adapter.renderScaffold()

@@ -7,9 +7,11 @@ import {
   Code2,
   Download,
   FileJson,
+  Info,
   Loader2,
   Pause,
   Play,
+  RefreshCcw,
   Sparkles,
   Square,
   CheckCircle2,
@@ -21,6 +23,8 @@ import { CodePreview } from './components/CodePreview'
 import { AssertionBuilder } from './components/AssertionBuilder'
 import { FrameworkPicker } from './components/FrameworkPicker'
 import { MethodPreview } from './components/MethodPreview'
+import { TestDataPanel } from './components/TestDataPanel'
+import { LocatorValidationPanel } from './components/LocatorValidationPanel'
 
 type Tab = 'recording' | 'history'
 
@@ -36,20 +40,28 @@ export function SidePanelApp() {
     sessions,
     generatedCode,
     codeGenError,
+    stepsDirty,
     isProbeActive,
     assertionContext,
     selectedFramework,
     setSelectedFramework,
+    autoWaitEnabled,
+    setAutoWaitEnabled,
     includeMocks,
     setIncludeMocks,
     methodRenames,
     renameMethod,
+    testData,
+    setTestData,
     startRecording,
     stopRecording,
     pauseRecording,
     resumeRecording,
     generateCode,
     deleteStep,
+    reorderStep,
+    updateStep,
+    setStepLocator,
     toggleAssertionProbe,
     cancelAssertionBuilder,
     addAssertion,
@@ -58,6 +70,14 @@ export function SidePanelApp() {
     handleRenameSession,
     exportJson,
     exportZip,
+    validationResults,
+    validationDurationMs,
+    validationError,
+    validationTruncated,
+    isValidating,
+    validateLocators,
+    showLocatorOnPage,
+    useFallbackLocator,
   } = useSession()
 
   const isActive = isRecording || isPaused
@@ -158,7 +178,14 @@ export function SidePanelApp() {
 
       <main className="flex-1 overflow-y-auto">
         {activeTab === 'recording' ? (
-          <StepList steps={steps} onDeleteStep={deleteStep} />
+          <StepList
+            steps={steps}
+            reorderable={!isActive}
+            onDeleteStep={(id) => void deleteStep(id)}
+            onReorderStep={(from, to) => void reorderStep(from, to)}
+            onUpdateStep={(id, patch) => void updateStep(id, patch)}
+            onPickLocator={(id, candidate) => void setStepLocator(id, candidate)}
+          />
         ) : (
           <SessionList
             sessions={sessions}
@@ -184,6 +211,12 @@ export function SidePanelApp() {
             renames={methodRenames}
             onRename={renameMethod}
           />
+          <TestDataPanel
+            steps={steps}
+            startUrl={activeSession?.startUrl ?? 'about:blank'}
+            testData={testData}
+            onChange={setTestData}
+          />
           <label className="flex cursor-pointer items-center gap-2 text-xs text-text-muted">
             <input
               type="checkbox"
@@ -194,6 +227,19 @@ export function SidePanelApp() {
             <span>
               Include mocks for captured network requests
               <span className="ml-1 text-text-subtle">(page.route)</span>
+            </span>
+          </label>
+          <label className="flex cursor-pointer items-center gap-2 text-xs text-text-muted">
+            <input
+              type="checkbox"
+              checked={autoWaitEnabled}
+              onChange={(e) => setAutoWaitEnabled(e.target.checked)}
+              className="h-3.5 w-3.5 cursor-pointer rounded border-border accent-accent"
+              aria-label="Auto-detect waits"
+            />
+            <span>
+              Auto-detect waits
+              <span className="ml-1 text-text-subtle">(networkidle, spinners)</span>
             </span>
           </label>
           <div className="flex gap-2">
@@ -239,6 +285,25 @@ export function SidePanelApp() {
 
       {generatedCode && activeTab === 'recording' && (
         <div className="border-t border-border">
+          {stepsDirty && (
+            <div
+              role="status"
+              className="flex items-center justify-between gap-3 bg-warning-soft px-5 py-2 text-xs text-warning"
+            >
+              <span className="inline-flex items-center gap-1.5">
+                <Info className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                Steps modified — regenerate code to apply changes
+              </span>
+              <button
+                type="button"
+                onClick={generateCode}
+                className="inline-flex items-center gap-1 rounded-md bg-warning px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm transition-colors hover:opacity-90"
+              >
+                <RefreshCcw className="h-3 w-3" aria-hidden="true" />
+                Re-generate
+              </button>
+            </div>
+          )}
           <div className="flex items-center justify-between bg-bg-elevated/40 px-5 py-2.5">
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-text-muted">
               <Code2 className="h-3.5 w-3.5" aria-hidden="true" />
@@ -254,7 +319,24 @@ export function SidePanelApp() {
               </button>
             )}
           </div>
-          <CodePreview code={generatedCode} />
+          <CodePreview
+            code={generatedCode}
+            onValidate={() => void validateLocators()}
+            isValidating={isValidating}
+            validateDisabled={isActive || steps.length === 0}
+          />
+          {(isValidating || validationResults.length > 0 || validationError) && (
+            <LocatorValidationPanel
+              results={validationResults}
+              durationMs={validationDurationMs}
+              isRunning={isValidating}
+              error={validationError}
+              truncated={validationTruncated}
+              onRefresh={() => void validateLocators()}
+              onShow={(r) => void showLocatorOnPage(r)}
+              onUseFallback={(r, idx) => void useFallbackLocator(r, idx)}
+            />
+          )}
         </div>
       )}
 

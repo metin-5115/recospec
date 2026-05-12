@@ -5,6 +5,7 @@ import type {
   InferredMethod,
   AssertionDetail,
   IRParamType,
+  TestDataConfig,
 } from '../../ir/types'
 import {
   renderFindByAnnotation,
@@ -12,6 +13,18 @@ import {
   renderByExpression,
   javaStr,
 } from './locator'
+import { resolveTestData } from '../../planner/test-data-resolver'
+
+let TEST_DATA: TestDataConfig | undefined
+export function setSeleniumJavaPageObjectTestData(value: TestDataConfig | undefined): void {
+  TEST_DATA = value
+}
+
+function renderFillValueExpr(el: IRElement | undefined, recordedValue: string): string {
+  const r = resolveTestData(el, recordedValue, TEST_DATA)
+  if (!r.useEnvVar) return javaStr(r.literal)
+  return `System.getenv().getOrDefault(${javaStr(r.envVarName)}, ${javaStr(r.defaultValue)})`
+}
 
 // ---------------------------------------------------------------------------
 // Naming helpers
@@ -178,10 +191,11 @@ function renderStepInMethod(step: IRStep, indent: string): string {
   }
   if (step.action === 'fill' && step.element) {
     const fieldRef = toJavaFieldName(step.element.name)
+    const expr = renderFillValueExpr(step.element, step.value ?? '')
     return [
       `${indent}wait.until(ExpectedConditions.visibilityOf(${fieldRef}));`,
       `${indent}${fieldRef}.clear();`,
-      `${indent}${fieldRef}.sendKeys(${javaStr(step.value ?? '')});`,
+      `${indent}${fieldRef}.sendKeys(${expr});`,
     ].join('\n')
   }
   if (step.action === 'keypress' && step.key) {

@@ -2,8 +2,11 @@ import { describe, it, expect } from 'vitest'
 import { renderScenario } from './scenario'
 import type { IRPage, IRScenario, IRElement } from '../../ir/types'
 
+// Note: deliberately uses a non-sensitive field name (`usernameInput`) so
+// these tests stay focused on scenario-level rendering. Sensitive-field
+// auto-detection is exercised in dedicated test-data tests.
 const emailEl: IRElement = {
-  name: 'emailInput',
+  name: 'usernameInput',
   locatorStrategy: 'testid',
   locatorValue: '[data-testid="login-email"]',
   tagName: 'input',

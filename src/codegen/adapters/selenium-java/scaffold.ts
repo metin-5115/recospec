@@ -1,4 +1,10 @@
 import type { GeneratedFile } from '@shared/types/generated'
+import type { TestDataConfig } from '../../ir/types'
+
+let TEST_DATA: TestDataConfig | undefined
+export function setSeleniumJavaScaffoldTestData(value: TestDataConfig | undefined): void {
+  TEST_DATA = value
+}
 
 const POM_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
@@ -74,9 +80,19 @@ screenshots/
 `
 
 export function renderScaffold(): GeneratedFile[] {
-  return [
+  const files: GeneratedFile[] = [
     { filename: 'pom.xml', content: POM_XML },
     { filename: 'testng.xml', content: TESTNG_XML },
     { filename: '.gitignore', content: GITIGNORE },
   ]
+  const params = TEST_DATA?.params.filter((p) => p.useEnvVar) ?? []
+  if (params.length) {
+    const header = '# PlayForge — copy to test-data.properties and fill in values.\n'
+    const body = params.map((p) => `${p.envVarName}=${p.isSecret ? '' : p.defaultValue}`).join('\n')
+    files.push({
+      filename: 'src/test/resources/test-data.properties.example',
+      content: `${header}${body}\n`,
+    })
+  }
+  return files
 }

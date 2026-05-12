@@ -15,6 +15,12 @@ import {
   handleAssertionSuggestion,
   handleAssertionAdd,
 } from './assertion-handler'
+import { handleStepsReordered, handleStepUpdated, handleStepDeleted } from './step-controller'
+import {
+  handleHighlightLocator,
+  handleValidateLocators,
+  handleValidationResponse,
+} from './locator-validation-controller'
 import { logger } from '@shared/logger'
 
 export function initMessageRouter(): void {
@@ -59,6 +65,8 @@ export function initMessageRouter(): void {
         return handleCodeGenerate(message.sessionId, message.framework, {
           includeMocks: message.includeMocks,
           methodRenames: message.methodRenames,
+          autoWaitEnabled: message.autoWaitEnabled,
+          testData: message.testData,
         }).catch((err) => logger.error('[BG] CODE_GENERATE failed', err))
 
       case 'ASSERTION_PROBE_START':
@@ -89,6 +97,45 @@ export function initMessageRouter(): void {
           message.elementSnapshot,
           message.pageMetadata,
         ).catch((err) => logger.error('[BG] ASSERTION_ADD failed', err))
+
+      case 'STEPS_REORDERED':
+        return handleStepsReordered(message.sessionId, message.orderedActionIds).catch((err) =>
+          logger.error('[BG] STEPS_REORDERED failed', err),
+        )
+
+      case 'STEP_UPDATED':
+        return handleStepUpdated(message.sessionId, message.actionId, message.patch).catch((err) =>
+          logger.error('[BG] STEP_UPDATED failed', err),
+        )
+
+      case 'STEP_DELETED':
+        return handleStepDeleted(message.sessionId, message.actionId).catch((err) =>
+          logger.error('[BG] STEP_DELETED failed', err),
+        )
+
+      case 'VALIDATE_LOCATORS':
+        return handleValidateLocators(
+          message.sessionId,
+          message.targets,
+          message.recordedUrl,
+        ).catch((err) => logger.error('[BG] VALIDATE_LOCATORS failed', err))
+
+      case 'HIGHLIGHT_LOCATOR':
+        return handleHighlightLocator(
+          message.sessionId,
+          message.locator,
+          message.shadowContext,
+          message.frameContext,
+          message.label,
+        ).catch((err) => logger.error('[BG] HIGHLIGHT_LOCATOR failed', err))
+
+      case 'LOCATOR_VALIDATION_RESPONSE':
+        return handleValidationResponse(
+          message.sessionId,
+          message.results,
+          message.durationMs,
+          message.pageUrl,
+        ).catch((err) => logger.error('[BG] LOCATOR_VALIDATION_RESPONSE failed', err))
     }
   })
 }

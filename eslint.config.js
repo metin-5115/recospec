@@ -35,6 +35,11 @@ export default [
         Response: 'readonly',
         XMLHttpRequest: 'readonly',
         performance: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        queueMicrotask: 'readonly',
       },
     },
     plugins: {

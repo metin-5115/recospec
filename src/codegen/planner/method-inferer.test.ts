@@ -199,6 +199,41 @@ describe('inferMethods — default naming', () => {
   })
 })
 
+describe('inferMethods — secret parameter detection', () => {
+  it('marks password param as secret in login pattern', () => {
+    const methods = inferMethods([
+      fillStep('emailInput', 'input', 'email'),
+      fillStep('passwordInput', 'input', 'password'),
+      clickStep('submitBtn'),
+    ])
+    expect(methods[0].name).toBe('login')
+    expect(methods[0].paramSecret).toEqual([true, true])
+  })
+
+  it('marks single password fill as secret in default fillField pattern', () => {
+    const methods = inferMethods([
+      clickStep('openModalBtn'),
+      fillStep('passwordInput', 'input', 'password'),
+    ])
+    expect(methods[1].name).toBe('fillPassword')
+    expect(methods[1].paramSecret).toEqual([true])
+  })
+
+  it('does NOT mark plain text fields as secret', () => {
+    const methods = inferMethods([
+      fillStep('firstNameInput'),
+      fillStep('lastNameInput'),
+      fillStep('phoneInput'),
+    ])
+    expect(methods[0].paramSecret).toEqual([false, false, false])
+  })
+
+  it('marks api_key field by name as secret even without password type', () => {
+    const methods = inferMethods([fillStep('apiKeyInput'), keypressStep('Enter')])
+    expect(methods[0].paramSecret).toEqual([true])
+  })
+})
+
 describe('inferMethods — network steps', () => {
   it('threads network step into the preceding user method without spawning a new one', () => {
     const methods = inferMethods([

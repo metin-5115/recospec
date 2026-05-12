@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Spinner / async modal fixture</title>
+  </head>
+  <body>
+    <h1>Async modal demo</h1>
+    <button id="open-modal" data-testid="open-modal" type="button">Open</button>
+
+    <!-- The page may inject this overlay after a network call. The locator
+         engine should select stable identifiers (testid / role) over the
+         dynamic class names commonly used by spinner libraries. -->
+    <div role="dialog" aria-modal="true" data-testid="loading-modal" hidden>
+      <div role="progressbar" aria-label="Loading" class="spinner spinner-lg">
+        <span class="loading">Loading…</span>
+      </div>
+      <p aria-busy="true" data-testid="status-text">Fetching results…</p>
+    </div>
+
+    <ul id="results" data-testid="results-list" aria-busy="false"></ul>
+  </body>
+</html>

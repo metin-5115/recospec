@@ -1,5 +1,17 @@
-import type { IRScenario, IRStep, AssertionDetail, IRElement } from '../../ir/types'
+import type { IRScenario, IRStep, AssertionDetail, IRElement, TestDataConfig } from '../../ir/types'
 import { renderLocatorTuple, pyStr } from './locator'
+import { resolveTestData } from '../../planner/test-data-resolver'
+
+let TEST_DATA: TestDataConfig | undefined
+export function setSeleniumPyTestData(value: TestDataConfig | undefined): void {
+  TEST_DATA = value
+}
+
+function renderFillValueExpr(el: IRElement | undefined, recordedValue: string): string {
+  const r = resolveTestData(el, recordedValue, TEST_DATA)
+  if (!r.useEnvVar) return pyStr(r.literal)
+  return `os.environ.get(${pyStr(r.envVarName)}, ${pyStr(r.defaultValue)})`
+}
 
 /** Snake-case for module file names: LoginPage → login_page. */
 export function toSnakeCase(name: string): string {
@@ -47,6 +59,31 @@ function renderAssertion(d: AssertionDetail, el: IRElement | undefined, indent: 
   }
 }
 
+function renderWait(step: IRStep, indent: string): string {
+  if (!step.wait) return ''
+  // Selenium has no native networkidle; degrade to a presence check on body.
+  // For spinner / element-hidden / element-visible we use WebDriverWait.
+  const timeoutSec = Math.max(1, Math.round(step.wait.timeoutMs / 1000))
+  if (step.wait.reason === 'networkidle') {
+    return [
+      `${indent}# networkidle has no direct Selenium equivalent — wait until DOM is settled.`,
+      `${indent}WebDriverWait(driver, ${timeoutSec}).until(`,
+      `${indent}    EC.presence_of_element_located((By.TAG_NAME, 'body'))`,
+      `${indent})`,
+    ].join('\n')
+  }
+  if (step.wait.reason === 'spinner' || step.wait.reason === 'element-hidden') {
+    if (!step.element) return ''
+    const tuple = renderLocatorTuple(step.element)
+    return `${indent}WebDriverWait(driver, ${timeoutSec}).until(EC.invisibility_of_element_located(${tuple}))`
+  }
+  if (step.wait.reason === 'element-visible' && step.element) {
+    const tuple = renderLocatorTuple(step.element)
+    return `${indent}WebDriverWait(driver, ${timeoutSec}).until(EC.visibility_of_element_located(${tuple}))`
+  }
+  return ''
+}
+
 function renderStepInTest(step: IRStep, indent: string): string {
   if (step.action === 'navigate' && step.url) {
     return `${indent}driver.get(${pyStr(step.url)})`
@@ -57,14 +94,18 @@ function renderStepInTest(step: IRStep, indent: string): string {
   }
   if (step.action === 'fill' && step.element) {
     const tuple = renderLocatorTuple(step.element)
+    const expr = renderFillValueExpr(step.element, step.value ?? '')
     return [
       `${indent}_el = WebDriverWait(driver, 10).until(EC.visibility_of_element_located(${tuple}))`,
       `${indent}_el.clear()`,
-      `${indent}_el.send_keys(${pyStr(step.value ?? '')})`,
+      `${indent}_el.send_keys(${expr})`,
     ].join('\n')
   }
   if (step.action === 'keypress' && step.key) {
     return `${indent}driver.switch_to.active_element.send_keys(Keys.${step.key.toUpperCase()})`
+  }
+  if (step.action === 'wait') {
+    return renderWait(step, indent)
   }
   if (step.action === 'assert') {
     if (step.assertionDetail) {
@@ -108,7 +149,10 @@ export function renderScenario(scenario: IRScenario): string {
   const pomReferences = scenario.pages.map((p) => `    _ = ${p.className}  # noqa: F841`).join('\n')
   const pomBlock = pomReferences ? `${pomReferences}\n` : ''
 
-  return `from selenium.webdriver.common.by import By
+  const needsOsImport = (TEST_DATA?.params ?? []).some((p) => p.useEnvVar)
+  const osImportLine = needsOsImport ? 'import os\n' : ''
+
+  return `${osImportLine}from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC

@@ -7,8 +7,120 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] — 2026-05-10
+
 ### Added
 
+- **Live locator validation ("Test on Page")** — the side-panel's code preview
+  now ships a primary "Test on Page" button that evaluates every recorded
+  locator against the user's currently focused tab before they download the
+  ZIP. Each row reports `matched` (1 hit), `multiple` (selector ambiguous), or
+  `missing`, plus the strategy and selector. A "Show me" action flashes a
+  green/amber overlay over the matched element (with a label and 1 s
+  auto-dismiss); a "Use fallback" action one-clicks the top-scoring fallback
+  into the step's primary slot via the existing `setStepLocator` pipeline,
+  flipping `userOverridden=true` and reusing the same `STEP_UPDATED` round
+  trip used by the locator picker. Iframes and shadow DOM are pierced via the
+  recorded `frameContext.frameChain` / `shadowContext.hostChain`, mirroring
+  the recording-time logic in `content/shadow-pierce.ts`. Cross-origin
+  iframes (whose `contentWindow.document` is unreachable) surface as
+  `cross-origin` instead of a misleading miss.
+- New `shared/constants.ts` entries: `LOCATOR_VALIDATION_MAX_TARGETS` (100)
+  caps single-run target count and surfaces a "Validated first 100 of N"
+  hint in the panel; `LOCATOR_VALIDATION_HIGHLIGHT_DURATION_MS` (1000) tunes
+  the on-page overlay flash.
+- New message contract: `VALIDATE_LOCATORS` (UI → BG), `VALIDATE_LOCATORS_RUN`
+  (BG → CS), `LOCATOR_VALIDATION_RESPONSE` (CS → BG), `LOCATOR_VALIDATION_RESULT`
+  (BG → UI), plus `HIGHLIGHT_LOCATOR` / `HIGHLIGHT_LOCATOR_ON_PAGE` for the
+  Show-me overlay. Origin-mismatch detection compares the recorded
+  `session.startUrl` origin to the active tab's URL and tags every result
+  with `urlMismatch: true` so the panel can render an "Active tab no longer
+  matches the recorded origin" warning.
+
+- **Test data parameterization** — sensitive form fields (password, token,
+  secret, api key, email; plus `autocomplete=current-password|new-password|
+one-time-code|email|username`) are auto-detected and rendered as env-var
+  lookups instead of hardcoded literals. Each adapter uses its idiomatic
+  helper:
+  - **Playwright TS** — `process.env.PLAYFORGE_PASSWORD ?? "change-me"`
+  - **Cypress JS** — `Cypress.env("password") || "change-me"`
+  - **Selenium Python** — `os.environ.get('PLAYFORGE_PASSWORD', 'change-me')`
+  - **Selenium Java (TestNG)** — `System.getenv().getOrDefault("PLAYFORGE_PASSWORD", "change-me")`
+- New side-panel **Test Data** card lists every parameterized field with an
+  inline editor for parameter name, default value, secret toggle, and
+  "use env var" checkbox. Manual overrides flow through `CODE_GENERATE` via
+  the new `testData: TestDataConfig` payload.
+- Adapter scaffolds gain fixture/env templates when env-var params exist:
+  `.env.example` (Playwright), `cypress.env.json.example` (Cypress),
+  `.env.example` + `python-dotenv` in `conftest.py` (Selenium Py), and
+  `src/test/resources/test-data.properties.example` (Selenium Java).
+- `IRElementSnapshot` now carries `fieldName` and `autocomplete` to feed the
+  detector; `InferredMethod` gains a parallel `paramSecret: boolean[]` so
+  page-object methods can be reasoned about as "this method takes a secret".
+- New `shared/constants.ts` entries: `SENSITIVE_FIELD_PATTERNS`,
+  `SENSITIVE_AUTOCOMPLETE_VALUES`, `SECRET_PARAM_DEFAULT_VALUE`, `ENV_VAR_PREFIX`.
+- `logger.ts` redacts any property whose key matches the sensitive patterns
+  (`password|secret|token|apiKey|…`) before forwarding to console — secrets
+  never leak through the dev-mode logger.
+
+- **Smart auto-wait detection** — clicks that trigger network activity or
+  introduce a spinner-like node within 500 ms now emit a dedicated `wait` IR
+  step. Reasons currently inferred: `networkidle` (one or more `fetch`/XHR
+  responses observed in the post-click window) and `spinner` (a node matching
+  `[role=progressbar]`, `.spinner`, `.loading`, or `[aria-busy=true]` is
+  attached to the DOM, or an existing element flips `aria-busy` to true).
+  Spinner waits carry the spinner element's locator; the spinner heuristic
+  takes precedence over networkidle when both fire.
+- New IR surface: `IRActionType` gains `'wait'`; new `IRWaitReason` union
+  (`networkidle | spinner | element-hidden | element-visible`) and
+  `IRWaitInfo { reason, timeoutMs }` carried on `IRStep.wait`. The new
+  `wait-normalizer` is the single point of conversion from a recorded `wait`
+  action to an IR step.
+- All four adapters render the wait idiomatically:
+  - **Playwright TS** — `await page.waitForLoadState('networkidle')` for
+    networkidle; `await locator.waitFor({ state: 'hidden', timeout })` for
+    spinners. Page-object methods use `this.<element>.waitFor(...)`.
+  - **Cypress JS** — `cy.intercept('**/*').as('netReq'); cy.wait('@netReq')`
+    for networkidle; `cy.get(...).should('not.exist')` for spinners.
+  - **Selenium Python** — `WebDriverWait(...).until(EC.invisibility_of_element_located(...))`
+    for spinners; networkidle degrades to a `presence_of_element_located` body
+    wait with an explanatory comment (no native equivalent).
+  - **Selenium Java (TestNG)** — `wait.until(ExpectedConditions.invisibilityOfElementLocated(...))`
+    for spinners; same body-presence fallback for networkidle.
+- Side panel **Auto-detect waits** toggle (default ON) lives next to the
+  network mocks toggle and persists in `localStorage`. When off, recorded
+  `wait` actions are stripped from the IR before code generation. Wait steps
+  render in the recording list with an Hourglass icon and a `Wait for <reason>`
+  label; `StepEditModal` exposes a Wait timeout (ms) field for tweaking the
+  rendered `timeoutMs`.
+- `CODE_GENERATE` message now accepts an optional `autoWaitEnabled` flag,
+  threaded through `handleCodeGenerate` → `generate(...)`.
+- New constants in `shared/constants.ts`: `AUTO_WAIT_NETWORK_DEBOUNCE_MS`
+  (500 ms detection window), `AUTO_WAIT_DEFAULT_TIMEOUT_MS` (10 s timeout),
+  `SPINNER_SELECTORS` (the four matchers above).
+- Benchmark fixture `benchmarks/fixtures/spinner-modal/` exercising a modal
+  with the four spinner patterns to keep locator scoring stable in the face
+  of `.spinner`/`.loading` class names.
+
+- **Edit, reorder and override locators on recorded steps** — the recording panel
+  is no longer read-only after capture. Each step has a drag handle (keyboard- and
+  pointer-accessible via `@dnd-kit`) for reordering and a Pencil icon that opens
+  `StepEditModal`. The modal exposes the action's value (fill), key (keypress) and
+  delay (ms), plus a Locator tab listing every scored candidate from
+  `LocatorBundle.allCandidates` — picking one promotes it to primary and demotes
+  the previous primary into the fallbacks list. Overridden steps surface a small
+  `✏ overridden` pill in the list. Reorder/edit/delete only enable while the
+  session is paused or stopped; they refuse during active recording. After any
+  modification the code preview gains a `Steps modified — regenerate code to apply
+changes` banner with a `Re-generate` button.
+- `RecordedAction.target.allCandidates?: ScoredLocator[]` and
+  `RecordedAction.target.userOverridden?: boolean` — persisted on the action so a
+  manually picked locator survives reloads.
+- New messages: `STEPS_REORDERED`, `STEP_UPDATED`, `STEP_DELETED` (UI →
+  background); `STEPS_SYNCED` (background → UI). Reorder/update/delete dispatch
+  optimistic UI updates and the background reconciles via `STEPS_SYNCED`.
+- `action-repo.reorderActions`, `action-repo.updateAction`, `action-repo.deleteAction`
+  — transactional Dexie operations that keep `sequenceNumber` contiguous (0..n-1).
 - **Rich locator detail in step list** — every step now shows the strategy
   badge, primary score (color-coded: green ≥80, amber ≥50, red <50), and a
   one-line element snapshot (`tag · "text" · #id`). Clicking the locator opens

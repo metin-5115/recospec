@@ -2,8 +2,10 @@ import { describe, it, expect } from 'vitest'
 import { renderScenario, toSnakeCase } from './scenario'
 import type { IRPage, IRScenario, IRElement } from '../../ir/types'
 
+// Non-sensitive field name keeps these scenario tests focused on rendering;
+// env-var emission for sensitive fields is covered in test-data tests.
 const emailEl: IRElement = {
-  name: 'emailInput',
+  name: 'usernameInput',
   locatorStrategy: 'testid',
   locatorValue: '[data-testid="login-email"]',
   tagName: 'input',

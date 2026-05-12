@@ -21,6 +21,7 @@ export async function aggregateEvent(sessionId: string, event: CapturedEvent): P
       ? {
           primaryLocator: bundle.primary,
           fallbackLocators: bundle.fallbacks,
+          allCandidates: bundle.allCandidates,
           elementSnapshot: event.target!.elementSnapshot,
           shadowContext: bundle.shadowContext,
           shadowClosed: bundle.shadowClosed,

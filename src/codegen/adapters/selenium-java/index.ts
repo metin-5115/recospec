@@ -1,9 +1,9 @@
 import type { GeneratedFile } from '@shared/types/generated'
 import type { IRPage, IRScenario } from '../../ir/types'
 import { registerAdapter, type FrameworkAdapter } from '../registry'
-import { renderPageObject } from './page-object'
-import { renderScenario, toJavaMethodName } from './scenario'
-import { renderScaffold } from './scaffold'
+import { renderPageObject, setSeleniumJavaPageObjectTestData } from './page-object'
+import { renderScenario, toJavaMethodName, setSeleniumJavaTestData } from './scenario'
+import { renderScaffold, setSeleniumJavaScaffoldTestData } from './scaffold'
 
 export { renderPageObject, renderScenario, renderScaffold, toJavaMethodName }
 
@@ -15,6 +15,11 @@ export const seleniumJavaAdapter: FrameworkAdapter = {
     language: 'Java',
     testRunner: 'TestNG',
     packageName: 'org.seleniumhq.selenium:selenium-java',
+  },
+  applyOptions(options) {
+    setSeleniumJavaTestData(options.testData)
+    setSeleniumJavaPageObjectTestData(options.testData)
+    setSeleniumJavaScaffoldTestData(options.testData)
   },
   renderPageObject(page: IRPage): GeneratedFile {
     return {

@@ -1,4 +1,4 @@
-import type { IRPage, IRScenario } from '../ir/types'
+import type { IRPage, IRScenario, TestDataConfig } from '../ir/types'
 import type { FrameworkId, GeneratedFile } from '@shared/types/generated'
 
 export interface AdapterMetadata {
@@ -10,6 +10,11 @@ export interface AdapterMetadata {
 /** Render-time options forwarded by the orchestrator (e.g. include mocks). */
 export interface RenderOptions {
   includeMocks?: boolean
+  /**
+   * User-edited test-data config. Adapters use this to render env-var
+   * lookups for sensitive fields and `.env.example` / fixture scaffolds.
+   */
+  testData?: TestDataConfig
 }
 
 export interface FrameworkAdapter {

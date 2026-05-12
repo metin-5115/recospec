@@ -1,6 +1,26 @@
 import type { ShadowContext, FrameContext } from '@shared/types/locator'
 
-export type IRActionType = 'navigate' | 'click' | 'fill' | 'assert' | 'keypress' | 'network'
+export type IRActionType =
+  | 'navigate'
+  | 'click'
+  | 'fill'
+  | 'assert'
+  | 'keypress'
+  | 'network'
+  | 'wait'
+
+/** Reason an auto-detected wait was injected after a click. */
+export type IRWaitReason = 'networkidle' | 'spinner' | 'element-hidden' | 'element-visible'
+
+/**
+ * Auto-detected wait emitted by the content script after a click whose
+ * follow-up triggers network or spinner activity. Adapters render it as the
+ * idiomatic wait helper for their framework.
+ */
+export interface IRWaitInfo {
+  reason: IRWaitReason
+  timeoutMs: number
+}
 
 /** TS-level parameter type used when rendering inferred method signatures. */
 export type IRParamType = 'string' | 'number' | 'boolean'
@@ -26,6 +46,10 @@ export interface IRElementSnapshot {
   id?: string
   testId?: string
   role?: string
+  /** Form-control name attribute (powers sensitive-field detection). */
+  fieldName?: string
+  /** Lower-cased autocomplete attribute (e.g. `current-password`, `email`). */
+  autocomplete?: string
 }
 
 export interface IRElement {
@@ -76,6 +100,7 @@ export interface IRStep {
   annotation?: string
   assertionDetail?: AssertionDetail
   network?: IRNetworkInfo
+  wait?: IRWaitInfo
 }
 
 export interface InferredMethod {
@@ -83,7 +108,35 @@ export interface InferredMethod {
   params: string[]
   /** Parallel array of TS types (defaults to all `'string'` when omitted). */
   paramTypes?: IRParamType[]
+  /**
+   * Parallel boolean array — `true` when the param holds a sensitive value
+   * (password, token, email, etc.). Adapters render secret params with env
+   * var lookups + a default fallback so the value never leaks into committed
+   * code. Defaults to all `false` when omitted.
+   */
+  paramSecret?: boolean[]
   steps: IRStep[]
+}
+
+/** A single user-visible test data parameter surfaced in the side panel. */
+export interface TestDataParam {
+  /** Stable parameter id, e.g. `LoginPage.login.password`. */
+  key: string
+  /** Camel-case parameter name as rendered in the method signature. */
+  name: string
+  /** Detected (or user-overridden) sensitive flag. */
+  isSecret: boolean
+  /** Default value substituted at call sites when no env var is set. */
+  defaultValue: string
+  /** When true, adapters emit `process.env.X ?? default` style lookups. */
+  useEnvVar: boolean
+  /** SCREAMING_SNAKE_CASE env var name (without `PLAYFORGE_` prefix). */
+  envVarName: string
+}
+
+/** Full test data configuration shipped from the side panel into codegen. */
+export interface TestDataConfig {
+  params: TestDataParam[]
 }
 
 export interface IRPage {

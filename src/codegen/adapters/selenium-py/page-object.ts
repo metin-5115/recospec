@@ -5,8 +5,21 @@ import type {
   InferredMethod,
   AssertionDetail,
   IRParamType,
+  TestDataConfig,
 } from '../../ir/types'
 import { renderLocatorTuple, renderFallbackTuple, pyStr } from './locator'
+import { resolveTestData } from '../../planner/test-data-resolver'
+
+let TEST_DATA: TestDataConfig | undefined
+export function setSeleniumPyPageObjectTestData(value: TestDataConfig | undefined): void {
+  TEST_DATA = value
+}
+
+function renderFillValueExpr(el: IRElement | undefined, recordedValue: string): string {
+  const r = resolveTestData(el, recordedValue, TEST_DATA)
+  if (!r.useEnvVar) return pyStr(r.literal)
+  return `os.environ.get(${pyStr(r.envVarName)}, ${pyStr(r.defaultValue)})`
+}
 
 // ---------------------------------------------------------------------------
 // Naming helpers
@@ -111,7 +124,8 @@ function renderStepInMethod(step: IRStep, indent: string): string {
   if (step.action === 'fill' && step.element) {
     const ref = `self.${toConstName(step.element.name)}`
     const elField = `self.wait.until(EC.visibility_of_element_located(${ref}))`
-    return `${indent}_el = ${elField}\n${indent}_el.clear()\n${indent}_el.send_keys(${pyStr(step.value ?? '')})`
+    const expr = renderFillValueExpr(step.element, step.value ?? '')
+    return `${indent}_el = ${elField}\n${indent}_el.clear()\n${indent}_el.send_keys(${expr})`
   }
   if (step.action === 'keypress' && step.key) {
     const keyConst = step.key.toUpperCase()
@@ -190,7 +204,10 @@ export function renderPageObject(page: IRPage): string {
 
   const constantsBlock = constants ? `${constants}\n\n` : ''
 
-  return `from selenium.webdriver.common.by import By
+  const needsOsImport = (TEST_DATA?.params ?? []).some((p) => p.useEnvVar)
+  const osImportLine = needsOsImport ? 'import os\n' : ''
+
+  return `${osImportLine}from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC

@@ -1,12 +1,20 @@
 import { useState } from 'react'
-import { Check, Copy, Download } from 'lucide-react'
+import { Check, Copy, Download, Loader2, Play } from 'lucide-react'
 import type { GeneratedCode } from '@shared/types/generated'
 
 interface CodePreviewProps {
   code: GeneratedCode
+  onValidate?: () => void
+  isValidating?: boolean
+  validateDisabled?: boolean
 }
 
-export function CodePreview({ code }: CodePreviewProps) {
+export function CodePreview({
+  code,
+  onValidate,
+  isValidating,
+  validateDisabled,
+}: CodePreviewProps) {
   const [activeIndex, setActiveIndex] = useState(0)
   const [copied, setCopied] = useState(false)
 
@@ -49,6 +57,22 @@ export function CodePreview({ code }: CodePreviewProps) {
           ))}
         </div>
         <div className="ml-2 flex shrink-0 gap-1">
+          {onValidate && (
+            <button
+              onClick={onValidate}
+              disabled={validateDisabled || isValidating}
+              className="inline-flex items-center gap-1 rounded-md bg-gradient-accent px-2.5 py-1 text-xs font-semibold text-white shadow-sm transition-all hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
+              aria-label="Validate locators on the active tab"
+              title="Validate every locator against the page currently focused in your browser"
+            >
+              {isValidating ? (
+                <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+              ) : (
+                <Play className="h-3 w-3 fill-current" aria-hidden="true" />
+              )}
+              <span className="hidden sm:inline">{isValidating ? 'Testing…' : 'Test on Page'}</span>
+            </button>
+          )}
           <button
             onClick={handleDownload}
             className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-text-muted transition-colors hover:bg-bg hover:text-text"

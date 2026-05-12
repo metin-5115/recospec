@@ -1,4 +1,5 @@
 import type { IRStep, IRElement, InferredMethod, IRParamType } from '../ir/types'
+import { isSensitiveField } from './sensitive-detector'
 
 // ---------------------------------------------------------------------------
 // Element classification helpers
@@ -80,17 +81,30 @@ interface MethodDraft {
   name: string
   params: string[]
   paramTypes: IRParamType[]
+  /** Aligned with `params` — true when the parameter holds a secret value. */
+  paramSecret: boolean[]
+  /** Element each param was derived from — used to recompute secret flags. */
+  paramElements: (IRElement | undefined)[]
   steps: IRStep[]
+}
+
+function emptyDraft(name: string, step: IRStep): MethodDraft {
+  return {
+    name,
+    params: [],
+    paramTypes: [],
+    paramSecret: [],
+    paramElements: [],
+    steps: [step],
+  }
 }
 
 function defaultDraft(step: IRStep): MethodDraft {
   if (step.action === 'click' && step.element) {
-    return {
-      name: `click${capitalize(stripElementSuffix(step.element.name) || 'Element')}`,
-      params: [],
-      paramTypes: [],
-      steps: [step],
-    }
+    return emptyDraft(
+      `click${capitalize(stripElementSuffix(step.element.name) || 'Element')}`,
+      step,
+    )
   }
   if (step.action === 'fill' && step.element) {
     const param = paramName(step.element, 'value')
@@ -98,25 +112,22 @@ function defaultDraft(step: IRStep): MethodDraft {
       name: `fill${capitalize(stripElementSuffix(step.element.name) || 'Field')}`,
       params: [param],
       paramTypes: [paramTypeFor(step.element)],
+      paramSecret: [isSensitiveField(step.element)],
+      paramElements: [step.element],
       steps: [step],
     }
   }
   if (step.action === 'keypress' && step.key) {
-    return {
-      name: `press${capitalize(step.key.toLowerCase())}`,
-      params: [],
-      paramTypes: [],
-      steps: [step],
-    }
+    return emptyDraft(`press${capitalize(step.key.toLowerCase())}`, step)
   }
   if (step.action === 'assert') {
     const target = step.element ? capitalize(stripElementSuffix(step.element.name)) : 'State'
-    return { name: `verify${target || 'State'}`, params: [], paramTypes: [], steps: [step] }
+    return emptyDraft(`verify${target || 'State'}`, step)
   }
   if (step.action === 'network') {
-    return { name: 'awaitNetwork', params: [], paramTypes: [], steps: [step] }
+    return emptyDraft('awaitNetwork', step)
   }
-  return { name: 'doAction', params: [], paramTypes: [], steps: [step] }
+  return emptyDraft('doAction', step)
 }
 
 // ---------------------------------------------------------------------------
@@ -172,6 +183,8 @@ export function inferMethods(steps: IRStep[]): InferredMethod[] {
         name: 'search',
         params: [paramName(s0.element, 'query')],
         paramTypes: [paramTypeFor(s0.element)],
+        paramSecret: [isSensitiveField(s0.element)],
+        paramElements: [s0.element],
         steps: [s0, s1],
       })
       i += 2
@@ -189,6 +202,8 @@ export function inferMethods(steps: IRStep[]): InferredMethod[] {
         name: 'search',
         params: [paramName(s0.element, 'query')],
         paramTypes: [paramTypeFor(s0.element)],
+        paramSecret: [isSensitiveField(s0.element)],
+        paramElements: [s0.element],
         steps: [s0, s1],
       })
       i += 2
@@ -209,6 +224,8 @@ export function inferMethods(steps: IRStep[]): InferredMethod[] {
         name,
         params: [paramName(s0.element, 'email'), paramName(s1.element, 'password')],
         paramTypes: [paramTypeFor(s0.element), paramTypeFor(s1.element)],
+        paramSecret: [isSensitiveField(s0.element), isSensitiveField(s1.element)],
+        paramElements: [s0.element, s1.element],
         steps: [s0, s1, s2],
       })
       i += 3
@@ -229,6 +246,8 @@ export function inferMethods(steps: IRStep[]): InferredMethod[] {
           name: 'submitForm',
           params: fillSteps.map((s, idx) => paramName(s.element, `field${idx + 1}`)),
           paramTypes: fillSteps.map((s) => paramTypeFor(s.element)),
+          paramSecret: fillSteps.map((s) => isSensitiveField(s.element)),
+          paramElements: fillSteps.map((s) => s.element),
           steps: [...fillSteps, next],
         })
         i = j + 1
@@ -239,6 +258,8 @@ export function inferMethods(steps: IRStep[]): InferredMethod[] {
           name: 'fillForm',
           params: fillSteps.map((s, idx) => paramName(s.element, `field${idx + 1}`)),
           paramTypes: fillSteps.map((s) => paramTypeFor(s.element)),
+          paramSecret: fillSteps.map((s) => isSensitiveField(s.element)),
+          paramElements: fillSteps.map((s) => s.element),
           steps: fillSteps,
         })
         i = j
@@ -258,6 +279,8 @@ export function inferMethods(steps: IRStep[]): InferredMethod[] {
         name: 'acceptAndSubmit',
         params: [paramName(s0.element, 'consent')],
         paramTypes: ['boolean'],
+        paramSecret: [false],
+        paramElements: [s0.element],
         steps: [s0, s1],
       })
       i += 2
@@ -275,6 +298,8 @@ export function inferMethods(steps: IRStep[]): InferredMethod[] {
         name: 'navigateFromMenu',
         params: [paramName(s1.element, 'option')],
         paramTypes: ['string'],
+        paramSecret: [false],
+        paramElements: [s1.element],
         steps: [s0, s1, s2],
       })
       i += 3
@@ -287,6 +312,8 @@ export function inferMethods(steps: IRStep[]): InferredMethod[] {
         name: 'selectFromMenu',
         params: [paramName(s1.element, 'option')],
         paramTypes: ['string'],
+        paramSecret: [false],
+        paramElements: [s1.element],
         steps: [s0, s1],
       })
       i += 2
@@ -299,6 +326,8 @@ export function inferMethods(steps: IRStep[]): InferredMethod[] {
         name: 'openItem',
         params: [paramName(s0.element, 'itemName')],
         paramTypes: ['string'],
+        paramSecret: [false],
+        paramElements: [s0.element],
         steps: [s0, s1],
       })
       i += 2
@@ -311,6 +340,8 @@ export function inferMethods(steps: IRStep[]): InferredMethod[] {
         name: 'confirmAction',
         params: [paramName(s0.element, 'target')],
         paramTypes: ['string'],
+        paramSecret: [false],
+        paramElements: [s0.element],
         steps: [s0, s1],
       })
       i += 2
@@ -340,7 +371,15 @@ export function inferMethods(steps: IRStep[]): InferredMethod[] {
         owner = drafts[0]
       }
       if (owner) owner.steps.push(net)
-      else drafts.push({ name: 'awaitNetwork', params: [], paramTypes: [], steps: [net] })
+      else
+        drafts.push({
+          name: 'awaitNetwork',
+          params: [],
+          paramTypes: [],
+          paramSecret: [],
+          paramElements: [],
+          steps: [net],
+        })
     }
   }
 
@@ -357,6 +396,7 @@ export function inferMethods(steps: IRStep[]): InferredMethod[] {
       name: candidate,
       params: d.params,
       paramTypes: d.paramTypes,
+      paramSecret: d.paramSecret,
       steps: d.steps,
     }
   })

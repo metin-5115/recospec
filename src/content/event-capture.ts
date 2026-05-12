@@ -5,10 +5,13 @@ import type {
   NetworkPayload,
 } from '@shared/types/action'
 import type { LocatorBundle } from '@shared/types/locator'
+import type { IRWaitInfo, IRWaitReason } from '@codegen/ir/types'
 import { LocatorEngine } from '@locator/index'
 import { detectShadowContext, detectFrameContext } from './shadow-pierce'
+import { observeForSpinner } from './spinner-detector'
 import { sendToBackground } from '@shared/messaging/send'
 import { logger } from '@shared/logger'
+import { AUTO_WAIT_DEFAULT_TIMEOUT_MS, AUTO_WAIT_NETWORK_DEBOUNCE_MS } from '@shared/constants'
 
 const engine = new LocatorEngine()
 const frameContext = detectFrameContext()
@@ -48,15 +51,72 @@ function buildEvent(
   }
 }
 
+function buildWaitEvent(reason: IRWaitReason, target: Element | null): CapturedEvent {
+  const wait: IRWaitInfo = { reason, timeoutMs: AUTO_WAIT_DEFAULT_TIMEOUT_MS }
+  if (target) {
+    const shadowResult = detectShadowContext(target)
+    const bundle: LocatorBundle | null = engine.evaluate(target, document, {
+      shadowContext: shadowResult?.context,
+      shadowClosed: shadowResult?.closed,
+      frameContext: frameContext ?? undefined,
+    })
+    return {
+      type: 'wait',
+      target: { locatorBundle: bundle, elementSnapshot: buildSnapshot(target) },
+      payload: { wait },
+      timestamp: Date.now(),
+      pageMetadata: { url: location.href, title: document.title },
+    }
+  }
+  return {
+    type: 'wait',
+    target: null,
+    payload: { wait },
+    timestamp: Date.now(),
+    pageMetadata: { url: location.href, title: document.title },
+  }
+}
+
 let activeSessionId: string | null = null
+/** Most recent post-click network event timestamp; reset per click watch. */
+let networkActivityCounter = 0
+/** AbortController for the in-flight post-click wait detection, if any. */
+let pendingWaitAbort: AbortController | null = null
+
+async function watchForWait(sessionId: string): Promise<void> {
+  // Cancel any prior watch — only the latest click matters.
+  pendingWaitAbort?.abort()
+  const ctrl = new AbortController()
+  pendingWaitAbort = ctrl
+  const networkBefore = networkActivityCounter
+
+  const spinner = await observeForSpinner({ timeoutMs: AUTO_WAIT_NETWORK_DEBOUNCE_MS }, ctrl.signal)
+
+  if (ctrl.signal.aborted) return
+
+  let event: CapturedEvent | null = null
+  if (spinner) {
+    // Spinner wins — it's a more specific cue than networkidle.
+    event = buildWaitEvent('spinner', spinner)
+  } else if (networkActivityCounter > networkBefore) {
+    event = buildWaitEvent('networkidle', null)
+  }
+
+  if (!event || ctrl.signal.aborted) return
+  if (pendingWaitAbort === ctrl) pendingWaitAbort = null
+  await sendToBackground({ type: 'EVENT_CAPTURED', sessionId, event }).catch((err) =>
+    logger.error('[CS] Failed to send wait EVENT_CAPTURED', err),
+  )
+}
 
 function onClickCapture(e: MouseEvent): void {
   if (!activeSessionId || !(e.target instanceof Element)) return
   const sessionId = activeSessionId
   const event = buildEvent('click', e.target)
-  sendToBackground({ type: 'EVENT_CAPTURED', sessionId, event }).catch((err) =>
-    logger.error('[CS] Failed to send EVENT_CAPTURED', err),
-  )
+  sendToBackground({ type: 'EVENT_CAPTURED', sessionId, event })
+    .catch((err) => logger.error('[CS] Failed to send EVENT_CAPTURED', err))
+    .then(() => watchForWait(sessionId))
+    .catch((err) => logger.error('[CS] watchForWait failed', err))
 }
 
 function onChangeCapture(e: Event): void {
@@ -72,6 +132,9 @@ function onNetworkCapture(e: Event): void {
   if (!activeSessionId) return
   const detail = (e as CustomEvent<NetworkPayload>).detail
   if (!detail || !detail.url || !detail.method) return
+  // Bump the counter regardless of whether the user wants mocks — the wait
+  // watcher needs to know there *was* network activity within the window.
+  networkActivityCounter += 1
   const sessionId = activeSessionId
   const event: CapturedEvent = {
     type: 'network',
@@ -95,6 +158,8 @@ export function startCapture(sessionId: string): void {
 
 export function stopCapture(): void {
   activeSessionId = null
+  pendingWaitAbort?.abort()
+  pendingWaitAbort = null
   document.removeEventListener('click', onClickCapture, { capture: true })
   document.removeEventListener('change', onChangeCapture, { capture: true })
   window.removeEventListener('playforge:network', onNetworkCapture as EventListener)

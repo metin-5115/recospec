@@ -33,7 +33,7 @@ describe('StepList — rich locator cell', () => {
         elementSnapshot: { tagName: 'button', attributes: {}, textContent: 'Submit' },
       },
     })
-    render(<StepList steps={[step]} onDeleteStep={vi.fn()} />)
+    render(<StepList steps={[step]} reorderable={false} onDeleteStep={vi.fn()} />)
     expect(screen.getByText('[data-testid="submit"]')).toBeTruthy()
     expect(screen.getByText('95')).toBeTruthy()
     expect(screen.getByText('testid')).toBeTruthy()
@@ -62,7 +62,7 @@ describe('StepList — rich locator cell', () => {
         elementSnapshot: { tagName: 'button', attributes: {}, textContent: 'Submit' },
       },
     })
-    render(<StepList steps={[step]} onDeleteStep={vi.fn()} />)
+    render(<StepList steps={[step]} reorderable={false} onDeleteStep={vi.fn()} />)
     fireEvent.click(screen.getByRole('button', { name: 'Show locator detail' }))
     expect(screen.getByRole('dialog', { name: 'Locator detail' })).toBeTruthy()
     expect(screen.getByText('All strategies')).toBeTruthy()
@@ -84,13 +84,78 @@ describe('StepList — rich locator cell', () => {
         elementSnapshot: { tagName: 'input', attributes: {}, textContent: '' },
       },
     })
-    render(<StepList steps={[step]} onDeleteStep={vi.fn()} />)
+    render(<StepList steps={[step]} reorderable={false} onDeleteStep={vi.fn()} />)
     const json = JSON.stringify({ frame: 'iframe[name="card"]', target: 'input#cc' })
     expect(screen.getByText(json)).toBeTruthy()
   })
 
   it('renders empty state when there are no steps', () => {
-    render(<StepList steps={[]} onDeleteStep={vi.fn()} />)
+    render(<StepList steps={[]} reorderable={false} onDeleteStep={vi.fn()} />)
     expect(screen.getByText('No steps yet')).toBeTruthy()
+  })
+
+  it('shows ✏ overridden pill when target.userOverridden is true', () => {
+    const step = makeStep({
+      target: {
+        primaryLocator: {
+          strategy: 'css',
+          selector: '#submit',
+          framework: {},
+          score: 70,
+          matchCount: 1,
+        },
+        fallbackLocators: [],
+        userOverridden: true,
+        elementSnapshot: { tagName: 'button', attributes: {}, textContent: 'Go' },
+      },
+    })
+    render(<StepList steps={[step]} reorderable={false} onDeleteStep={vi.fn()} />)
+    expect(screen.getByText(/overridden/)).toBeTruthy()
+  })
+
+  it('drag handle and edit button only render when reorderable=true', () => {
+    const step = makeStep({
+      target: {
+        primaryLocator: {
+          strategy: 'testid',
+          selector: 'submit-btn',
+          framework: {},
+          score: 95,
+          matchCount: 1,
+        },
+        fallbackLocators: [],
+        elementSnapshot: { tagName: 'button', attributes: {}, textContent: 'Submit' },
+      },
+    })
+    const { rerender } = render(
+      <StepList steps={[step]} reorderable={false} onDeleteStep={vi.fn()} />,
+    )
+    expect(screen.queryByLabelText('Drag to reorder')).toBeNull()
+    expect(screen.queryByLabelText('Edit step')).toBeNull()
+
+    rerender(<StepList steps={[step]} reorderable={true} onDeleteStep={vi.fn()} />)
+    expect(screen.getByLabelText('Drag to reorder')).toBeTruthy()
+    expect(screen.getByLabelText('Edit step')).toBeTruthy()
+  })
+
+  it('opens StepEditModal on edit click', () => {
+    const step = makeStep({
+      type: 'fill',
+      payload: { value: 'hello' },
+      target: {
+        primaryLocator: {
+          strategy: 'testid',
+          selector: 'name-input',
+          framework: {},
+          score: 90,
+          matchCount: 1,
+        },
+        fallbackLocators: [],
+        elementSnapshot: { tagName: 'input', attributes: {}, textContent: '' },
+      },
+    })
+    render(<StepList steps={[step]} reorderable={true} onDeleteStep={vi.fn()} />)
+    fireEvent.click(screen.getByLabelText('Edit step'))
+    expect(screen.getByRole('dialog', { name: 'Edit step' })).toBeTruthy()
   })
 })

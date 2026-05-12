@@ -1,12 +1,15 @@
 import type { GeneratedFile } from '@shared/types/generated'
-import type { IRPage, IRScenario } from '../../ir/types'
+import type { IRPage, IRScenario, TestDataConfig } from '../../ir/types'
 import { registerAdapter, type FrameworkAdapter } from '../registry'
 import { renderPageObject } from './page-object'
-import { renderScenario } from './scenario'
+import { renderScenario, setCypressTestData } from './scenario'
+import { setCypressPageObjectTestData } from './page-object'
 import { renderLocator } from './locator'
 import { CYPRESS_SELF_HEALING_JS } from '../../scaffold/self-healing'
 
 export { renderPageObject, renderScenario, renderLocator }
+
+let TEST_DATA: TestDataConfig | undefined
 
 export function renderScaffold(): GeneratedFile[] {
   const packageJson = JSON.stringify(
@@ -56,13 +59,23 @@ addMatchImageSnapshotCommand({
 });
 `
 
-  return [
+  const files: GeneratedFile[] = [
     { filename: 'package.json', content: packageJson },
     { filename: 'cypress.config.js', content: cypressConfig },
     { filename: 'cypress/support/e2e.js', content: supportFile },
     { filename: 'cypress/support/locator.js', content: CYPRESS_SELF_HEALING_JS },
     { filename: 'cypress/screenshots/.gitkeep', content: '' },
   ]
+  const params = TEST_DATA?.params.filter((p) => p.useEnvVar) ?? []
+  if (params.length) {
+    const envObject: Record<string, string> = {}
+    for (const p of params) envObject[p.name] = p.isSecret ? '' : p.defaultValue
+    files.push({
+      filename: 'cypress.env.json.example',
+      content: JSON.stringify(envObject, null, 2) + '\n',
+    })
+  }
+  return files
 }
 
 export const cypressAdapter: FrameworkAdapter = {
@@ -73,6 +86,11 @@ export const cypressAdapter: FrameworkAdapter = {
     language: 'JavaScript',
     testRunner: 'cypress',
     packageName: 'cypress',
+  },
+  applyOptions(options) {
+    TEST_DATA = options.testData
+    setCypressTestData(options.testData)
+    setCypressPageObjectTestData(options.testData)
   },
   renderPageObject(page: IRPage): GeneratedFile {
     return { filename: `${page.className}.js`, content: renderPageObject(page) }

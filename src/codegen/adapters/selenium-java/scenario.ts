@@ -1,5 +1,17 @@
-import type { IRScenario, IRStep, AssertionDetail, IRElement } from '../../ir/types'
+import type { IRScenario, IRStep, AssertionDetail, IRElement, TestDataConfig } from '../../ir/types'
 import { renderByExpression, javaStr } from './locator'
+import { resolveTestData } from '../../planner/test-data-resolver'
+
+let TEST_DATA: TestDataConfig | undefined
+export function setSeleniumJavaTestData(value: TestDataConfig | undefined): void {
+  TEST_DATA = value
+}
+
+function renderFillValueExpr(el: IRElement | undefined, recordedValue: string): string {
+  const r = resolveTestData(el, recordedValue, TEST_DATA)
+  if (!r.useEnvVar) return javaStr(r.literal)
+  return `System.getenv().getOrDefault(${javaStr(r.envVarName)}, ${javaStr(r.defaultValue)})`
+}
 
 /** Convert a recorded scenario name to a valid Java method name suffix. */
 export function toJavaMethodName(name: string): string {
@@ -52,6 +64,26 @@ function renderAssertion(d: AssertionDetail, el: IRElement | undefined, indent: 
   }
 }
 
+function renderWait(step: IRStep, indent: string): string {
+  if (!step.wait) return ''
+  if (step.wait.reason === 'networkidle') {
+    return [
+      `${indent}// networkidle has no direct Selenium equivalent — wait until DOM body is present.`,
+      `${indent}wait.until(ExpectedConditions.presenceOfElementLocated(By.tagName("body")));`,
+    ].join('\n')
+  }
+  if (step.wait.reason === 'spinner' || step.wait.reason === 'element-hidden') {
+    if (!step.element) return ''
+    const byExpr = renderByExpression(step.element)
+    return `${indent}wait.until(ExpectedConditions.invisibilityOfElementLocated(${byExpr}));`
+  }
+  if (step.wait.reason === 'element-visible' && step.element) {
+    const byExpr = renderByExpression(step.element)
+    return `${indent}wait.until(ExpectedConditions.visibilityOfElementLocated(${byExpr}));`
+  }
+  return ''
+}
+
 function renderStepInTest(step: IRStep, indent: string): string {
   if (step.action === 'navigate' && step.url) {
     return `${indent}driver.get(${javaStr(step.url)});`
@@ -62,14 +94,18 @@ function renderStepInTest(step: IRStep, indent: string): string {
   }
   if (step.action === 'fill' && step.element) {
     const byExpr = renderByExpression(step.element)
+    const expr = renderFillValueExpr(step.element, step.value ?? '')
     return [
       `${indent}WebElement _el = wait.until(ExpectedConditions.visibilityOfElementLocated(${byExpr}));`,
       `${indent}_el.clear();`,
-      `${indent}_el.sendKeys(${javaStr(step.value ?? '')});`,
+      `${indent}_el.sendKeys(${expr});`,
     ].join('\n')
   }
   if (step.action === 'keypress' && step.key) {
     return `${indent}driver.switchTo().activeElement().sendKeys(Keys.${step.key.toUpperCase()});`
+  }
+  if (step.action === 'wait') {
+    return renderWait(step, indent)
   }
   if (step.action === 'assert') {
     if (step.assertionDetail) {

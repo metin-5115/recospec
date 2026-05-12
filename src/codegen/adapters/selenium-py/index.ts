@@ -1,9 +1,9 @@
 import type { GeneratedFile } from '@shared/types/generated'
 import type { IRPage, IRScenario } from '../../ir/types'
 import { registerAdapter, type FrameworkAdapter } from '../registry'
-import { renderPageObject } from './page-object'
-import { renderScenario, toSnakeCase } from './scenario'
-import { renderScaffold } from './scaffold'
+import { renderPageObject, setSeleniumPyPageObjectTestData } from './page-object'
+import { renderScenario, toSnakeCase, setSeleniumPyTestData } from './scenario'
+import { renderScaffold, setSeleniumPyScaffoldTestData } from './scaffold'
 
 export { renderPageObject, renderScenario, renderScaffold, toSnakeCase }
 
@@ -15,6 +15,11 @@ export const seleniumPyAdapter: FrameworkAdapter = {
     language: 'Python',
     testRunner: 'pytest',
     packageName: 'selenium',
+  },
+  applyOptions(options) {
+    setSeleniumPyTestData(options.testData)
+    setSeleniumPyPageObjectTestData(options.testData)
+    setSeleniumPyScaffoldTestData(options.testData)
   },
   renderPageObject(page: IRPage): GeneratedFile {
     return {
