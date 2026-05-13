@@ -40,6 +40,8 @@ export default [
         setInterval: 'readonly',
         clearInterval: 'readonly',
         queueMicrotask: 'readonly',
+        process: 'readonly',
+        Buffer: 'readonly',
       },
     },
     plugins: {
