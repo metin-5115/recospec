@@ -1,5 +1,13 @@
 export const DB_NAME = 'PlayForgeDB' as const
-export const DB_VERSION = 1 as const
+/** Latest schema version. Bumping triggers Dexie upgrade callbacks. */
+export const DB_VERSION = 2 as const
+/**
+ * Number of recorded steps the background waits for before computing the
+ * flow signature and probing the DB for prior matching sessions. Three
+ * steps is enough shape to discriminate `login` from `checkout` while
+ * staying cheap to compute.
+ */
+export const ITERATION_SIGNATURE_STEPS = 3 as const
 export const LOCATOR_FALLBACK_COUNT = 2 as const
 export const MAX_TEXT_CONTENT_LENGTH = 100 as const
 export const MAX_DYNAMIC_ID_ENTROPY = 3.5 as const

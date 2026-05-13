@@ -21,6 +21,7 @@ import {
   handleValidateLocators,
   handleValidationResponse,
 } from './locator-validation-controller'
+import { handleIterationAccept, handleIterationDismiss } from './iteration-controller'
 import { logger } from '@shared/logger'
 
 export function initMessageRouter(): void {
@@ -67,6 +68,7 @@ export function initMessageRouter(): void {
           methodRenames: message.methodRenames,
           autoWaitEnabled: message.autoWaitEnabled,
           testData: message.testData,
+          bdd: message.bdd,
         }).catch((err) => logger.error('[BG] CODE_GENERATE failed', err))
 
       case 'ASSERTION_PROBE_START':
@@ -136,6 +138,16 @@ export function initMessageRouter(): void {
           message.durationMs,
           message.pageUrl,
         ).catch((err) => logger.error('[BG] LOCATOR_VALIDATION_RESPONSE failed', err))
+
+      case 'SESSION_ITERATION_ACCEPT':
+        return handleIterationAccept(message.sessionId, message.parentSessionId).catch((err) =>
+          logger.error('[BG] SESSION_ITERATION_ACCEPT failed', err),
+        )
+
+      case 'SESSION_ITERATION_DISMISS':
+        return handleIterationDismiss(message.sessionId).catch((err) =>
+          logger.error('[BG] SESSION_ITERATION_DISMISS failed', err),
+        )
     }
   })
 }

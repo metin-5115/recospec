@@ -17,6 +17,8 @@ function makeSession(overrides: Partial<Session> = {}): Session {
       timezone: 'UTC',
     },
     config: { captureClicks: true, captureInputs: true, captureNavigation: true },
+    iterationNumber: 1,
+    flowSignature: 'test-sig',
     ...overrides,
   }
 }
@@ -98,6 +100,48 @@ describe('buildZipExport', () => {
     const readme = await readZipFile(blob, 'README.md')
     expect(readme).toContain('Visual regression')
     expect(readme).toContain('toHaveScreenshot')
+  })
+
+  it('places cypress BDD .feature file at cypress/e2e/', async () => {
+    const code: GeneratedCode = {
+      framework: 'cypress',
+      files: [{ filename: 'scenario.feature', content: 'Feature: x' }],
+    }
+    const blob = await buildZipExport(makeSession(), code)
+    const paths = await listZipPaths(blob)
+    expect(paths).toContain('cypress/e2e/scenario.feature')
+  })
+
+  it('places cypress BDD .steps.js inside a folder matching the feature basename', async () => {
+    const code: GeneratedCode = {
+      framework: 'cypress',
+      files: [{ filename: 'scenario.steps.js', content: '// step defs' }],
+    }
+    const blob = await buildZipExport(makeSession(), code)
+    const paths = await listZipPaths(blob)
+    // cypress-cucumber-preprocessor convention: feature/<name>.feature is
+    // paired with the same-named folder for step definitions.
+    expect(paths).toContain('cypress/e2e/scenario/scenario.steps.js')
+  })
+
+  it('still routes cypress page-object .js files to cypress/pages/', async () => {
+    const code: GeneratedCode = {
+      framework: 'cypress',
+      files: [{ filename: 'LoginPage.js', content: 'export class LoginPage {}' }],
+    }
+    const blob = await buildZipExport(makeSession(), code)
+    const paths = await listZipPaths(blob)
+    expect(paths).toContain('cypress/pages/LoginPage.js')
+  })
+
+  it('still routes Playwright BDD .feature files to features/', async () => {
+    const code: GeneratedCode = {
+      framework: 'playwright-ts',
+      files: [{ filename: 'scenario.feature', content: 'Feature: x' }],
+    }
+    const blob = await buildZipExport(makeSession(), code)
+    const paths = await listZipPaths(blob)
+    expect(paths).toContain('features/scenario.feature')
   })
 
   it('handles a full set of generated files correctly', async () => {

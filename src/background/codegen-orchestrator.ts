@@ -12,6 +12,7 @@ export async function handleCodeGenerate(
     methodRenames?: Record<string, string>
     autoWaitEnabled?: boolean
     testData?: TestDataConfig
+    bdd?: boolean
   } = {},
 ): Promise<void> {
   try {
@@ -20,6 +21,7 @@ export async function handleCodeGenerate(
       methodRenames: options.methodRenames,
       autoWaitEnabled: options.autoWaitEnabled,
       testData: options.testData,
+      bdd: options.bdd,
     })
     await broadcastToUI({ type: 'CODE_GENERATED', sessionId, code })
   } catch (err) {

@@ -23,6 +23,21 @@ interface AssertionContext {
   screenshotDataUrl?: string
 }
 
+interface IterationSuggestion {
+  sessionId: string
+  parentSessionId: string
+  parentName: string
+  parentIterationNumber: number
+  parentTimestamp: number
+}
+
+interface DiffSelection {
+  sessionA: Session
+  actionsA: RecordedAction[]
+  sessionB: Session
+  actionsB: RecordedAction[]
+}
+
 const MAX_RETRIES = 3
 
 export function useSession() {
@@ -35,6 +50,7 @@ export function useSession() {
     sessions,
     selectedFramework,
     autoWaitEnabled,
+    bddEnabled,
     setActiveSession,
     appendStep,
     deleteStep,
@@ -50,6 +66,7 @@ export function useSession() {
     removeSession,
     setSelectedFramework,
     setAutoWaitEnabled,
+    setBddEnabled,
   } = useSessionStore()
 
   const [isProbeActive, setIsProbeActive] = useState(false)
@@ -62,6 +79,8 @@ export function useSession() {
   const [validationError, setValidationError] = useState<string | null>(null)
   const [validationTruncated, setValidationTruncated] = useState<number | undefined>(undefined)
   const [isValidating, setIsValidating] = useState(false)
+  const [iterationSuggestion, setIterationSuggestion] = useState<IterationSuggestion | null>(null)
+  const [diffSelection, setDiffSelection] = useState<DiffSelection | null>(null)
 
   const renameMethod = useCallback((key: string, value: string) => {
     setMethodRenames((prev) => ({ ...prev, [key]: value }))
@@ -106,6 +125,14 @@ export function useSession() {
         setValidationDurationMs(message.durationMs)
         setValidationError(message.error ?? null)
         setValidationTruncated(message.truncated)
+      } else if (message.type === 'SESSION_ITERATION_SUGGESTED') {
+        setIterationSuggestion({
+          sessionId: message.sessionId,
+          parentSessionId: message.parentSessionId,
+          parentName: message.parentName,
+          parentIterationNumber: message.parentIterationNumber,
+          parentTimestamp: message.parentTimestamp,
+        })
       }
     })
     return cleanup
@@ -225,6 +252,7 @@ export function useSession() {
           autoWaitEnabled,
           methodRenames,
           testData,
+          bdd: bddEnabled,
         })
         return
       } catch {
@@ -242,6 +270,7 @@ export function useSession() {
     autoWaitEnabled,
     methodRenames,
     testData,
+    bddEnabled,
     setCodeGenError,
   ])
 
@@ -384,6 +413,37 @@ export function useSession() {
     [steps, handleSetStepLocator],
   )
 
+  const acceptIteration = useCallback(async () => {
+    if (!iterationSuggestion) return
+    await sendToBackground({
+      type: 'SESSION_ITERATION_ACCEPT',
+      sessionId: iterationSuggestion.sessionId,
+      parentSessionId: iterationSuggestion.parentSessionId,
+    })
+    setIterationSuggestion(null)
+  }, [iterationSuggestion])
+
+  const dismissIteration = useCallback(async () => {
+    if (!iterationSuggestion) return
+    await sendToBackground({
+      type: 'SESSION_ITERATION_DISMISS',
+      sessionId: iterationSuggestion.sessionId,
+    })
+    setIterationSuggestion(null)
+  }, [iterationSuggestion])
+
+  const openDiff = useCallback(async (sessionA: Session, sessionB: Session) => {
+    const [actionsA, actionsB] = await Promise.all([
+      getActionsBySession(sessionA.sessionId),
+      getActionsBySession(sessionB.sessionId),
+    ])
+    setDiffSelection({ sessionA, actionsA, sessionB, actionsB })
+  }, [])
+
+  const closeDiff = useCallback(() => {
+    setDiffSelection(null)
+  }, [])
+
   const handleDeleteSession = useCallback(
     async (sessionId: string) => {
       await sendToBackground({ type: 'SESSION_DELETE', sessionId })
@@ -434,6 +494,7 @@ export function useSession() {
           methodRenames,
           autoWaitEnabled,
           testData,
+          bdd: bddEnabled,
         })
         await downloadZipExport(session, code)
       } catch (err) {
@@ -447,6 +508,7 @@ export function useSession() {
       autoWaitEnabled,
       methodRenames,
       testData,
+      bddEnabled,
       setCodeGenError,
     ],
   )
@@ -470,6 +532,8 @@ export function useSession() {
     setSelectedFramework,
     autoWaitEnabled,
     setAutoWaitEnabled,
+    bddEnabled,
+    setBddEnabled,
     includeMocks,
     setIncludeMocks,
     methodRenames,
@@ -502,5 +566,11 @@ export function useSession() {
     validateLocators,
     showLocatorOnPage,
     useFallbackLocator,
+    iterationSuggestion,
+    acceptIteration,
+    dismissIteration,
+    diffSelection,
+    openDiff,
+    closeDiff,
   }
 }

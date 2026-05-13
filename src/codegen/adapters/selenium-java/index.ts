@@ -4,8 +4,11 @@ import { registerAdapter, type FrameworkAdapter } from '../registry'
 import { renderPageObject, setSeleniumJavaPageObjectTestData } from './page-object'
 import { renderScenario, toJavaMethodName, setSeleniumJavaTestData } from './scenario'
 import { renderScaffold, setSeleniumJavaScaffoldTestData } from './scaffold'
+import { renderFeatureFile, renderStepsFile, renderBddScaffoldFiles } from './bdd'
 
 export { renderPageObject, renderScenario, renderScaffold, toJavaMethodName }
+
+let BDD_MODE = false
 
 export const seleniumJavaAdapter: FrameworkAdapter = {
   id: 'selenium-java',
@@ -17,9 +20,16 @@ export const seleniumJavaAdapter: FrameworkAdapter = {
     packageName: 'org.seleniumhq.selenium:selenium-java',
   },
   applyOptions(options) {
+    BDD_MODE = Boolean(options.bdd)
     setSeleniumJavaTestData(options.testData)
     setSeleniumJavaPageObjectTestData(options.testData)
     setSeleniumJavaScaffoldTestData(options.testData)
+  },
+  postProcess(files) {
+    if (!BDD_MODE) return files
+    // BDD mode drives test discovery via JUnit Platform Suite (CucumberRunner)
+    // — testng.xml from the vanilla scaffold is dead weight; strip it.
+    return files.filter((f) => f.filename !== 'testng.xml')
   },
   renderPageObject(page: IRPage): GeneratedFile {
     return {
@@ -34,6 +44,15 @@ export const seleniumJavaAdapter: FrameworkAdapter = {
   },
   renderScaffold() {
     return renderScaffold()
+  },
+  renderBddFeature(scenario) {
+    return { filename: 'scenario.feature', content: renderFeatureFile(scenario) }
+  },
+  renderBddSteps(scenario) {
+    return { filename: 'StepDefinitions.java', content: renderStepsFile(scenario) }
+  },
+  renderBddScaffold() {
+    return renderBddScaffoldFiles()
   },
 }
 

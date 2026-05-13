@@ -32,6 +32,8 @@ function makeStoppedSession(sessionId = 's1'): Session {
     startedAt: 0,
     metadata: { userAgent: 'x', viewport: { width: 0, height: 0 }, timezone: 'UTC' },
     config: { captureClicks: true, captureInputs: true, captureNavigation: true },
+    iterationNumber: 1,
+    flowSignature: 'test-sig',
   }
 }
 

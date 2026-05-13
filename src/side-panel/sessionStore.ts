@@ -16,6 +16,8 @@ interface SessionStore {
   selectedFramework: FrameworkId
   /** Strip auto-detected wait steps from the generated code when false. */
   autoWaitEnabled: boolean
+  /** Emit Gherkin .feature + step definitions alongside the page objects. */
+  bddEnabled: boolean
   setActiveSession: (session: Session | null) => void
   appendStep: (step: RecordedAction) => void
   deleteStep: (actionId: string) => void
@@ -32,10 +34,12 @@ interface SessionStore {
   removeSession: (sessionId: string) => void
   setSelectedFramework: (framework: FrameworkId) => void
   setAutoWaitEnabled: (enabled: boolean) => void
+  setBddEnabled: (enabled: boolean) => void
 }
 
 const FRAMEWORK_STORAGE_KEY = 'playforge.selectedFramework'
 const AUTO_WAIT_STORAGE_KEY = 'playforge.autoWaitEnabled'
+const BDD_ENABLED_STORAGE_KEY = 'playforge.bddEnabled'
 
 function loadInitialAutoWait(): boolean {
   try {
@@ -45,6 +49,16 @@ function loadInitialAutoWait(): boolean {
     /* localStorage unavailable in some test envs */
   }
   return true
+}
+
+function loadInitialBddEnabled(): boolean {
+  try {
+    const stored = window.localStorage.getItem(BDD_ENABLED_STORAGE_KEY)
+    if (stored === 'true') return true
+  } catch {
+    /* localStorage unavailable in some test envs */
+  }
+  return false
 }
 
 function loadInitialFramework(): FrameworkId {
@@ -79,6 +93,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
   sessions: [],
   selectedFramework: loadInitialFramework(),
   autoWaitEnabled: loadInitialAutoWait(),
+  bddEnabled: loadInitialBddEnabled(),
   setActiveSession: (session) => set({ activeSession: session }),
   appendStep: (step) => set((state) => ({ steps: [...state.steps, step] })),
   deleteStep: (actionId) =>
@@ -192,5 +207,13 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       /* localStorage unavailable */
     }
     set({ autoWaitEnabled: enabled })
+  },
+  setBddEnabled: (enabled) => {
+    try {
+      window.localStorage.setItem(BDD_ENABLED_STORAGE_KEY, enabled ? 'true' : 'false')
+    } catch {
+      /* localStorage unavailable */
+    }
+    set({ bddEnabled: enabled })
   },
 }))

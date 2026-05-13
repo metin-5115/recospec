@@ -67,6 +67,8 @@ export type UIToBackgroundMessage =
       methodRenames?: Record<string, string>
       /** User-edited test data parameters (env-var emission, default values). */
       testData?: TestDataConfig
+      /** When true, emit Gherkin `.feature` + step definitions alongside the page objects. */
+      bdd?: boolean
     }
   | { type: 'ASSERTION_PROBE_START'; sessionId: string }
   | { type: 'ASSERTION_PROBE_STOP'; sessionId: string }
@@ -96,6 +98,15 @@ export type UIToBackgroundMessage =
       frameContext?: FrameContext
       label?: string
     }
+  | {
+      type: 'SESSION_ITERATION_ACCEPT'
+      sessionId: string
+      parentSessionId: string
+    }
+  | {
+      type: 'SESSION_ITERATION_DISMISS'
+      sessionId: string
+    }
 
 export type BackgroundToUIMessage =
   | { type: 'STEP_RECORDED'; sessionId: string; step: RecordedAction }
@@ -124,6 +135,17 @@ export type BackgroundToUIMessage =
       error?: string
       /** Truncated `targets.length` when the request exceeded the cap. */
       truncated?: number
+    }
+  | {
+      type: 'SESSION_ITERATION_SUGGESTED'
+      /** Currently-recording session. */
+      sessionId: string
+      /** Matched prior session — proposed parent for the new iteration. */
+      parentSessionId: string
+      parentName: string
+      parentIterationNumber: number
+      /** Recorded `stoppedAt` (or `startedAt`) of the parent — for "last recorded …". */
+      parentTimestamp: number
     }
 
 export type ContentToBackgroundMessage =

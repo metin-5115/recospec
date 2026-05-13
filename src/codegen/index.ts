@@ -25,6 +25,8 @@ export interface GenerateOptions {
    * fields and which fixture/.env scaffolds adapters render.
    */
   testData?: TestDataConfig
+  /** Emit Gherkin `.feature` + step definitions alongside the page objects. */
+  bdd?: boolean
 }
 
 function applyRenames(
@@ -77,13 +79,44 @@ export async function generate(
   adapter.applyOptions?.({
     includeMocks: options.includeMocks,
     testData: options.testData,
+    bdd: options.bdd,
   })
+
+  if (options.bdd) {
+    if (!adapter.renderBddFeature || !adapter.renderBddSteps || !adapter.renderBddScaffold) {
+      throw new Error(
+        `Framework ${framework} does not support BDD output yet — disable the BDD toggle or pick a different framework.`,
+      )
+    }
+  }
+
   const pageFiles = doc.pages.map((page) => adapter.renderPageObject(page))
-  const specFile = adapter.renderScenario(scenario)
   const scaffoldFiles = adapter.renderScaffold()
 
-  const allFiles = [...pageFiles, specFile, ...scaffoldFiles]
-  const finalFiles = adapter.postProcess?.(allFiles) ?? allFiles
+  const allFiles: typeof pageFiles = [...pageFiles]
+  if (
+    options.bdd &&
+    adapter.renderBddFeature &&
+    adapter.renderBddSteps &&
+    adapter.renderBddScaffold
+  ) {
+    allFiles.push(adapter.renderBddFeature(scenario))
+    allFiles.push(adapter.renderBddSteps(scenario))
+    allFiles.push(...scaffoldFiles, ...adapter.renderBddScaffold())
+  } else {
+    const specFile = adapter.renderScenario(scenario)
+    allFiles.push(specFile, ...scaffoldFiles)
+  }
+
+  // BDD scaffold overrides vanilla scaffold filenames (package.json, etc.).
+  // Dedupe keeping the last occurrence so the override wins.
+  const dedupedByFilename = Array.from(
+    allFiles
+      .reduce((acc, f) => acc.set(f.filename, f), new Map<string, (typeof allFiles)[number]>())
+      .values(),
+  )
+
+  const finalFiles = adapter.postProcess?.(dedupedByFilename) ?? dedupedByFilename
 
   return {
     framework,

@@ -6,6 +6,7 @@ import { renderScenario, setCypressTestData } from './scenario'
 import { setCypressPageObjectTestData } from './page-object'
 import { renderLocator } from './locator'
 import { CYPRESS_SELF_HEALING_JS } from '../../scaffold/self-healing'
+import { renderFeatureFile, renderStepsFile, renderBddScaffoldFiles } from './bdd'
 
 export { renderPageObject, renderScenario, renderLocator }
 
@@ -100,6 +101,15 @@ export const cypressAdapter: FrameworkAdapter = {
   },
   renderScaffold() {
     return renderScaffold()
+  },
+  renderBddFeature(scenario) {
+    return { filename: 'scenario.feature', content: renderFeatureFile(scenario) }
+  },
+  renderBddSteps(scenario) {
+    return { filename: 'scenario.steps.js', content: renderStepsFile(scenario) }
+  },
+  renderBddScaffold() {
+    return renderBddScaffoldFiles()
   },
 }
 

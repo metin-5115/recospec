@@ -4,6 +4,7 @@ import { registerAdapter, type FrameworkAdapter } from '../registry'
 import { renderPageObject, setSeleniumPyPageObjectTestData } from './page-object'
 import { renderScenario, toSnakeCase, setSeleniumPyTestData } from './scenario'
 import { renderScaffold, setSeleniumPyScaffoldTestData } from './scaffold'
+import { renderFeatureFile, renderStepsFile, renderBddScaffoldFiles } from './bdd'
 
 export { renderPageObject, renderScenario, renderScaffold, toSnakeCase }
 
@@ -32,6 +33,16 @@ export const seleniumPyAdapter: FrameworkAdapter = {
   },
   renderScaffold() {
     return renderScaffold()
+  },
+  renderBddFeature(scenario) {
+    return { filename: 'scenario.feature', content: renderFeatureFile(scenario) }
+  },
+  renderBddSteps(scenario) {
+    // `test_*.py` so zip-export routes it into `tests/` alongside conftest.py.
+    return { filename: 'test_scenario.py', content: renderStepsFile(scenario) }
+  },
+  renderBddScaffold() {
+    return renderBddScaffoldFiles()
   },
 }
 

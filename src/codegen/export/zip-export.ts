@@ -94,23 +94,42 @@ function resolveZipPath(filename: string, framework: string): string {
   if (filename === 'pom.xml') return filename
   if (filename === 'testng.xml') return filename
   if (filename === '.gitignore') return filename
+  if (filename === 'bddgen.config.ts') return filename
 
   if (framework === 'cypress') {
+    // cypress-cucumber-preprocessor convention: feature at `cypress/e2e/<name>.feature`
+    // and step file co-located in a folder of the same basename.
+    if (filename.endsWith('.feature')) return `cypress/e2e/${filename}`
+    if (filename.endsWith('.steps.js')) {
+      const base = filename.replace(/\.steps\.js$/, '')
+      return `cypress/e2e/${base}/${filename}`
+    }
     if (filename.endsWith('.cy.js')) return `cypress/e2e/${filename}`
     if (filename.endsWith('.js')) return `cypress/pages/${filename}`
     return filename
   }
 
-  if (framework === 'selenium-py') {
-    if (filename.startsWith('test_') && filename.endsWith('.py')) return `tests/${filename}`
-    if (filename.endsWith('.py')) return `pages/${filename}`
-    return filename
-  }
-
   if (framework === 'selenium-java') {
+    // BDD: .feature lives under Maven test resources; runners/steps live in
+    // their own packages under src/test/java; JUnit Platform properties stays
+    // at the test-resources root.
+    if (filename.endsWith('.feature')) return `src/test/resources/features/${filename}`
+    if (filename === 'junit-platform.properties') return `src/test/resources/${filename}`
+    if (filename === 'StepDefinitions.java') return `src/test/java/steps/${filename}`
+    if (filename === 'CucumberRunner.java') return `src/test/java/runners/${filename}`
     if (filename.startsWith('Test') && filename.endsWith('.java'))
       return `src/test/java/tests/${filename}`
     if (filename.endsWith('.java')) return `src/main/java/pages/${filename}`
+    return filename
+  }
+
+  // BDD output routing for the remaining frameworks (Playwright TS).
+  if (filename.endsWith('.feature')) return `features/${filename}`
+  if (filename.endsWith('.steps.ts')) return `features/steps/${filename}`
+
+  if (framework === 'selenium-py') {
+    if (filename.startsWith('test_') && filename.endsWith('.py')) return `tests/${filename}`
+    if (filename.endsWith('.py')) return `pages/${filename}`
     return filename
   }
 

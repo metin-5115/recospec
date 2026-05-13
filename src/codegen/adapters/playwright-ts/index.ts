@@ -13,6 +13,7 @@ import type {
 import { registerAdapter, type FrameworkAdapter } from '../registry'
 import { PLAYWRIGHT_SELF_HEALING_TS } from '../../scaffold/self-healing'
 import { resolveTestData } from '../../planner/test-data-resolver'
+import { renderFeatureFile, renderStepsFile, renderBddScaffoldFiles } from './bdd'
 
 // Module-scoped mock toggle. The orchestrator flips it before each render via
 // the FrameworkAdapter.options field; defaulting to false keeps existing
@@ -480,6 +481,15 @@ export const playwrightTsAdapter: FrameworkAdapter = {
   },
   renderScaffold() {
     return renderScaffold()
+  },
+  renderBddFeature(scenario) {
+    return { filename: 'scenario.feature', content: renderFeatureFile(scenario) }
+  },
+  renderBddSteps(scenario) {
+    return { filename: 'scenario.steps.ts', content: renderStepsFile(scenario) }
+  },
+  renderBddScaffold() {
+    return renderBddScaffoldFiles()
   },
 }
 

@@ -7,6 +7,7 @@ import {
   Code2,
   Download,
   FileJson,
+  GitBranch,
   Info,
   Loader2,
   Pause,
@@ -15,6 +16,7 @@ import {
   Sparkles,
   Square,
   CheckCircle2,
+  X,
 } from 'lucide-react'
 import { useSession } from './hooks/useSession'
 import { StepList } from './components/StepList'
@@ -25,6 +27,7 @@ import { FrameworkPicker } from './components/FrameworkPicker'
 import { MethodPreview } from './components/MethodPreview'
 import { TestDataPanel } from './components/TestDataPanel'
 import { LocatorValidationPanel } from './components/LocatorValidationPanel'
+import { SessionDiffModal } from './components/SessionDiffModal'
 
 type Tab = 'recording' | 'history'
 
@@ -47,6 +50,8 @@ export function SidePanelApp() {
     setSelectedFramework,
     autoWaitEnabled,
     setAutoWaitEnabled,
+    bddEnabled,
+    setBddEnabled,
     includeMocks,
     setIncludeMocks,
     methodRenames,
@@ -78,6 +83,12 @@ export function SidePanelApp() {
     validateLocators,
     showLocatorOnPage,
     useFallbackLocator,
+    iterationSuggestion,
+    acceptIteration,
+    dismissIteration,
+    diffSelection,
+    openDiff,
+    closeDiff,
   } = useSession()
 
   const isActive = isRecording || isPaused
@@ -161,6 +172,50 @@ export function SidePanelApp() {
         </div>
       </header>
 
+      {iterationSuggestion && (
+        <div
+          role="status"
+          aria-label="Iteration suggested"
+          className="flex items-start gap-2 border-b border-accent/30 bg-accent-soft px-5 py-2 text-xs text-text"
+        >
+          <GitBranch className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" aria-hidden="true" />
+          <div className="flex-1">
+            <p className="font-semibold text-text">
+              Looks like an iteration of{' '}
+              <span className="font-mono text-accent">{iterationSuggestion.parentName}</span>
+            </p>
+            <p className="text-text-muted">
+              Last recorded{' '}
+              {new Date(iterationSuggestion.parentTimestamp).toLocaleString(undefined, {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}{' '}
+              · link as{' '}
+              <span className="font-mono">v{iterationSuggestion.parentIterationNumber + 1}</span>?
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              onClick={() => void acceptIteration()}
+              className="rounded-md bg-accent px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm hover:opacity-90"
+            >
+              Link as v{iterationSuggestion.parentIterationNumber + 1}
+            </button>
+            <button
+              type="button"
+              onClick={() => void dismissIteration()}
+              className="rounded-md p-1 text-text-muted hover:bg-bg-muted hover:text-text"
+              aria-label="Dismiss iteration suggestion"
+            >
+              <X className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex gap-1 border-b border-border bg-bg-elevated/40 px-3 pb-0 pt-2">
         <TabButton
           label="Recording"
@@ -198,13 +253,19 @@ export function SidePanelApp() {
             onRename={handleRenameSession}
             onExportJson={exportJson}
             onExportZip={exportZip}
+            onCompare={(a, b) => void openDiff(a, b)}
           />
         )}
       </main>
 
       {activeTab === 'recording' && steps.length > 0 && !isActive && (
         <div className="space-y-3 border-t border-border bg-bg-elevated/40 px-5 py-4">
-          <FrameworkPicker value={selectedFramework} onChange={setSelectedFramework} />
+          <FrameworkPicker
+            value={selectedFramework}
+            onChange={setSelectedFramework}
+            bddEnabled={bddEnabled}
+            onBddChange={setBddEnabled}
+          />
           <MethodPreview
             steps={steps}
             startUrl={activeSession?.startUrl ?? 'about:blank'}
@@ -267,10 +328,11 @@ export function SidePanelApp() {
               <button
                 onClick={() => void exportJson(activeSession.sessionId)}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-bg px-3 py-2 text-sm font-medium text-text-muted transition-colors hover:border-border-strong hover:bg-bg-muted hover:text-text"
-                title="Export raw session data as JSON"
+                title="Export raw session data as JSON for the playforge CLI (playforge add session.json)"
+                aria-label="Export JSON for CLI"
               >
                 <FileJson className="h-4 w-4" aria-hidden="true" />
-                JSON
+                JSON for CLI
               </button>
             )}
           </div>
@@ -355,6 +417,16 @@ export function SidePanelApp() {
           screenshotDataUrl={assertionContext.screenshotDataUrl}
           onConfirm={addAssertion}
           onCancel={cancelAssertionBuilder}
+        />
+      )}
+
+      {diffSelection && (
+        <SessionDiffModal
+          sessionA={diffSelection.sessionA}
+          actionsA={diffSelection.actionsA}
+          sessionB={diffSelection.sessionB}
+          actionsB={diffSelection.actionsB}
+          onClose={closeDiff}
         />
       )}
     </div>
