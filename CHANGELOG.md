@@ -7,6 +7,99 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-05-13
+
+### Added
+
+- **`playforge` CLI** — a Node bin that applies a recorded JSON export onto an
+  existing test project without producing the framework scaffold. Shipped via
+  the same npm package (`bin: { playforge: "dist/cli/index.js" }`) and built
+  with a dedicated `vite.config.cli.ts` (SSR/lib mode, single ESM bundle,
+  `~164 KB` uncompressed).
+  - `playforge add <json> [projectDir]` renders page objects + the scenario
+    file through the matching adapter and writes them into the target
+    project. Adapters are loaded via side-effect imports so all four register
+    themselves into `ADAPTER_REGISTRY` at startup.
+  - `playforge init [projectDir]` writes a `.playforgerc.json` so subsequent
+    `add` calls skip framework detection. Honours `--framework` / `--bdd`.
+  - `--bdd` reuses the existing `renderBddFeature` / `renderBddSteps`
+    adapter hooks; the routing table mirrors `zip-export.ts/resolveZipPath`
+    so feature + step files land in the same idiomatic locations the
+    extension's ZIP export uses.
+- **AST-aware mergers** — on every conflict the CLI prompts `m/o/s/r/d`
+  (merge/overwrite/skip/rename/diff). The diff option prints a unified diff
+  and re-prompts. Merge implementations per kind:
+  - `src/cli/merge/ts-page-object.ts` — `@babel/parser` + `traverse` +
+    `generator`. Locates the first exported class, appends only members
+    (methods, getters, properties) whose name doesn't already exist, dedupes
+    imports by source. Existing method bodies are never overwritten.
+  - `src/cli/merge/py-page-object.ts` — `spawnSync(python, '-c', 'import
+ast; …')` extracts canonical class-member names from each file. When no
+    Python interpreter is on PATH it falls back to a regex extractor
+    (`def …(`, `CONST = `). Imports are deduped by exact line.
+  - `src/cli/merge/java-page-object.ts` — tokenizing balanced-brace walker
+    locates the outer `public class …` body (no javaparser; the npm port is
+    unmaintained). Inner classes trigger an `overwrite ↔ skip` prompt rather
+    than risking brace-counting collisions. Methods and `@FindBy`-annotated
+    fields are appended by name; imports are deduped.
+  - `src/cli/merge/feature-file.ts` — parses with `@cucumber/gherkin` to
+    collect existing scenario titles, then walks the incoming file
+    line-by-line and appends scenarios whose title (case-insensitive) is
+    new. The single `Feature:` header is preserved — duplicates are
+    impossible by construction.
+- **Framework auto-detection** — `src/cli/detect-framework.ts` walks
+  `pom.xml` (selenium-java artifact), `requirements.txt` (`selenium` line),
+  and `package.json` `devDependencies` (`@playwright/test`, `cypress`) in
+  descending specificity. Returns the marker file as `source` so the
+  console output explains its pick.
+- **`.playforgerc.json`** — `src/cli/config-loader.ts` reads the rc into a
+  typed `PlayforgeRc`. The rc currently pins `framework` and the default
+  `bdd` value; `paths` is reserved for P7.3.
+- **"JSON for CLI" button** in the side panel — the existing JSON export
+  was relabeled and its `aria-label` / tooltip updated to point at the new
+  `playforge add` workflow. Internals unchanged; still calls
+  `downloadJsonExport`.
+- **Session versioning & diff explorer** — recordings of the same flow now
+  cluster as a version tree instead of standalone rows. After the first
+  three steps of a new recording are captured, the background computes a
+  deterministic `flowSignature` (normalized `startUrl` + first 3 step types
+  - first 2 locator strategies + selector hash) and probes the DB for prior
+    sessions that share it. If a match is found, the side panel surfaces a
+    banner — _"Looks like an iteration of <Login Flow>"_ — with one-click
+    `Link as v2` and dismiss controls. Accepting attaches the live session
+    to the matched parent: bumps `iterationNumber`, inherits the parent's
+    signature, and re-derives the name as `<family> v<n>`.
+- New `src/storage/session-repo.ts` helpers: `computeFlowSignature`,
+  `findRootSessionId`, `getVersions` (DFS over the parent chain with depth
+  annotations), `createIteration`, `findIterationCandidate`, `linkIteration`,
+  `getSessionWithActions`. `updateSession` now also accepts
+  `flowSignature` / `iterationNumber` / `parentSessionId` patches.
+- New pure module `src/codegen/diff/session-differ.ts` with `diffSessions`
+  and `summarizeDiff`. Three-pass matcher: actionId equality →
+  tight LCS (`type::strategy::selector[:30]`) → loose LCS (type only) so
+  locator rewrites surface as `changed` instead of phantom `added`+`removed`.
+  LCS tie-breaks deterministically to the leftmost match.
+- `SessionList` reorganizes into a version tree: roots render flat, children
+  indent 16px per level with a chevron toggle and `v<n>` pill. A new
+  **Compare** dropdown lists every sibling in the same tree and opens the
+  diff modal.
+- New `SessionDiffModal` (`src/side-panel/components/SessionDiffModal.tsx`)
+  — side-by-side two-column view, header summary
+  (`+added −removed ~changed · unchanged`), per-row tone (green added /
+  red removed / amber changed) on locator and value changes, and an
+  **Export diff as JSON** action that downloads the full `SessionDiff`
+  plus a small summary.
+- Dexie schema bumped to **v2**: `sessions` gains `iterationNumber`,
+  `parentSessionId`, `flowSignature` columns and a compound
+  `[parentSessionId+flowSignature]` index. An `upgrade()` callback backfills
+  every pre-v2 row with `iterationNumber=1` and
+  `flowSignature='legacy::<startUrl>'` so existing recordings keep working.
+- New message contract: `SESSION_ITERATION_SUGGESTED` (BG → UI),
+  `SESSION_ITERATION_ACCEPT` / `SESSION_ITERATION_DISMISS` (UI → BG).
+  Background controller in `src/background/iteration-controller.ts`.
+- New constant `ITERATION_SIGNATURE_STEPS = 3` in `shared/constants.ts` —
+  the step count after which the background probes for a parent.
+
 ## [0.5.1] — 2026-05-10
 
 ### Added
