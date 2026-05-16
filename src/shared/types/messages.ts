@@ -4,6 +4,7 @@ import type { GeneratedCode, FrameworkId } from './generated'
 import type { FrameContext, Locator, LocatorBundle, ScoredLocator, ShadowContext } from './locator'
 import type { ElementSnapshot } from './action'
 import type { TestDataConfig } from '@codegen/ir/types'
+import type { JsonExportPayload } from '@codegen/export/json-export'
 
 export type StepPatch = Partial<Pick<RecordedAction, 'payload' | 'annotation' | 'target' | 'type'>>
 
@@ -107,6 +108,15 @@ export type UIToBackgroundMessage =
       type: 'SESSION_ITERATION_DISMISS'
       sessionId: string
     }
+  /**
+   * Out-of-band export request. The VS Code Record flow invokes
+   * `handleExportRequest` directly via the service-worker global
+   * (`self.__playforgeExport`) because `chrome.runtime.sendMessage` cannot
+   * deliver to the sender. The case is wired into the message router so
+   * future surfaces (web playground, headless harness) can use the same
+   * typed contract through the message bus.
+   */
+  | { type: 'EXPORT_REQUEST'; sessionId?: string }
 
 export type BackgroundToUIMessage =
   | { type: 'STEP_RECORDED'; sessionId: string; step: RecordedAction }
@@ -147,6 +157,8 @@ export type BackgroundToUIMessage =
       /** Recorded `stoppedAt` (or `startedAt`) of the parent — for "last recorded …". */
       parentTimestamp: number
     }
+  /** Reply to `EXPORT_REQUEST`. `payload === null` means no recording was found. */
+  | { type: 'EXPORT_RESPONSE'; payload: JsonExportPayload | null; error?: string }
 
 export type ContentToBackgroundMessage =
   | { type: 'EVENT_CAPTURED'; sessionId: string; event: CapturedEvent }

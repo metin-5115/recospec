@@ -1,29 +1,27 @@
 import { readFileSync } from 'node:fs'
 import { basename, extname } from 'node:path'
 import prompts from 'prompts'
+import type {
+  ConflictAction,
+  ConflictContext,
+  ConflictDecision,
+  ConflictReporter,
+} from '@codegen/apply/conflict-reporter'
 
-export type ConflictAction = 'merge' | 'overwrite' | 'skip' | 'rename' | 'diff'
-
-export interface ConflictDecision {
-  action: ConflictAction
-  /** When `action === 'rename'`, the path the caller should write to instead. */
-  renamedPath?: string
-}
-
-interface ResolveContext {
-  /** Absolute path of the existing file on disk. */
-  targetPath: string
-  /** Newly generated content (rendered by the adapter). */
-  incoming: string
-  /** Whether structural merge is supported for this file (currently TS page objects only). */
-  canMerge: boolean
-}
+// Re-export so existing call sites (prompt.ts, add.ts, future hosts) can
+// import the contract from a single place without reaching into @codegen.
+export type {
+  ConflictAction,
+  ConflictContext,
+  ConflictDecision,
+  ConflictReporter,
+} from '@codegen/apply/conflict-reporter'
 
 /**
  * Drive the interactive prompt loop. We re-prompt after a `d` (diff preview)
  * because diff is informational, not a final decision.
  */
-export async function resolveConflict(ctx: ResolveContext): Promise<ConflictDecision> {
+export async function resolveConflict(ctx: ConflictContext): Promise<ConflictDecision> {
   const choices = [
     ...(ctx.canMerge
       ? [
@@ -63,6 +61,18 @@ export async function resolveConflict(ctx: ResolveContext): Promise<ConflictDeci
     }
 
     return { action: response.action }
+  }
+}
+
+/**
+ * Default `ConflictReporter` for terminal hosts (CLI). Wraps the interactive
+ * `prompts`-based `resolveConflict` so non-CLI hosts (e.g. the planned VS
+ * Code extension) can supply their own reporter without inheriting the
+ * stdin/stdout assumption.
+ */
+export function createTerminalReporter(): ConflictReporter {
+  return {
+    resolve: (ctx) => resolveConflict(ctx),
   }
 }
 

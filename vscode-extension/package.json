@@ -1,0 +1,158 @@
+{
+  "name": "playforge",
+  "displayName": "PlayForge",
+  "description": "Apply recorded PlayForge sessions to your test project and generate Claude Code prompts — straight from VS Code.",
+  "version": "0.7.0",
+  "publisher": "playforge",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/metin-5115/playforge.git"
+  },
+  "homepage": "https://github.com/metin-5115/playforge",
+  "bugs": {
+    "url": "https://github.com/metin-5115/playforge/issues"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Testing",
+    "Other"
+  ],
+  "keywords": [
+    "playwright",
+    "cypress",
+    "selenium",
+    "test-automation",
+    "page-object-model",
+    "claude-code"
+  ],
+  "icon": "icons/playforge.png",
+  "main": "./dist/extension.cjs",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "playforge.record",
+        "title": "PlayForge: Record Flow…",
+        "category": "PlayForge",
+        "icon": "$(record)"
+      },
+      {
+        "command": "playforge.init",
+        "title": "PlayForge: Init Project (.playforgerc.json)",
+        "category": "PlayForge"
+      },
+      {
+        "command": "playforge.applyJson",
+        "title": "PlayForge: Apply Existing JSON…",
+        "category": "PlayForge"
+      },
+      {
+        "command": "playforge.showPrompt",
+        "title": "PlayForge: Render Claude Prompt…",
+        "category": "PlayForge"
+      },
+      {
+        "command": "playforge.recordings.refresh",
+        "title": "Refresh",
+        "category": "PlayForge",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "playforge.recordings.apply",
+        "title": "Apply",
+        "category": "PlayForge",
+        "icon": "$(rocket)"
+      },
+      {
+        "command": "playforge.recordings.reveal",
+        "title": "Reveal in File Explorer",
+        "category": "PlayForge"
+      },
+      {
+        "command": "playforge.recordings.delete",
+        "title": "Delete",
+        "category": "PlayForge",
+        "icon": "$(trash)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "playforge",
+          "title": "PlayForge",
+          "icon": "icons/playforge-sidebar.svg"
+        }
+      ]
+    },
+    "views": {
+      "playforge": [
+        {
+          "id": "playforge.recordings",
+          "name": "Recordings",
+          "icon": "icons/playforge-sidebar.svg",
+          "contextualTitle": "PlayForge"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "playforge.recordings",
+        "contents": "No recordings yet.\n[Record a flow](command:playforge.record)\nRecordings are stored under `.playforge/sessions/` in the current workspace."
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "playforge.record",
+          "when": "view == playforge.recordings",
+          "group": "navigation@1"
+        },
+        {
+          "command": "playforge.recordings.refresh",
+          "when": "view == playforge.recordings",
+          "group": "navigation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "playforge.recordings.apply",
+          "when": "view == playforge.recordings && viewItem == playforgeRecording",
+          "group": "inline@1"
+        },
+        {
+          "command": "playforge.recordings.delete",
+          "when": "view == playforge.recordings && viewItem == playforgeRecording",
+          "group": "inline@2"
+        },
+        {
+          "command": "playforge.recordings.reveal",
+          "when": "view == playforge.recordings && viewItem == playforgeRecording",
+          "group": "1_modify@1"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "playforge.recordings.refresh",
+          "when": "false"
+        },
+        {
+          "command": "playforge.recordings.apply",
+          "when": "false"
+        },
+        {
+          "command": "playforge.recordings.reveal",
+          "when": "false"
+        },
+        {
+          "command": "playforge.recordings.delete",
+          "when": "false"
+        }
+      ]
+    }
+  }
+}

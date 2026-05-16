@@ -5,9 +5,10 @@ import { groupIntoPages } from '@codegen/planner/page-grouper'
 import { getAdapter } from '@codegen/adapters/registry'
 import type { FrameworkId, GeneratedFile } from '@shared/types/generated'
 import type { JsonExportPayload } from '@codegen/export/json-export'
+import type { ConflictReporter } from '@codegen/apply/conflict-reporter'
 import { detectFramework } from '../detect-framework'
 import { loadRc } from '../config-loader'
-import { resolveConflict } from '../conflict-resolver'
+import { createTerminalReporter } from '../conflict-resolver'
 import { mergeTsPageObject } from '../merge/ts-page-object'
 import { mergePyPageObject } from '../merge/py-page-object'
 import { mergeJavaPageObject } from '../merge/java-page-object'
@@ -46,7 +47,12 @@ interface ResolvedTarget {
 
 type MergeKind = 'ts-page' | 'py-page' | 'java-page' | 'feature' | null
 
-export async function runAdd(opts: AddOptions): Promise<void> {
+export async function runAdd(opts: AddOptions, reporter?: ConflictReporter): Promise<void> {
+  // Default to the terminal (prompts-based) reporter when no host injects
+  // its own — this is the only call site that builds it, so non-CLI hosts
+  // never pay the `prompts` import cost.
+  const activeReporter = reporter ?? createTerminalReporter()
+
   const payload = loadJson(opts.json)
   const rc = loadRc(opts.projectDir)
   if (rc) {
@@ -93,7 +99,7 @@ export async function runAdd(opts: AddOptions): Promise<void> {
   let renamed = 0
 
   for (const target of targets) {
-    const outcome = await writeOne(target, opts, framework)
+    const outcome = await writeOne(target, opts, framework, activeReporter)
     if (outcome === 'written') written++
     else if (outcome === 'merged') merged++
     else if (outcome === 'skipped') skipped++
@@ -214,6 +220,7 @@ async function writeOne(
   target: ResolvedTarget,
   opts: AddOptions,
   framework: FrameworkId,
+  reporter: ConflictReporter,
 ): Promise<WriteOutcome> {
   if (!existsSync(target.diskPath)) {
     persist(target.diskPath, target.content)
@@ -232,7 +239,7 @@ async function writeOne(
   }
 
   const kind = mergeKindFor(target, framework)
-  const decision = await resolveConflict({
+  const decision = await reporter.resolve({
     targetPath: target.diskPath,
     incoming: target.content,
     canMerge: kind !== null,

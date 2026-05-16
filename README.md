@@ -1,8 +1,9 @@
 # PlayForge
 
-[![Release](https://img.shields.io/badge/release-v0.6.0-6366f1)](https://github.com/metin-5115/playforge/releases/tag/v0.6.0)
+[![Release](https://img.shields.io/badge/release-v0.7.0-6366f1)](https://github.com/metin-5115/playforge/releases/tag/v0.7.0)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-629%20passing-brightgreen)](#performance)
+[![Tests](https://img.shields.io/badge/tests-661%20passing-brightgreen)](#performance)
+[![VS Code](https://img.shields.io/badge/VS_Code-extension-007ACC)](vscode-extension/README.md)
 
 PlayForge is an open-source Chrome extension that records your browser interactions and generates production-ready test automation code with smart locator strategies and automatic Page Object Model output — no manual editing required.
 
@@ -82,6 +83,39 @@ locations (`features/` for Playwright TS, `cypress/e2e/` for Cypress,
 `features/` for Selenium Py, `src/test/resources/features/` for Selenium
 Java).
 
+## VS Code extension (v0.7.0)
+
+PlayForge ships a companion VS Code extension that brings the **record →
+apply → Claude prompt** workflow directly into the editor. No terminal
+hop required.
+
+- **`PlayForge: Record Flow…`** — launches Chromium with the PlayForge
+  Chrome extension pre-bundled, captures the flow, and round-trips the
+  JSON back into VS Code automatically.
+- **Output Picker webview** — checkbox UI for what to emit on each apply
+  (test code, Claude prompt, BDD output, network mocks, redaction).
+- **Recordings tree view** — activity-bar sidebar lists every recording
+  in `.playforge/sessions/` for one-click re-apply.
+- **Same merge engine as the CLI** — page-object conflicts surface as a
+  QuickPick (Merge / Overwrite / Skip / `.new` / Diff).
+- **Claude Code integration** — every apply optionally emits a
+  `/playforge-<flow>` slash command with locator catalogue + sensitive-
+  value contract.
+
+Install: download the VSIX from
+[releases/](releases/) → Extensions → "Install from VSIX…". See
+[vscode-extension/README.md](vscode-extension/README.md) for the full
+walkthrough, requirements (Playwright runtime), and troubleshooting.
+
+Build from source:
+
+```bash
+pnpm install
+pnpm build          # Chrome ext dist
+pnpm build:vscode   # VS Code ext dist (mirrors chrome-ext/ next door)
+pnpm package:vscode # → releases/playforge-0.7.0.vsix
+```
+
 ## Performance
 
 Measured via `benchmarks/performance.test.ts` (jsdom, run on every CI pass):
@@ -92,7 +126,8 @@ Measured via `benchmarks/performance.test.ts` (jsdom, run on every CI pass):
 | Single locator evaluate (max, 1000-elem DOM) | **130 ms**    | < 500 ms |
 | Total dist bundle (uncompressed)             | **~478 KB**   | < 500 KB |
 | CLI bundle (`pnpm build:cli`, uncompressed)  | **~164 KB**   | < 250 KB |
-| Unit tests passing                           | **629 / 629** | —        |
+| VS Code bundle (`pnpm build:vscode`)         | **~2.16 MB**  | — (CJS)  |
+| Unit tests passing                           | **661 / 661** | —        |
 
 ## Screenshot
 

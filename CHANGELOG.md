@@ -7,6 +7,112 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-05-16
+
+### Added
+
+- **PlayForge VS Code extension (companion)** — a separate marketplace-ready
+  bundle that brings the **record → apply → Claude prompt** workflow into
+  the editor. Builds via `pnpm build:vscode` (Vite SSR + lib mode → single
+  CJS file at `vscode-extension/dist/extension.cjs`, ~2.16 MB). Packaged
+  via `pnpm package:vscode` (wraps `@vscode/vsce`) into
+  `releases/playforge-0.7.0.vsix`.
+  - **`PlayForge: Record Flow…`** — launches Chromium with the PlayForge
+    Chrome extension pre-loaded (`@playwright/test` `launchPersistentContext`,
+    `--load-extension=<vscode-ext>/chrome-ext`, `headless: false` for MV3
+    SW lifecycle). Notification with "Stop & Apply" / "Cancel" races
+    against `context.on('close')` so an early browser close cannot hang
+    the wait. On stop, the recording bridge calls
+    `worker.evaluate(__playforgeExport())` on the Chrome ext service
+    worker to pull the latest session as a `JsonExportPayload`; the JSON
+    lands in `<workspace>/.playforge/sessions/` and is fed straight into
+    the Output Picker. Empty recordings surface a clean
+    "No steps recorded" info message.
+  - **Output Picker webview** — `src/vscode-ext/output-picker-html.ts`
+    renders a single self-contained HTML doc with strict CSP
+    (`default-src 'none'`, `script-src 'nonce-<per-load-uuid>'`,
+    `style-src ${cspSource} 'unsafe-inline'`). Checkboxes for **test
+    code**, **Claude prompt** (slash / `CLAUDE.md` block / standalone
+    `prompts/<slug>.md`), **BDD output**, **network mocks** (auto-disabled
+    when no network steps were captured), and **redact sensitive
+    values**. Server-side `sanitizeChoices` clamps every flag to the
+    actual capabilities of the session + adapter so a tampered webview
+    cannot smuggle a forbidden combo. `Esc` cancels, `Ctrl+Enter`
+    applies.
+  - **Conflict reporter (VS Code flavour)** — `apply-json.ts` reuses the
+    pure `ConflictReporter` contract (`@codegen/apply/conflict-reporter`)
+    and provides a QuickPick-backed reporter with Merge / Overwrite /
+    Skip / Write `.new` / Show diff. The diff option opens
+    `vscode.diff` between the existing file and an untitled buffer
+    holding the incoming content.
+  - **Recordings tree view** — activity-bar view container with the
+    PlayForge sidebar icon (`icons/playforge-sidebar.svg`, monochrome
+    `currentColor` so it inherits theme tinting). Items list newest-
+    first by mtime; descriptions surface `<stepCount> steps · <date>`.
+    Click → re-apply via the Output Picker. Welcome view points users
+    at `PlayForge: Record Flow…` when the sessions dir is empty. A
+    `vscode.workspace.createFileSystemWatcher` keeps the tree fresh
+    across record / delete cycles.
+  - **`PlayForge: Apply Existing JSON…`** + **`PlayForge: Render Claude
+Prompt…`** + **`PlayForge: Init Project…`** static commands wrap the
+    existing `runAdd` / `runPrompt` / `runInit` CLI functions through a
+    shared `applyJsonAtPath` helper. Framework is resolved silently from
+    `.playforgerc.json` → marker-file detection → QuickPick.
+  - **Status bar** — right-aligned `$(record) PlayForge` indicator that
+    flips to `$(sync~spin) PlayForge: <task>` during commands and
+    appends the resolved framework label when one is detected.
+  - **Bundled Chrome extension** — `vite.config.vscode.ts` ships a
+    `closeBundle` plugin that mirrors `dist/` (Chrome ext build) into
+    `vscode-extension/chrome-ext/` so the Record command can launch
+    Chromium without a separate install. Missing `dist/` triggers a
+    loud build-time warning + a `BundledExtensionMissingError` at
+    runtime with the exact remediation command.
+- **`EXPORT_REQUEST` / `EXPORT_RESPONSE` message types** in
+  `src/shared/types/messages.ts` and a `case 'EXPORT_REQUEST'` in
+  `src/background/message-router.ts`. The real path used by the VS Code
+  host calls the new `handleExportRequest` (`src/background/export-handler.ts`)
+  directly via the service-worker global
+  `globalThis.__playforgeExport`, because `chrome.runtime.sendMessage`
+  cannot deliver a message to the sender. The handler reads the most-
+  recently-stopped session (or a specific id) from Dexie and returns
+  `buildJsonExport(session, actions)` — returning `null` when no
+  actions are captured so the orchestrator surfaces a friendly
+  "No steps recorded" message instead of an empty file.
+
+### Changed
+
+- **`runAdd` opens a `ConflictReporter` seam** — `src/cli/commands/add.ts`
+  accepts an optional reporter and defaults to the existing terminal
+  prompts reporter. The new `createTerminalReporter` export keeps the
+  CLI's `prompts` dependency private to the CLI path so non-CLI hosts
+  (the VS Code extension is the first; future web playground next)
+  never pay the import cost.
+
+### Fixed
+
+- **Locator engine — framework-internal auto-generated ID detection**.
+  `src/locator-engine/scoring/dynamic-detector.ts` now rejects
+  Bootstrap Vue (`__BVID__N`, `__BV_tab__N`), Angular Material / MDC /
+  CDK (`mat-input-3`, `mdc-floating-label-12`, `cdk-overlay-42`),
+  Vuetify (`v-input-3`), jQuery UI (`ui-id-42`), Lit (`lit-element-3`),
+  and bare double-underscore tails (`BVID__517`). Detection is
+  structural — the digit-suffix threshold stays at 5 so semantic IDs
+  (`ticket-789`, `order-1234`, `BVD-135`) still pass. 13 new regression
+  tests cover the new patterns and the negative guards (`user_id_1`,
+  `_private_field_2`, `v-2` remain static). Total tests **674 / 674**.
+
+### Packaging
+
+- New `pnpm package:vscode` script — wraps `@vscode/vsce` via a
+  small Node driver (`scripts/package-vscode.mjs`) so the same command
+  works on cmd.exe / PowerShell / bash. The driver enforces that
+  `pnpm build` and `pnpm build:vscode` ran first (and that the
+  `chrome-ext/` mirror is populated) before invoking `vsce package`,
+  then emits `releases/playforge-<version>.vsix`.
+- New `releases/` directory holds the committed VSIX for tagged
+  releases. The CI tag pushes the file alongside the source tag so
+  install-from-VSIX works without re-running the toolchain.
+
 ## [0.6.0] — 2026-05-13
 
 ### Added

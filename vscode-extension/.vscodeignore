@@ -1,0 +1,20 @@
+# Files inside `vscode-extension/` that should not ship in the VSIX.
+# The directory only contains build artifacts + manifest assets, so the
+# blocklist is short.
+
+# Source maps are large and not needed at runtime.
+dist/**/*.map
+
+# Files vsce already drops by default, called out here so the policy is
+# explicit when someone scans the manifest.
+.vscode/**
+.gitignore
+.gitattributes
+.eslintrc*
+**/.DS_Store
+**/Thumbs.db
+
+# Local-only Chromium user-data dirs (mkdtemp during recording). Should
+# never appear in a clean tree but the ignore is here in case a user runs
+# `code --extensionDevelopmentPath` from this directory.
+user-data-*/**
