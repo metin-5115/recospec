@@ -8,9 +8,12 @@ import type {
   InferredMethod,
   GeneratedFile,
   AssertionDetail,
+  TestDataConfig,
 } from '../../ir/types'
 import { registerAdapter, type FrameworkAdapter } from '../registry'
 import { PLAYWRIGHT_SELF_HEALING_TS } from '../../scaffold/self-healing'
+import { resolveTestData } from '../../planner/test-data-resolver'
+import { renderFeatureFile, renderStepsFile, renderBddScaffoldFiles } from './bdd'
 
 // Module-scoped mock toggle. The orchestrator flips it before each render via
 // the FrameworkAdapter.options field; defaulting to false keeps existing
@@ -18,6 +21,18 @@ import { PLAYWRIGHT_SELF_HEALING_TS } from '../../scaffold/self-healing'
 let RENDER_MOCKS = false
 function setRenderMocks(value: boolean): void {
   RENDER_MOCKS = value
+}
+
+let TEST_DATA: TestDataConfig | undefined
+function setTestData(value: TestDataConfig | undefined): void {
+  TEST_DATA = value
+}
+
+/** Render the value-substitution expression for a Playwright fill. */
+function renderFillValueExpr(el: IRElement | undefined, recordedValue: string): string {
+  const r = resolveTestData(el, recordedValue, TEST_DATA)
+  if (!r.useEnvVar) return JSON.stringify(r.literal)
+  return `process.env.${r.envVarName} ?? ${JSON.stringify(r.defaultValue)}`
 }
 
 function urlPattern(rawUrl: string): string {
@@ -162,7 +177,8 @@ function renderStepInMethod(step: IRStep, indent: string): string {
     return `${indent}await this.${step.element.name}.click();`
   }
   if (step.action === 'fill' && step.element) {
-    return `${indent}await this.${step.element.name}.fill(${JSON.stringify(step.value ?? '')});`
+    const expr = renderFillValueExpr(step.element, step.value ?? '')
+    return `${indent}await this.${step.element.name}.fill(${expr});`
   }
   if (step.action === 'keypress' && step.key) {
     return `${indent}await this.page.keyboard.press(${JSON.stringify(step.key)});`
@@ -182,6 +198,43 @@ function renderStepInMethod(step: IRStep, indent: string): string {
     // Page-object methods receive `this.page`; rewrite the helper accordingly.
     return renderMockBlock(step.network, indent).replace(/\bpage\.route\(/g, 'this.page.route(')
   }
+  if (step.action === 'wait' && step.wait) {
+    return renderWaitInMethod(step, indent)
+  }
+  return ''
+}
+
+function renderWaitInSpec(step: IRStep, indent: string): string {
+  if (!step.wait) return ''
+  const timeout = step.wait.timeoutMs
+  if (step.wait.reason === 'networkidle') {
+    return `${indent}await page.waitForLoadState('networkidle');`
+  }
+  if (step.wait.reason === 'spinner' || step.wait.reason === 'element-hidden') {
+    if (!step.element) return `${indent}await page.waitForLoadState('networkidle');`
+    return `${indent}await ${renderLocator(step.element)}.waitFor({ state: 'hidden', timeout: ${timeout} });`
+  }
+  if (step.wait.reason === 'element-visible' && step.element) {
+    return `${indent}await ${renderLocator(step.element)}.waitFor({ state: 'visible', timeout: ${timeout} });`
+  }
+  return ''
+}
+
+function renderWaitInMethod(step: IRStep, indent: string): string {
+  if (!step.wait) return ''
+  const timeout = step.wait.timeoutMs
+  if (step.wait.reason === 'networkidle') {
+    return `${indent}await this.page.waitForLoadState('networkidle');`
+  }
+  if (step.wait.reason === 'spinner' || step.wait.reason === 'element-hidden') {
+    if (!step.element) return `${indent}await this.page.waitForLoadState('networkidle');`
+    // Page-object getters expose locators via `this.<name>`, so we don't need
+    // to re-render the full chain — the named getter is canonical.
+    return `${indent}await this.${step.element.name}.waitFor({ state: 'hidden', timeout: ${timeout} });`
+  }
+  if (step.wait.reason === 'element-visible' && step.element) {
+    return `${indent}await this.${step.element.name}.waitFor({ state: 'visible', timeout: ${timeout} });`
+  }
   return ''
 }
 
@@ -193,7 +246,8 @@ function renderStepInSpec(step: IRStep, indent: string): string {
     return `${indent}await ${renderLocator(step.element)}.click();`
   }
   if (step.action === 'fill' && step.element) {
-    return `${indent}await ${renderLocator(step.element)}.fill(${JSON.stringify(step.value ?? '')});`
+    const expr = renderFillValueExpr(step.element, step.value ?? '')
+    return `${indent}await ${renderLocator(step.element)}.fill(${expr});`
   }
   if (step.action === 'keypress' && step.key) {
     return `${indent}await page.keyboard.press(${JSON.stringify(step.key)});`
@@ -211,6 +265,9 @@ function renderStepInSpec(step: IRStep, indent: string): string {
   if (step.action === 'network' && step.network) {
     if (!RENDER_MOCKS) return ''
     return renderMockBlock(step.network, indent)
+  }
+  if (step.action === 'wait' && step.wait) {
+    return renderWaitInSpec(step, indent)
   }
   return ''
 }
@@ -322,6 +379,14 @@ ${testBody}
 // Scaffold (package.json, playwright.config.ts, tsconfig.json)
 // ---------------------------------------------------------------------------
 
+function renderEnvExample(): GeneratedFile | null {
+  const params = TEST_DATA?.params.filter((p) => p.useEnvVar) ?? []
+  if (!params.length) return null
+  const header = '# PlayForge — copy to .env and fill in your test data values.\n'
+  const body = params.map((p) => `${p.envVarName}=${p.isSecret ? '' : p.defaultValue}`).join('\n')
+  return { filename: '.env.example', content: `${header}${body}\n` }
+}
+
 export function renderScaffold(): GeneratedFile[] {
   const packageJson = JSON.stringify(
     {
@@ -379,13 +444,16 @@ export default defineConfig({
     2,
   )
 
-  return [
+  const files: GeneratedFile[] = [
     { filename: 'package.json', content: packageJson },
     { filename: 'playwright.config.ts', content: playwrightConfig },
     { filename: 'tsconfig.json', content: tsConfig },
     { filename: 'utils/locator.ts', content: PLAYWRIGHT_SELF_HEALING_TS },
     { filename: 'tests/scenario.spec.ts-snapshots/.gitkeep', content: '' },
   ]
+  const envExample = renderEnvExample()
+  if (envExample) files.push(envExample)
+  return files
 }
 
 // ---------------------------------------------------------------------------
@@ -403,6 +471,7 @@ export const playwrightTsAdapter: FrameworkAdapter = {
   },
   applyOptions(options) {
     setRenderMocks(Boolean(options.includeMocks))
+    setTestData(options.testData)
   },
   renderPageObject(page) {
     return { filename: `${page.className}.ts`, content: renderPageObject(page) }
@@ -412,6 +481,15 @@ export const playwrightTsAdapter: FrameworkAdapter = {
   },
   renderScaffold() {
     return renderScaffold()
+  },
+  renderBddFeature(scenario) {
+    return { filename: 'scenario.feature', content: renderFeatureFile(scenario) }
+  },
+  renderBddSteps(scenario) {
+    return { filename: 'scenario.steps.ts', content: renderStepsFile(scenario) }
+  },
+  renderBddScaffold() {
+    return renderBddScaffoldFiles()
   },
 }
 

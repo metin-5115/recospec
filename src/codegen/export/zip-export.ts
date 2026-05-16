@@ -4,16 +4,30 @@ import type { Session } from '@shared/types/session'
 
 const README_TEMPLATE = (session: Session, framework: string) => {
   const isCypress = framework === 'cypress'
+  const isSeleniumPy = framework === 'selenium-py'
+  const isSeleniumJava = framework === 'selenium-java'
   const runCommand = isCypress
     ? '```bash\nnpm install\nnpx cypress run\n```'
-    : '```bash\nnpm install\nnpx playwright install chromium\nnpx playwright test\n```'
+    : isSeleniumPy
+      ? '```bash\npython -m venv .venv\n. .venv/bin/activate    # Windows: .venv\\Scripts\\activate\npip install -r requirements.txt\npytest\n```'
+      : isSeleniumJava
+        ? '```bash\nmvn test\n# headed mode:\nmvn test -Dheaded=true\n```'
+        : '```bash\nnpm install\nnpx playwright install chromium\nnpx playwright test\n```'
   const structure = isCypress
     ? '```\ncypress/e2e/         Test scenarios\ncypress/pages/       Page Object Model classes\ncypress/support/     Custom commands (incl. cy.selfHealing, image-snapshot)\ncypress/screenshots/ Visual regression baselines (committed)\ncypress.config.js\npackage.json\n```'
-    : '```\npages/                              Page Object Model classes (one file per page)\ntests/                              Test scenarios\ntests/scenario.spec.ts-snapshots/   Visual regression baselines (committed)\nutils/                              selfHealingLocator helper\nplaywright.config.ts\npackage.json\n```'
+    : isSeleniumPy
+      ? '```\npages/         Page Object Model classes (one file per recorded page)\ntests/         Pytest test scenarios\nconftest.py    Chrome WebDriver fixture (headless by default; --headed flag)\npytest.ini     Pytest config + HTML report\nrequirements.txt\n```'
+      : isSeleniumJava
+        ? '```\nsrc/main/java/pages/   Page Object Model classes (PageFactory + @FindBy)\nsrc/test/java/tests/   TestNG test classes (@BeforeMethod / @Test / @AfterMethod)\npom.xml                Maven build (selenium-java, testng, webdrivermanager)\ntestng.xml             TestNG suite config\n```'
+        : '```\npages/                              Page Object Model classes (one file per page)\ntests/                              Test scenarios\ntests/scenario.spec.ts-snapshots/   Visual regression baselines (committed)\nutils/                              selfHealingLocator helper\nplaywright.config.ts\npackage.json\n```'
 
   const selfHealingNote = isCypress
     ? '`cypress/support/locator.js` registers `cy.selfHealing([...])` — pass the primary selector and recorded fallbacks; the first one that matches wins.'
-    : '`utils/locator.ts` exports `selfHealingLocator(page, [...])` — pass the primary selector and recorded fallbacks; the first one whose `count()` is positive wins.'
+    : isSeleniumPy
+      ? 'Each page-object element class constant ships with a `# Fallbacks: ...` comment listing the locator tuples PlayForge ranked just below the primary. Swap them in manually if the primary selector breaks.'
+      : isSeleniumJava
+        ? 'Each `@FindBy`-annotated WebElement field ships with a `// Fallbacks: ...` comment listing the alternate `@FindBy(...)` annotations PlayForge ranked just below the primary. Swap one in manually when the primary selector breaks — PageFactory will pick it up on the next page navigation.'
+        : '`utils/locator.ts` exports `selfHealingLocator(page, [...])` — pass the primary selector and recorded fallbacks; the first one whose `count()` is positive wins.'
 
   const visualRegressionNote = isCypress
     ? `Generated tests use [\`cypress-image-snapshot\`](https://github.com/jaredpalmer/cypress-image-snapshot) for visual regression. The first run produces baselines under \`cypress/screenshots/\` — commit them. Later runs compare pixel-by-pixel; the default \`failureThreshold\` is \`0.02\` (2%). Update baselines with:
@@ -21,7 +35,11 @@ const README_TEMPLATE = (session: Session, framework: string) => {
 \`\`\`bash
 npx cypress run --env updateSnapshots=true
 \`\`\``
-    : `Generated tests use Playwright's built-in \`toHaveScreenshot()\` matcher. The first run produces baselines under \`tests/scenario.spec.ts-snapshots/\` — commit them. Later runs compare pixel-by-pixel; the default \`threshold\` is \`0.2\` (20% per-pixel allowance). Update baselines with:
+    : isSeleniumPy
+      ? `Selenium has no built-in pixel-diff. Screenshot assertions emit \`driver.save_screenshot(...)\` stubs into \`screenshots/\` — wire up [\`needle\`](https://needle.readthedocs.io/) or \`pytest-image-diff\` if you want diffing.`
+      : isSeleniumJava
+        ? `Selenium has no built-in pixel-diff. Screenshot assertions emit \`// TODO\` stubs — wire up [\`ashot\`](https://github.com/pazone/ashot) or [\`applitools-eyes-selenium-java\`](https://applitools.com/) and replace the stub with a baseline comparison.`
+        : `Generated tests use Playwright's built-in \`toHaveScreenshot()\` matcher. The first run produces baselines under \`tests/scenario.spec.ts-snapshots/\` — commit them. Later runs compare pixel-by-pixel; the default \`threshold\` is \`0.2\` (20% per-pixel allowance). Update baselines with:
 
 \`\`\`bash
 npx playwright test --update-snapshots
@@ -70,10 +88,48 @@ function resolveZipPath(filename: string, framework: string): string {
   if (filename === 'playwright.config.ts') return filename
   if (filename === 'cypress.config.js') return filename
   if (filename === 'tsconfig.json') return filename
+  if (filename === 'requirements.txt') return filename
+  if (filename === 'conftest.py') return filename
+  if (filename === 'pytest.ini') return filename
+  if (filename === 'pom.xml') return filename
+  if (filename === 'testng.xml') return filename
+  if (filename === '.gitignore') return filename
+  if (filename === 'bddgen.config.ts') return filename
 
   if (framework === 'cypress') {
+    // cypress-cucumber-preprocessor convention: feature at `cypress/e2e/<name>.feature`
+    // and step file co-located in a folder of the same basename.
+    if (filename.endsWith('.feature')) return `cypress/e2e/${filename}`
+    if (filename.endsWith('.steps.js')) {
+      const base = filename.replace(/\.steps\.js$/, '')
+      return `cypress/e2e/${base}/${filename}`
+    }
     if (filename.endsWith('.cy.js')) return `cypress/e2e/${filename}`
     if (filename.endsWith('.js')) return `cypress/pages/${filename}`
+    return filename
+  }
+
+  if (framework === 'selenium-java') {
+    // BDD: .feature lives under Maven test resources; runners/steps live in
+    // their own packages under src/test/java; JUnit Platform properties stays
+    // at the test-resources root.
+    if (filename.endsWith('.feature')) return `src/test/resources/features/${filename}`
+    if (filename === 'junit-platform.properties') return `src/test/resources/${filename}`
+    if (filename === 'StepDefinitions.java') return `src/test/java/steps/${filename}`
+    if (filename === 'CucumberRunner.java') return `src/test/java/runners/${filename}`
+    if (filename.startsWith('Test') && filename.endsWith('.java'))
+      return `src/test/java/tests/${filename}`
+    if (filename.endsWith('.java')) return `src/main/java/pages/${filename}`
+    return filename
+  }
+
+  // BDD output routing for the remaining frameworks (Playwright TS).
+  if (filename.endsWith('.feature')) return `features/${filename}`
+  if (filename.endsWith('.steps.ts')) return `features/steps/${filename}`
+
+  if (framework === 'selenium-py') {
+    if (filename.startsWith('test_') && filename.endsWith('.py')) return `tests/${filename}`
+    if (filename.endsWith('.py')) return `pages/${filename}`
     return filename
   }
 

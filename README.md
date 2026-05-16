@@ -1,8 +1,9 @@
 # PlayForge
 
-[![Release](https://img.shields.io/badge/release-v0.5.0-6366f1)](https://github.com/metin-5115/playforge/releases/tag/v0.5.0)
+[![Release](https://img.shields.io/badge/release-v0.7.0-6366f1)](https://github.com/metin-5115/playforge/releases/tag/v0.7.0)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-248%20passing-brightgreen)](#performance)
+[![Tests](https://img.shields.io/badge/tests-661%20passing-brightgreen)](#performance)
+[![VS Code](https://img.shields.io/badge/VS_Code-extension-007ACC)](vscode-extension/README.md)
 
 PlayForge is an open-source Chrome extension that records your browser interactions and generates production-ready test automation code with smart locator strategies and automatic Page Object Model output — no manual editing required.
 
@@ -39,12 +40,81 @@ Then load the extension in Chrome:
 
 ## Supported Frameworks
 
-| Framework                | Status      |
-| ------------------------ | ----------- |
-| Playwright (TypeScript)  | ✅ Stable   |
-| Cypress (JavaScript)     | ✅ Stable   |
-| Selenium Python (pytest) | Coming soon |
-| Selenium Java (TestNG)   | Coming soon |
+| Framework                | Status    |
+| ------------------------ | --------- |
+| Playwright (TypeScript)  | ✅ Stable |
+| Cypress (JavaScript)     | ✅ Stable |
+| Selenium Python (pytest) | ✅ Stable |
+| Selenium Java (TestNG)   | ✅ Stable |
+
+## Add to an existing project (CLI)
+
+The `playforge` CLI applies a recorded session onto an already-configured test
+project — no scaffolding required, so it slots into repos that already have
+their own `package.json` / `pom.xml` / runner config.
+
+```bash
+# 1. Record + export from the extension (side panel → "JSON for CLI").
+# 2. Run the CLI inside your existing test project:
+npx playforge add ~/Downloads/login_v1.json
+
+# Auto-detects the framework from package.json / pom.xml / requirements.txt.
+# Override it explicitly when needed:
+npx playforge add login_v1.json --framework selenium-py
+
+# Pin the framework once so subsequent runs skip detection:
+npx playforge init --framework playwright-ts
+```
+
+When a target file already exists, the CLI prompts:
+
+- `[m] merge` — append new methods/fields/scenarios via AST-aware mergers
+  (Babel for TS, `python -c "import ast"` for Python with a regex fallback,
+  a balanced-brace tracker for Java, `@cucumber/gherkin` for `.feature`
+  files). Existing method bodies are never overwritten.
+- `[o] overwrite` — replace the file outright.
+- `[s] skip` — leave the file untouched.
+- `[r] rename` — write next to the existing file with a `.new` suffix.
+- `[d] diff` — print a unified diff, then re-prompt.
+
+BDD output (`--bdd`) reuses the same Gherkin renderers as the extension's ZIP
+export, so `.feature` + step-definition files land in the framework-idiomatic
+locations (`features/` for Playwright TS, `cypress/e2e/` for Cypress,
+`features/` for Selenium Py, `src/test/resources/features/` for Selenium
+Java).
+
+## VS Code extension (v0.7.0)
+
+PlayForge ships a companion VS Code extension that brings the **record →
+apply → Claude prompt** workflow directly into the editor. No terminal
+hop required.
+
+- **`PlayForge: Record Flow…`** — launches Chromium with the PlayForge
+  Chrome extension pre-bundled, captures the flow, and round-trips the
+  JSON back into VS Code automatically.
+- **Output Picker webview** — checkbox UI for what to emit on each apply
+  (test code, Claude prompt, BDD output, network mocks, redaction).
+- **Recordings tree view** — activity-bar sidebar lists every recording
+  in `.playforge/sessions/` for one-click re-apply.
+- **Same merge engine as the CLI** — page-object conflicts surface as a
+  QuickPick (Merge / Overwrite / Skip / `.new` / Diff).
+- **Claude Code integration** — every apply optionally emits a
+  `/playforge-<flow>` slash command with locator catalogue + sensitive-
+  value contract.
+
+Install: download the VSIX from
+[releases/](releases/) → Extensions → "Install from VSIX…". See
+[vscode-extension/README.md](vscode-extension/README.md) for the full
+walkthrough, requirements (Playwright runtime), and troubleshooting.
+
+Build from source:
+
+```bash
+pnpm install
+pnpm build          # Chrome ext dist
+pnpm build:vscode   # VS Code ext dist (mirrors chrome-ext/ next door)
+pnpm package:vscode # → releases/playforge-0.7.0.vsix
+```
 
 ## Performance
 
@@ -55,7 +125,9 @@ Measured via `benchmarks/performance.test.ts` (jsdom, run on every CI pass):
 | Single locator evaluate (p99, simple form)   | **1.33 ms**   | < 5 ms   |
 | Single locator evaluate (max, 1000-elem DOM) | **130 ms**    | < 500 ms |
 | Total dist bundle (uncompressed)             | **~478 KB**   | < 500 KB |
-| Unit tests passing                           | **248 / 248** | —        |
+| CLI bundle (`pnpm build:cli`, uncompressed)  | **~164 KB**   | < 250 KB |
+| VS Code bundle (`pnpm build:vscode`)         | **~2.16 MB**  | — (CJS)  |
+| Unit tests passing                           | **661 / 661** | —        |
 
 ## Screenshot
 

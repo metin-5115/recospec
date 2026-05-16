@@ -1,4 +1,4 @@
-import type { Locator, LocatorBundle, ShadowContext, FrameContext } from './locator'
+import type { Locator, LocatorBundle, ScoredLocator, ShadowContext, FrameContext } from './locator'
 
 export type ActionType =
   | 'click'
@@ -77,12 +77,20 @@ export interface RecordedAction {
   pageUrl: string
   pageTitle?: string
   target?: {
-    primaryLocator: Locator
-    fallbackLocators: Locator[]
+    primaryLocator: ScoredLocator
+    fallbackLocators: ScoredLocator[]
+    /**
+     * All scored candidates the engine considered (sorted by score desc), surfaced
+     * so users can pick a different locator without re-running the engine. Optional
+     * for backward compat with actions recorded before P1.
+     */
+    allCandidates?: ScoredLocator[]
     elementSnapshot: ElementSnapshot
     shadowContext?: ShadowContext
     shadowClosed?: boolean
     frameContext?: FrameContext
+    /** True when the user manually picked a different locator candidate. */
+    userOverridden?: boolean
   }
   elementSnapshot?: ElementSnapshot
   payload?: Record<string, unknown>

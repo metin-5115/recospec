@@ -14,6 +14,7 @@ import type {
   IRNetworkInfo,
 } from '../ir/types'
 import { normalizeUrl } from './url-normalizer'
+import { normalizeWaitAction } from './wait-normalizer'
 import { nameElement } from '../planner/element-namer'
 
 export interface NormalizedActions {
@@ -34,6 +35,8 @@ function summarizeSnapshot(snapshot: ElementSnapshot): IRElementSnapshot {
   if (attrs.class) summary.className = attrs.class
   if (attrs['data-testid']) summary.testId = attrs['data-testid']
   if (attrs.role) summary.role = attrs.role
+  if (attrs.name) summary.fieldName = attrs.name
+  if (attrs.autocomplete) summary.autocomplete = attrs.autocomplete.toLowerCase()
   return summary
 }
 
@@ -154,6 +157,14 @@ export function normalizeActions(actions: RecordedAction[]): NormalizedActions {
       }
 
       steps.push(step)
+      continue
+    }
+
+    if (type === 'wait') {
+      const waitStep = normalizeWaitAction(action, (snapshot, primary, fallbacks, sc, scl, fc) =>
+        buildElement(snapshot, primary, fallbacks, usedNames, locatorToName, sc, scl, fc),
+      )
+      if (waitStep) steps.push(waitStep)
       continue
     }
 

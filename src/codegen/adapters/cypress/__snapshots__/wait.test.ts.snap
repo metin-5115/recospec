@@ -1,0 +1,15 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`cypress wait rendering > matches snapshot for combined wait reasons 1`] = `
+"import { HomePage } from '../pages/HomePage';
+
+describe('wait flow', () => {
+  it('full flow', () => {
+    cy.visit("/");
+    cy.intercept('**/*').as('netReq');
+    cy.wait('@netReq', { timeout: 8000 });
+    cy.get(".spinner").should('not.exist');
+  });
+});
+"
+`;

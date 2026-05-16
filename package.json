@@ -1,11 +1,14 @@
 {
   "name": "playforge",
-  "version": "0.5.0",
+  "version": "0.7.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:cli": "vite build --config vite.config.cli.ts",
+    "build:vscode": "vite build --config vite.config.vscode.ts",
+    "package:vscode": "pnpm build && pnpm build:vscode && node scripts/package-vscode.mjs",
     "preview": "vite preview",
     "pretest": "tsc --noEmit",
     "test": "vitest run",
@@ -16,6 +19,9 @@
     "format": "prettier --write src",
     "typecheck": "tsc --noEmit",
     "prepare": "husky"
+  },
+  "bin": {
+    "playforge": "dist/cli/index.js"
   },
   "description": "Chrome extension that records browser interactions and generates production-ready Playwright / Cypress / Selenium test code with Page Object Model output.",
   "keywords": [
@@ -33,9 +39,18 @@
   "license": "MIT",
   "packageManager": "pnpm@10.32.1",
   "dependencies": {
+    "@babel/generator": "^7.25.0",
+    "@babel/parser": "^7.25.0",
+    "@babel/traverse": "^7.25.0",
+    "@babel/types": "^7.25.0",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "commander": "^12.1.0",
     "dexie": "^4.4.2",
     "jszip": "^3.10.1",
     "lucide-react": "^1.14.0",
+    "prompts": "^2.4.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "zustand": "^4.5.7"
@@ -51,15 +66,21 @@
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.4.0",
+    "@cucumber/gherkin": "^39.1.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.51.0",
     "@tailwindcss/postcss": "^4.2.4",
     "@testing-library/react": "^16.3.2",
+    "@types/babel__generator": "^7.6.8",
+    "@types/babel__traverse": "^7.20.6",
     "@types/chrome": "^0.1.40",
     "@types/jszip": "^3.4.1",
     "@types/node": "^20.0.0",
+    "@types/prompts": "^2.4.9",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.6.0",
     "@typescript-eslint/eslint-plugin": "^8.59.2",
     "@typescript-eslint/parser": "^8.59.2",
     "@vitejs/plugin-react": "^4.7.0",

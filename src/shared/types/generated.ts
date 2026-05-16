@@ -1,4 +1,4 @@
-export type FrameworkId = 'playwright-ts' | 'cypress'
+export type FrameworkId = 'playwright-ts' | 'cypress' | 'selenium-py' | 'selenium-java'
 
 export interface GeneratedFile {
   filename: string

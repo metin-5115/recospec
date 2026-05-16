@@ -59,4 +59,92 @@ describe('isDynamicId', () => {
   it('detects high-entropy long id', () => {
     expect(isDynamicId('xQ9mZ2kPvRtYwNsA')).toBe(true)
   })
+
+  // Boundary: digit-suffix threshold raised to 5+. Previously (3+) misclassified
+  // semantic domain ids like BVD-135, order-1234, ticket-789 as dynamic.
+  it('accepts 3-digit semantic id (BVD-135)', () => {
+    expect(isDynamicId('BVD-135')).toBe(false)
+  })
+
+  it('accepts 3-digit ticket id', () => {
+    expect(isDynamicId('ticket-789')).toBe(false)
+  })
+
+  it('accepts 4-digit order id', () => {
+    expect(isDynamicId('order-1234')).toBe(false)
+  })
+
+  it('detects 5-digit suffix (boundary, dynamic)', () => {
+    expect(isDynamicId('widget-12345')).toBe(true)
+  })
+
+  it('detects 6-digit suffix (dynamic)', () => {
+    expect(isDynamicId('product-123456')).toBe(true)
+  })
+
+  it('detects compound numeric suffix when first group is 5+ digits', () => {
+    expect(isDynamicId('row-12345-1')).toBe(true)
+  })
+
+  it('accepts compound numeric suffix when first group is short', () => {
+    expect(isDynamicId('row-12-1')).toBe(false)
+  })
+
+  // Framework-internal IDs — structural fingerprint detection. These slip
+  // past entropy + digit-count thresholds because the digit tail is short;
+  // the surrounding shape is what makes them dynamic.
+  describe('framework-internal auto-generated IDs', () => {
+    it('detects Bootstrap Vue __BVID__N', () => {
+      expect(isDynamicId('__BVID__517')).toBe(true)
+    })
+
+    it('detects Bootstrap Vue __BVID__N with 1 digit', () => {
+      expect(isDynamicId('__BVID__1')).toBe(true)
+    })
+
+    it('detects Bootstrap Vue __BV_tab__N', () => {
+      expect(isDynamicId('__BV_tab__1')).toBe(true)
+    })
+
+    it('detects Angular Material mat-input-N', () => {
+      expect(isDynamicId('mat-input-3')).toBe(true)
+    })
+
+    it('detects MDC mdc-floating-label-N', () => {
+      expect(isDynamicId('mdc-floating-label-12')).toBe(true)
+    })
+
+    it('detects Angular CDK cdk-overlay-N', () => {
+      expect(isDynamicId('cdk-overlay-42')).toBe(true)
+    })
+
+    it('detects Vuetify v-input-N', () => {
+      expect(isDynamicId('v-input-3')).toBe(true)
+    })
+
+    it('detects jQuery UI ui-id-N', () => {
+      expect(isDynamicId('ui-id-42')).toBe(true)
+    })
+
+    it('detects Lit lit-element-N', () => {
+      expect(isDynamicId('lit-element-3')).toBe(true)
+    })
+
+    it('detects bare prefix__N (no leading underscores)', () => {
+      expect(isDynamicId('BVID__517')).toBe(true)
+    })
+
+    // Negative: snake_case semantic IDs must NOT trip the framework filter.
+    it('keeps snake_case semantic IDs (single underscore separator)', () => {
+      expect(isDynamicId('user_id_1')).toBe(false)
+    })
+
+    it('keeps snake_case private semantic IDs', () => {
+      expect(isDynamicId('_private_field_2')).toBe(false)
+    })
+
+    it('keeps v-2 manual semantic id (no word between v and digits)', () => {
+      expect(isDynamicId('v-2')).toBe(false)
+    })
+  })
 })

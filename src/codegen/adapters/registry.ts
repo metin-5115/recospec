@@ -1,4 +1,4 @@
-import type { IRPage, IRScenario } from '../ir/types'
+import type { IRPage, IRScenario, TestDataConfig } from '../ir/types'
 import type { FrameworkId, GeneratedFile } from '@shared/types/generated'
 
 export interface AdapterMetadata {
@@ -10,6 +10,13 @@ export interface AdapterMetadata {
 /** Render-time options forwarded by the orchestrator (e.g. include mocks). */
 export interface RenderOptions {
   includeMocks?: boolean
+  /**
+   * User-edited test-data config. Adapters use this to render env-var
+   * lookups for sensitive fields and `.env.example` / fixture scaffolds.
+   */
+  testData?: TestDataConfig
+  /** Emit Gherkin .feature + step definitions instead of a vanilla spec. */
+  bdd?: boolean
 }
 
 export interface FrameworkAdapter {
@@ -24,11 +31,20 @@ export interface FrameworkAdapter {
   postProcess?(files: GeneratedFile[]): GeneratedFile[]
   /** Optional hook invoked once before rendering — adapters use this to read flags like `includeMocks`. */
   applyOptions?(options: RenderOptions): void
+
+  /** BDD mode — Gherkin feature file (`*.feature`). Adapters that support BDD implement all three. */
+  renderBddFeature?(scenario: IRScenario): GeneratedFile
+  /** BDD mode — step definitions wired to the page-object methods (`*.steps.ts`). */
+  renderBddSteps?(scenario: IRScenario): GeneratedFile
+  /** BDD mode — scaffold additions (config, deps). Merged with `renderScaffold()`. */
+  renderBddScaffold?(): GeneratedFile[]
 }
 
 export const ADAPTER_REGISTRY: Record<FrameworkId, FrameworkAdapter | undefined> = {
   'playwright-ts': undefined,
   cypress: undefined,
+  'selenium-py': undefined,
+  'selenium-java': undefined,
 }
 
 export function registerAdapter(adapter: FrameworkAdapter): void {

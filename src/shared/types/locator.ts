@@ -25,6 +25,12 @@ export interface Locator {
 
 export interface ScoredLocator extends Locator {
   score: number
+  /**
+   * Number of DOM elements this locator currently resolves to. 1 means unique.
+   * Best-effort: for strategies whose `selector` is not a CSS selector
+   * (`role-name`, sometimes `text`), defaults to 1.
+   */
+  matchCount: number
 }
 
 /** Describes that an element lives inside one or more open shadow roots. */
@@ -53,6 +59,12 @@ export interface LocatorBundle {
   primary: ScoredLocator
   fallbacks: ScoredLocator[]
   rejected: ScoredLocator[]
+  /**
+   * All scored candidates produced by the engine (one per strategy that fired),
+   * sorted by score descending. Includes primary, fallbacks, and rejected.
+   * Surfaced for UIs that want to inspect every option the engine considered.
+   */
+  allCandidates: ScoredLocator[]
   /** Present when the element lives inside an open shadow root. */
   shadowContext?: ShadowContext
   /** Set to true when a closed shadow root was encountered (locator may be unreliable). */

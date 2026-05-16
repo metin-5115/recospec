@@ -24,7 +24,13 @@ const loginFlow: RecordedAction[] = [
     {
       type: 'fill',
       target: {
-        primaryLocator: { strategy: 'testid', selector: '[data-testid="email"]', framework: {} },
+        primaryLocator: {
+          strategy: 'testid',
+          selector: '[data-testid="email"]',
+          framework: {},
+          score: 100,
+          matchCount: 1,
+        },
         fallbackLocators: [],
         elementSnapshot: { tagName: 'input', attributes: { type: 'email' }, textContent: '' },
       },
@@ -36,7 +42,13 @@ const loginFlow: RecordedAction[] = [
     {
       type: 'fill',
       target: {
-        primaryLocator: { strategy: 'testid', selector: '[data-testid="password"]', framework: {} },
+        primaryLocator: {
+          strategy: 'testid',
+          selector: '[data-testid="password"]',
+          framework: {},
+          score: 100,
+          matchCount: 1,
+        },
         fallbackLocators: [],
         elementSnapshot: { tagName: 'input', attributes: { type: 'password' }, textContent: '' },
       },
@@ -48,7 +60,13 @@ const loginFlow: RecordedAction[] = [
     {
       type: 'click',
       target: {
-        primaryLocator: { strategy: 'testid', selector: '[data-testid="submit"]', framework: {} },
+        primaryLocator: {
+          strategy: 'testid',
+          selector: '[data-testid="submit"]',
+          framework: {},
+          score: 100,
+          matchCount: 1,
+        },
         fallbackLocators: [],
         elementSnapshot: {
           tagName: 'button',
@@ -76,6 +94,8 @@ const loginFlow: RecordedAction[] = [
           strategy: 'testid',
           selector: '[data-testid="welcome-msg"]',
           framework: {},
+          score: 100,
+          matchCount: 1,
         },
         fallbackLocators: [],
         elementSnapshot: { tagName: 'div', attributes: {}, textContent: 'Welcome' },

@@ -45,15 +45,20 @@ export async function startSession(
   const sessionId = crypto.randomUUID()
   const now = Date.now()
   const tab = await chrome.tabs.get(tabId).catch(() => null)
+  const startUrl = tab?.url ?? ''
   const session: Session = {
     sessionId,
     name: `${SESSION_NAME_PREFIX} ${new Date(now).toLocaleString()}`,
     state: 'recording',
-    startUrl: tab?.url ?? '',
+    startUrl,
     startedAt: now,
     tabId,
     metadata,
     config,
+    iterationNumber: 1,
+    // Placeholder signature — recomputed by event-aggregator once
+    // ITERATION_SIGNATURE_STEPS steps have been captured.
+    flowSignature: `pending::${startUrl}`,
   }
 
   await createSession(session)

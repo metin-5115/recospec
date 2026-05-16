@@ -1,0 +1,33 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`selenium-py renderPageObject > matches snapshot for LoginPage with login() method 1`] = `
+"from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+
+class LoginPage:
+    EMAIL_INPUT = (By.CSS_SELECTOR, '[data-testid="login-email"]')
+
+    PASSWORD_INPUT = (By.CSS_SELECTOR, '[data-testid="login-password"]')
+
+    SIGN_IN_BUTTON = (By.XPATH, "//button[normalize-space()='Sign In']")
+
+    def __init__(self, driver):
+        self.driver = driver
+        self.wait = WebDriverWait(driver, 10)
+
+    def goto(self):
+        self.driver.get('/login')
+
+    def login(self, email: str, password: str):
+        _el = self.wait.until(EC.visibility_of_element_located(self.EMAIL_INPUT))
+        _el.clear()
+        _el.send_keys(email)
+        _el = self.wait.until(EC.visibility_of_element_located(self.PASSWORD_INPUT))
+        _el.clear()
+        _el.send_keys(password)
+        self.wait.until(EC.element_to_be_clickable(self.SIGN_IN_BUTTON)).click()
+"
+`;

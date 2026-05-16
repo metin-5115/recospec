@@ -5,8 +5,21 @@ import type {
   IRFallback,
   InferredMethod,
   AssertionDetail,
+  TestDataConfig,
 } from '../../ir/types'
 import { renderLocator } from './locator'
+import { resolveTestData } from '../../planner/test-data-resolver'
+
+let TEST_DATA: TestDataConfig | undefined
+export function setCypressPageObjectTestData(value: TestDataConfig | undefined): void {
+  TEST_DATA = value
+}
+
+function renderFillValueExpr(el: IRElement | undefined, recordedValue: string): string {
+  const r = resolveTestData(el, recordedValue, TEST_DATA)
+  if (!r.useEnvVar) return JSON.stringify(r.literal)
+  return `Cypress.env(${JSON.stringify(r.paramName)}) || ${JSON.stringify(r.defaultValue)}`
+}
 
 // ---------------------------------------------------------------------------
 // Element getters
@@ -81,7 +94,8 @@ function renderStepInMethod(step: IRStep, indent: string): string {
     return `${indent}this.${step.element.name}().click();`
   }
   if (step.action === 'fill' && step.element) {
-    return `${indent}this.${step.element.name}().clear().type(${JSON.stringify(step.value ?? '')});`
+    const expr = renderFillValueExpr(step.element, step.value ?? '')
+    return `${indent}this.${step.element.name}().clear().type(${expr});`
   }
   if (step.action === 'keypress' && step.key) {
     return `${indent}cy.focused().type(${JSON.stringify(`{${step.key.toLowerCase()}}`)});`

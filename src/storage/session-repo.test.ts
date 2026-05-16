@@ -25,6 +25,8 @@ function makeSession(overrides: Partial<Session> = {}): Session {
       timezone: 'UTC',
     },
     config: { captureClicks: true, captureInputs: true, captureNavigation: true },
+    iterationNumber: 1,
+    flowSignature: 'test-sig',
     ...overrides,
   }
 }

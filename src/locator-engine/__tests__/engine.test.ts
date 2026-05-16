@@ -60,4 +60,44 @@ describe('LocatorEngine', () => {
     const bundle = engine.evaluate(input, doc)
     expect(bundle?.edgeCases).toBeUndefined()
   })
+
+  it('populates matchCount = 1 for a unique testid', () => {
+    const doc = parse(`<button data-testid="confirm">OK</button>`)
+    const btn = doc.querySelector('button') as Element
+    const bundle = engine.evaluate(btn, doc)
+    expect(bundle?.primary.matchCount).toBe(1)
+  })
+
+  it('populates matchCount > 1 for a non-unique class selector', () => {
+    const doc = parse(
+      `<ul><li class="row"><button>A</button></li><li class="row"><button>B</button></li></ul>`,
+    )
+    const btn = doc.querySelectorAll('button')[0] as Element
+    const bundle = engine.evaluate(btn, doc)
+    const cssCandidate = bundle?.allCandidates.find((c) => c.strategy === 'css')
+    expect(cssCandidate).toBeDefined()
+    expect(cssCandidate!.matchCount).toBeGreaterThan(1)
+  })
+
+  it('exposes allCandidates sorted by score desc, including primary + fallbacks + rejected', () => {
+    const doc = parse(
+      `<form><label for="email">Email</label><input id="email" data-testid="email" aria-label="Email" /></form>`,
+    )
+    const input = doc.querySelector('input') as Element
+    const bundle = engine.evaluate(input, doc)
+    expect(bundle?.allCandidates.length).toBeGreaterThanOrEqual(3)
+    const scores = bundle!.allCandidates.map((c) => c.score)
+    const sorted = [...scores].sort((a, b) => b - a)
+    expect(scores).toEqual(sorted)
+    const strategies = bundle!.allCandidates.map((c) => c.strategy)
+    expect(strategies).toContain(bundle!.primary.strategy)
+  })
+
+  it('canvas locator carries matchCount and allCandidates', () => {
+    const doc = parse(`<canvas id="game"></canvas>`)
+    const canvas = doc.querySelector('canvas') as Element
+    const bundle = engine.evaluate(canvas, doc)
+    expect(bundle?.primary.matchCount).toBe(1)
+    expect(bundle?.allCandidates).toEqual([bundle!.primary])
+  })
 })

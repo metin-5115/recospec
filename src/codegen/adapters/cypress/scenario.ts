@@ -1,5 +1,20 @@
-import type { IRScenario, IRStep, AssertionDetail } from '../../ir/types'
+import type { IRScenario, IRStep, AssertionDetail, IRElement, TestDataConfig } from '../../ir/types'
 import { renderLocator } from './locator'
+import { resolveTestData } from '../../planner/test-data-resolver'
+
+let TEST_DATA: TestDataConfig | undefined
+export function setCypressTestData(value: TestDataConfig | undefined): void {
+  TEST_DATA = value
+}
+
+function renderFillValueExpr(el: IRElement | undefined, recordedValue: string): string {
+  const r = resolveTestData(el, recordedValue, TEST_DATA)
+  if (!r.useEnvVar) return JSON.stringify(r.literal)
+  // Cypress.env returns undefined when missing; `||` falls back to the safe default.
+  return `Cypress.env(${JSON.stringify(r.paramName)}) || ${JSON.stringify(r.defaultValue)}`
+}
+
+export { renderFillValueExpr as _internal_renderFillValueExpr }
 
 function renderAssertion(d: AssertionDetail, chain: string, indent: string): string {
   switch (d.type) {
@@ -23,6 +38,25 @@ function renderAssertion(d: AssertionDetail, chain: string, indent: string): str
   }
 }
 
+function renderWait(step: IRStep, indent: string): string {
+  if (!step.wait) return ''
+  const timeout = step.wait.timeoutMs
+  if (step.wait.reason === 'networkidle') {
+    return [
+      `${indent}cy.intercept('**/*').as('netReq');`,
+      `${indent}cy.wait('@netReq', { timeout: ${timeout} });`,
+    ].join('\n')
+  }
+  if (step.wait.reason === 'spinner' || step.wait.reason === 'element-hidden') {
+    if (!step.element) return ''
+    return `${indent}${renderLocator(step.element)}.should('not.exist');`
+  }
+  if (step.wait.reason === 'element-visible' && step.element) {
+    return `${indent}${renderLocator(step.element)}.should('be.visible');`
+  }
+  return ''
+}
+
 function renderStepInSpec(step: IRStep, indent: string): string {
   if (step.action === 'navigate' && step.url) {
     return `${indent}cy.visit(${JSON.stringify(step.url)});`
@@ -31,10 +65,14 @@ function renderStepInSpec(step: IRStep, indent: string): string {
     return `${indent}${renderLocator(step.element)}.click();`
   }
   if (step.action === 'fill' && step.element) {
-    return `${indent}${renderLocator(step.element)}.clear().type(${JSON.stringify(step.value ?? '')});`
+    const expr = renderFillValueExpr(step.element, step.value ?? '')
+    return `${indent}${renderLocator(step.element)}.clear().type(${expr});`
   }
   if (step.action === 'keypress' && step.key) {
     return `${indent}cy.focused().type(${JSON.stringify(`{${step.key.toLowerCase()}}`)});`
+  }
+  if (step.action === 'wait') {
+    return renderWait(step, indent)
   }
   if (step.action === 'assert') {
     if (step.assertionDetail) {
