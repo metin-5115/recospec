@@ -89,4 +89,62 @@ describe('isDynamicId', () => {
   it('accepts compound numeric suffix when first group is short', () => {
     expect(isDynamicId('row-12-1')).toBe(false)
   })
+
+  // Framework-internal IDs — structural fingerprint detection. These slip
+  // past entropy + digit-count thresholds because the digit tail is short;
+  // the surrounding shape is what makes them dynamic.
+  describe('framework-internal auto-generated IDs', () => {
+    it('detects Bootstrap Vue __BVID__N', () => {
+      expect(isDynamicId('__BVID__517')).toBe(true)
+    })
+
+    it('detects Bootstrap Vue __BVID__N with 1 digit', () => {
+      expect(isDynamicId('__BVID__1')).toBe(true)
+    })
+
+    it('detects Bootstrap Vue __BV_tab__N', () => {
+      expect(isDynamicId('__BV_tab__1')).toBe(true)
+    })
+
+    it('detects Angular Material mat-input-N', () => {
+      expect(isDynamicId('mat-input-3')).toBe(true)
+    })
+
+    it('detects MDC mdc-floating-label-N', () => {
+      expect(isDynamicId('mdc-floating-label-12')).toBe(true)
+    })
+
+    it('detects Angular CDK cdk-overlay-N', () => {
+      expect(isDynamicId('cdk-overlay-42')).toBe(true)
+    })
+
+    it('detects Vuetify v-input-N', () => {
+      expect(isDynamicId('v-input-3')).toBe(true)
+    })
+
+    it('detects jQuery UI ui-id-N', () => {
+      expect(isDynamicId('ui-id-42')).toBe(true)
+    })
+
+    it('detects Lit lit-element-N', () => {
+      expect(isDynamicId('lit-element-3')).toBe(true)
+    })
+
+    it('detects bare prefix__N (no leading underscores)', () => {
+      expect(isDynamicId('BVID__517')).toBe(true)
+    })
+
+    // Negative: snake_case semantic IDs must NOT trip the framework filter.
+    it('keeps snake_case semantic IDs (single underscore separator)', () => {
+      expect(isDynamicId('user_id_1')).toBe(false)
+    })
+
+    it('keeps snake_case private semantic IDs', () => {
+      expect(isDynamicId('_private_field_2')).toBe(false)
+    })
+
+    it('keeps v-2 manual semantic id (no word between v and digits)', () => {
+      expect(isDynamicId('v-2')).toBe(false)
+    })
+  })
 })
