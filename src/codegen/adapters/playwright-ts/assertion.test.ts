@@ -45,6 +45,13 @@ const pageWithAssertions: IRPage = {
       annotation: 'Expect text: "Welcome"',
     },
     {
+      id: 's3b',
+      action: 'assert',
+      element: headingEl,
+      assertionDetail: { type: 'text-contains', expected: 'Wel' },
+      annotation: 'Expect text contains',
+    },
+    {
       id: 's4',
       action: 'assert',
       element: inputEl,
@@ -88,6 +95,11 @@ describe('assertion codegen — renderPageObject', () => {
   it('renders toHaveText for text assertion', () => {
     const out = renderPageObject(pageWithAssertions)
     expect(out).toContain('await expect(this.welcomeHeading).toHaveText("Welcome")')
+  })
+
+  it('renders toContainText for text-contains assertion', () => {
+    const out = renderPageObject(pageWithAssertions)
+    expect(out).toContain('await expect(this.welcomeHeading).toContainText("Wel")')
   })
 
   it('renders toHaveValue for value assertion', () => {

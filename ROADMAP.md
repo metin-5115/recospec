@@ -1,4 +1,4 @@
-# PlayForge — Yol Haritası
+# Recospec — Yol Haritası
 
 > Bu dosya Claude Code tarafından her oturumda referans alınır.
 > Tasarım gerekçeleri için: `docs/technical-design.docx` Bölüm 8.
@@ -7,13 +7,13 @@
 
 ## Mevcut Durum
 
-| Alan               | Değer                                              |
-| ------------------ | -------------------------------------------------- |
-| **Faz**            | Faz 1 — MVP (Hafta 1–4)                            |
-| **Hafta**          | Hafta 1 / 4                                        |
-| **Son tamamlanan** | Hafta 1, Görev 1 — GitHub repo oluşturuldu         |
-| **Aktif görev**    | Hafta 1, Görev 2 — Vite + CRXJS extension iskeleti |
-| **Sürüm**          | v0.0.x (henüz release yok)                         |
+| Alan               | Değer                                                    |
+| ------------------ | -------------------------------------------------------- |
+| **Faz**            | Faz 3 — Genişleme (Hafta 11–20)                          |
+| **Hafta**          | Hafta 18 / 20                                            |
+| **Son tamamlanan** | P7.4 — VS Code extension v0.7.0 yayında (16 May 2026)    |
+| **Aktif görev**    | Hafta 18 — Shadow DOM ve iframe piercing locator desteği |
+| **Sürüm**          | **v0.7.0** (4 adapter + CLI + VS Code extension stabil)  |
 
 ---
 
@@ -129,12 +129,15 @@
 
 - [x] **Hafta 11–12** — Selenium Python (Pytest) adapter'ı + project scaffold
 - [x] **Hafta 13–14** — Selenium Java (TestNG) adapter'ı + project scaffold
-- [ ] **Hafta 15** — Self-healing locator'lar (fallback zinciri koda ekleniyor)
-- [ ] **Hafta 16** — Network request capture + opsiyonel mock üretimi
-- [ ] **Hafta 17** — Visual regression entegrasyonu (açık kaynak araç)
-- [ ] **Hafta 18** — Shadow DOM ve iframe piercing locator desteği
-- [ ] **Hafta 19** — Chrome Web Store başvurusu
+- [x] **Hafta 15** — Self-healing locator'lar (fallback zinciri koda ekleniyor) — _Faz 2'de (W7) erken tamamlandı_
+- [x] **Hafta 16** — Network request capture + opsiyonel mock üretimi — _Faz 2'de (W8) erken tamamlandı_
+- [x] **Hafta 17** — Visual regression entegrasyonu (açık kaynak araç) — _Faz 2'de (W9) erken tamamlandı_
+- [ ] **Hafta 18** — Shadow DOM ve iframe piercing locator desteği ← **aktif**
+- [ ] **Hafta 19** — Chrome Web Store başvurusu (+ VS Code Marketplace, npm yayını)
 - [ ] **Hafta 20** — `v1.0` release — CWS onayı, dokümantasyon sitesi, launch postları
+
+> **Plan dışı erken teslim edildi (Faz 4'ten öne çekildi):** `recospec` CLI
+> (v0.6.0 — add/init/prompt) ve VS Code extension (v0.7.0). Detay: CLAUDE.md §12.
 
 > Detay: `docs/technical-design.docx` Bölüm 6.6, 6.7, 5.5
 
@@ -144,7 +147,7 @@
 
 **Hedef:** Dış katkı kabulü, ekosistem genişletme, topluluk büyütme.
 
-- [ ] `playforge-cli` — CI ortamında kod üretimi
+- [ ] `recospec-cli` — CI ortamında kod üretimi
 - [ ] VS Code extension entegrasyonu
 - [ ] Plugin SDK rehberi (topluluk adapter'ları)
 - [ ] Docusaurus ile dokümantasyon sitesi

@@ -22,7 +22,7 @@ import '@codegen/adapters/selenium-py'
 import '@codegen/adapters/selenium-java'
 
 export interface AddOptions {
-  /** Absolute or cwd-relative path to a PlayForge JSON export. */
+  /** Absolute or cwd-relative path to a Recospec JSON export. */
   json: string
   /** Project root where the page-object / spec files will be written. */
   projectDir: string
@@ -57,14 +57,14 @@ export async function runAdd(opts: AddOptions, reporter?: ConflictReporter): Pro
   const rc = loadRc(opts.projectDir)
   if (rc) {
     // eslint-disable-next-line no-console
-    console.log(`[playforge] using config from ${rc.source}`)
+    console.log(`[recospec] using config from ${rc.source}`)
   }
   const framework = resolveFramework(opts, rc?.config.framework)
   const bdd = opts.bdd ?? rc?.config.bdd ?? false
 
   // eslint-disable-next-line no-console
   console.log(
-    `[playforge] session=${payload.session.name} framework=${framework} bdd=${bdd} target=${opts.projectDir}`,
+    `[recospec] session=${payload.session.name} framework=${framework} bdd=${bdd} target=${opts.projectDir}`,
   )
 
   const { flatSteps } = normalizeActions(payload.actions)
@@ -108,7 +108,7 @@ export async function runAdd(opts: AddOptions, reporter?: ConflictReporter): Pro
 
   // eslint-disable-next-line no-console
   console.log(
-    `[playforge] done — written=${written} merged=${merged} renamed=${renamed} skipped=${skipped}`,
+    `[recospec] done — written=${written} merged=${merged} renamed=${renamed} skipped=${skipped}`,
   )
 }
 
@@ -134,17 +134,17 @@ function resolveFramework(opts: AddOptions, rcFramework: FrameworkId | undefined
   if (opts.framework) return opts.framework
   if (rcFramework) {
     // eslint-disable-next-line no-console
-    console.log(`[playforge] framework=${rcFramework} (from .playforgerc.json)`)
+    console.log(`[recospec] framework=${rcFramework} (from .recospecrc.json)`)
     return rcFramework
   }
   const detected = detectFramework(opts.projectDir)
   if (!detected) {
     throw new Error(
-      `Could not auto-detect a framework in ${opts.projectDir}. Pass --framework playwright-ts|cypress|selenium-py|selenium-java or run \`playforge init\` first.`,
+      `Could not auto-detect a framework in ${opts.projectDir}. Pass --framework playwright-ts|cypress|selenium-py|selenium-java or run \`recospec init\` first.`,
     )
   }
   // eslint-disable-next-line no-console
-  console.log(`[playforge] auto-detected framework=${detected.framework} via ${detected.source}`)
+  console.log(`[recospec] auto-detected framework=${detected.framework} via ${detected.source}`)
   return detected.framework
 }
 
@@ -230,7 +230,7 @@ async function writeOne(
   // Existing file — resolve the conflict.
   if (opts.dryRun) {
     // eslint-disable-next-line no-console
-    console.log(`[playforge] skip (dry-run): ${target.diskPath}`)
+    console.log(`[recospec] skip (dry-run): ${target.diskPath}`)
     return 'skipped'
   }
   if (opts.force) {
@@ -247,7 +247,7 @@ async function writeOne(
 
   if (decision.action === 'skip') {
     // eslint-disable-next-line no-console
-    console.log(`[playforge] skipped ${target.diskPath}`)
+    console.log(`[recospec] skipped ${target.diskPath}`)
     return 'skipped'
   }
   if (decision.action === 'overwrite') {
@@ -257,7 +257,7 @@ async function writeOne(
   if (decision.action === 'rename' && decision.renamedPath) {
     persist(decision.renamedPath, target.content)
     // eslint-disable-next-line no-console
-    console.log(`[playforge] wrote ${decision.renamedPath} (renamed to avoid conflict)`)
+    console.log(`[recospec] wrote ${decision.renamedPath} (renamed to avoid conflict)`)
     return 'renamed'
   }
   if (decision.action === 'merge') {
@@ -266,13 +266,13 @@ async function writeOne(
       const result = await runMerge(kind, existing, target.content)
       if (result.outcome === 'skipped') {
         // eslint-disable-next-line no-console
-        console.log(`[playforge] skipped ${target.diskPath} (merge fallback)`)
+        console.log(`[recospec] skipped ${target.diskPath} (merge fallback)`)
         return 'skipped'
       }
       persist(target.diskPath, result.source)
       // eslint-disable-next-line no-console
       console.log(
-        `[playforge] merged ${target.diskPath} — added=[${result.added.join(', ')}] skipped=[${result.skipped.join(
+        `[recospec] merged ${target.diskPath} — added=[${result.added.join(', ')}] skipped=[${result.skipped.join(
           ', ',
         )}]`,
       )
@@ -280,7 +280,7 @@ async function writeOne(
     } catch (err) {
       // eslint-disable-next-line no-console
       console.warn(
-        `[playforge] merge failed for ${target.diskPath}: ${(err as Error).message}. Falling back to .new file.`,
+        `[recospec] merge failed for ${target.diskPath}: ${(err as Error).message}. Falling back to .new file.`,
       )
       const fallback = decision.renamedPath ?? renameFallback(target.diskPath)
       persist(fallback, target.content)

@@ -1,9 +1,24 @@
 import { db } from './db'
 import type { RecordedAction } from '@shared/types/action'
 import type { StepPatch } from '@shared/types/messages'
+import { IndexedDBQuotaError, isQuotaExceededError } from '@shared/errors'
+
+/**
+ * Run a Dexie write and re-throw IndexedDB quota failures as a typed
+ * {@link IndexedDBQuotaError} so callers (background message router) can
+ * surface a recovery UI instead of swallowing the failure.
+ */
+async function withQuotaGuard<T>(op: () => Promise<T>): Promise<T> {
+  try {
+    return await op()
+  } catch (err) {
+    if (isQuotaExceededError(err)) throw new IndexedDBQuotaError(err)
+    throw err
+  }
+}
 
 export async function appendAction(action: RecordedAction): Promise<void> {
-  await db.actions.add(action)
+  await withQuotaGuard(() => db.actions.add(action))
 }
 
 export async function getActionsBySession(sessionId: string): Promise<RecordedAction[]> {
@@ -68,7 +83,7 @@ export async function reorderActions(
  */
 export async function updateAction(actionId: string, patch: StepPatch): Promise<void> {
   if (Object.keys(patch).length === 0) return
-  await db.actions.update(actionId, patch)
+  await withQuotaGuard(() => db.actions.update(actionId, patch))
 }
 
 export async function getAction(actionId: string): Promise<RecordedAction | undefined> {

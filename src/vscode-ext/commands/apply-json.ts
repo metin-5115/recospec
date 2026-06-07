@@ -14,7 +14,7 @@ import type {
 import type { FrameworkId } from '@shared/types/generated'
 import { getActiveFramework, frameworkLabel, resolveWorkspace } from '../workspace-utils'
 import { showOutputPicker, type PickerChoices } from '../output-picker'
-import type { PlayforgeStatusBar } from '../status-bar'
+import type { RecospecStatusBar } from '../status-bar'
 
 // Side-effect imports — the adapters self-register in `ADAPTER_REGISTRY`
 // when the module is loaded. `runAdd` already pulls these in, but we also
@@ -26,17 +26,17 @@ import '@codegen/adapters/selenium-py'
 import '@codegen/adapters/selenium-java'
 
 /**
- * Wraps `runAdd` so the user can apply a PlayForge JSON export onto the
+ * Wraps `runAdd` so the user can apply a Recospec JSON export onto the
  * active workspace via a file picker. Framework is resolved silently from
- * `.playforgerc.json` → detection → QuickPick, the Output Picker webview
+ * `.recospecrc.json` → detection → QuickPick, the Output Picker webview
  * collects the per-run choices, and conflicts surface as VS Code dialogs
  * through a dedicated `ConflictReporter`.
  */
 export function registerApplyJsonCommand(
-  statusBar: PlayforgeStatusBar,
+  statusBar: RecospecStatusBar,
   output: vscode.OutputChannel,
 ): vscode.Disposable {
-  return vscode.commands.registerCommand('playforge.applyJson', async () => {
+  return vscode.commands.registerCommand('recospec.applyJson', async () => {
     const ws = await resolveWorkspace()
     if (!ws) return
 
@@ -44,7 +44,7 @@ export function registerApplyJsonCommand(
       canSelectFiles: true,
       canSelectFolders: false,
       canSelectMany: false,
-      filters: { 'PlayForge JSON': ['json'] },
+      filters: { 'Recospec JSON': ['json'] },
       openLabel: 'Apply',
       defaultUri: ws.folder.uri,
     })
@@ -60,17 +60,17 @@ export function registerApplyJsonCommand(
 }
 
 export interface ApplyJsonAtPathArgs {
-  /** Absolute path to a PlayForge JSON export already on disk. */
+  /** Absolute path to a Recospec JSON export already on disk. */
   jsonPath: string
   /** Workspace directory to apply the rendered files to. */
   projectDir: string
-  statusBar: PlayforgeStatusBar
+  statusBar: RecospecStatusBar
   output: vscode.OutputChannel
 }
 
 /**
- * Shared apply pipeline reused by `playforge.applyJson` (file dialog → JSON)
- * and `playforge.record` (Chromium recording → temp JSON → apply). The
+ * Shared apply pipeline reused by `recospec.applyJson` (file dialog → JSON)
+ * and `recospec.record` (Chromium recording → temp JSON → apply). The
  * framework is resolved via the standard rc → detection → QuickPick chain,
  * and the Output Picker collects per-run choices.
  */
@@ -82,7 +82,7 @@ export async function applyJsonAtPath(args: ApplyJsonAtPathArgs): Promise<void> 
   try {
     payload = loadJsonPayload(args.jsonPath)
   } catch (err) {
-    void vscode.window.showErrorMessage(`PlayForge: cannot read JSON — ${(err as Error).message}`)
+    void vscode.window.showErrorMessage(`Recospec: cannot read JSON — ${(err as Error).message}`)
     return
   }
 
@@ -92,10 +92,10 @@ export async function applyJsonAtPath(args: ApplyJsonAtPathArgs): Promise<void> 
 
   args.output.show(true)
   args.output.appendLine('')
-  args.output.appendLine(`[playforge] applying ${args.jsonPath}`)
-  args.output.appendLine(`[playforge] framework=${framework}`)
-  args.output.appendLine(`[playforge] target=${args.projectDir}`)
-  args.output.appendLine(`[playforge] choices=${formatChoices(choices)}`)
+  args.output.appendLine(`[recospec] applying ${args.jsonPath}`)
+  args.output.appendLine(`[recospec] framework=${framework}`)
+  args.output.appendLine(`[recospec] target=${args.projectDir}`)
+  args.output.appendLine(`[recospec] choices=${formatChoices(choices)}`)
 
   const reporter = createWebviewReporter(args.output)
   args.statusBar.setBusy('apply')
@@ -118,7 +118,7 @@ export async function applyJsonAtPath(args: ApplyJsonAtPathArgs): Promise<void> 
         reporter,
       )
     } else {
-      args.output.appendLine('[playforge] test code generation skipped (picker)')
+      args.output.appendLine('[recospec] test code generation skipped (picker)')
     }
 
     if (choices.claudePrompt) {
@@ -132,14 +132,14 @@ export async function applyJsonAtPath(args: ApplyJsonAtPathArgs): Promise<void> 
         output: args.output,
       })
     } else {
-      args.output.appendLine('[playforge] Claude prompt skipped (picker)')
+      args.output.appendLine('[recospec] Claude prompt skipped (picker)')
     }
 
-    void vscode.window.showInformationMessage('PlayForge: apply complete.')
+    void vscode.window.showInformationMessage('Recospec: apply complete.')
   } catch (err) {
     const message = (err as Error).message
-    args.output.appendLine(`[playforge] ERROR: ${message}`)
-    void vscode.window.showErrorMessage(`PlayForge apply failed: ${message}`)
+    args.output.appendLine(`[recospec] ERROR: ${message}`)
+    void vscode.window.showErrorMessage(`Recospec apply failed: ${message}`)
   } finally {
     restoreConsole()
     args.statusBar.setIdle()
@@ -209,18 +209,18 @@ async function renderAndWritePrompt(args: PromptWriteArgs): Promise<void> {
   const targetPath = defaultPromptPath(args.mode, doc.flowSlug, args.projectDir)
 
   args.output.appendLine(
-    `[playforge] prompt: slug=${doc.flowSlug} mode=${args.mode} → ${targetPath}`,
+    `[recospec] prompt: slug=${doc.flowSlug} mode=${args.mode} → ${targetPath}`,
   )
 
   if (args.mode === 'claude-md') {
     upsertClaudeMdBlock(targetPath, doc.flowSlug, markdown)
-    args.output.appendLine(`[playforge] wrote ${targetPath}`)
+    args.output.appendLine(`[recospec] wrote ${targetPath}`)
     return
   }
 
   if (!existsSync(targetPath)) {
     persist(targetPath, markdown)
-    args.output.appendLine(`[playforge] wrote ${targetPath}`)
+    args.output.appendLine(`[recospec] wrote ${targetPath}`)
     return
   }
 
@@ -230,20 +230,20 @@ async function renderAndWritePrompt(args: PromptWriteArgs): Promise<void> {
     canMerge: false,
   })
   if (decision.action === 'skip') {
-    args.output.appendLine(`[playforge] skipped ${targetPath}`)
+    args.output.appendLine(`[recospec] skipped ${targetPath}`)
     return
   }
   if (decision.action === 'overwrite') {
     persist(targetPath, markdown)
-    args.output.appendLine(`[playforge] overwrote ${targetPath}`)
+    args.output.appendLine(`[recospec] overwrote ${targetPath}`)
     return
   }
   if (decision.action === 'rename' && decision.renamedPath) {
     persist(decision.renamedPath, markdown)
-    args.output.appendLine(`[playforge] wrote ${decision.renamedPath}`)
+    args.output.appendLine(`[recospec] wrote ${decision.renamedPath}`)
     return
   }
-  args.output.appendLine(`[playforge] skipped ${targetPath} (no terminal choice)`)
+  args.output.appendLine(`[recospec] skipped ${targetPath} (no terminal choice)`)
 }
 
 function defaultPromptPath(
@@ -252,7 +252,7 @@ function defaultPromptPath(
   projectDir: string,
 ): string {
   if (mode === 'slash') {
-    return resolvePath(projectDir, '.claude', 'commands', `playforge-${slug}.md`)
+    return resolvePath(projectDir, '.claude', 'commands', `recospec-${slug}.md`)
   }
   if (mode === 'prompt') {
     return resolvePath(projectDir, 'prompts', `${slug}.md`)
@@ -263,13 +263,13 @@ function defaultPromptPath(
 /**
  * Idempotent CLAUDE.md updater — mirrors `runPrompt`'s upserter so the VS
  * Code flow and the CLI flow leave identical bytes on disk for the same
- * inputs. Replaces an existing `BEGIN/END playforge:<slug>` block in place,
+ * inputs. Replaces an existing `BEGIN/END recospec:<slug>` block in place,
  * otherwise appends a fresh block.
  */
 function upsertClaudeMdBlock(filePath: string, slug: string, markdown: string): void {
   const existing = existsSync(filePath) ? readFileSync(filePath, 'utf8') : ''
-  const beginMarker = `<!-- BEGIN playforge:${slug} -->`
-  const endMarker = `<!-- END playforge:${slug} -->`
+  const beginMarker = `<!-- BEGIN recospec:${slug} -->`
+  const endMarker = `<!-- END recospec:${slug} -->`
   const beginIdx = existing.indexOf(beginMarker)
   const endIdx = existing.indexOf(endMarker)
 
@@ -292,7 +292,7 @@ function persist(diskPath: string, content: string): void {
 
 /**
  * `runAdd` logs progress with `console.log`/`console.warn`. Redirect both to
- * the PlayForge output channel for the duration of the command so the user
+ * the Recospec output channel for the duration of the command so the user
  * sees a coherent transcript without digging through the extension-host
  * console.
  */
@@ -360,11 +360,11 @@ function createWebviewReporter(output: vscode.OutputChannel): ConflictReporter {
 
       for (;;) {
         const choice = await vscode.window.showQuickPick(options, {
-          placeHolder: `PlayForge conflict: ${ctx.targetPath}`,
+          placeHolder: `Recospec conflict: ${ctx.targetPath}`,
           ignoreFocusOut: true,
         })
         if (!choice) {
-          output.appendLine(`[playforge] no choice — skipping ${ctx.targetPath}`)
+          output.appendLine(`[recospec] no choice — skipping ${ctx.targetPath}`)
           return { action: 'skip' }
         }
         if (choice.action === 'diff') {
@@ -387,7 +387,7 @@ async function showDiff(ctx: ConflictContext): Promise<void> {
   const left = vscode.Uri.file(ctx.targetPath)
   // Use an untitled URI for the incoming side so the diff is read-only-feeling
   // and we don't risk persisting the buffer accidentally.
-  const right = vscode.Uri.parse(`untitled:${ctx.targetPath}.incoming?playforge-incoming`)
+  const right = vscode.Uri.parse(`untitled:${ctx.targetPath}.incoming?recospec-incoming`)
 
   const doc = await vscode.workspace.openTextDocument(right)
   const edit = new vscode.WorkspaceEdit()
@@ -397,7 +397,7 @@ async function showDiff(ctx: ConflictContext): Promise<void> {
     'vscode.diff',
     left,
     doc.uri,
-    `PlayForge: ${ctx.targetPath} ↔ incoming`,
+    `Recospec: ${ctx.targetPath} ↔ incoming`,
     { preview: true },
   )
 }

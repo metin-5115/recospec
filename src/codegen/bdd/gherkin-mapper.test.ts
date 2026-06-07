@@ -95,12 +95,25 @@ describe('mapIRStepToGherkin', () => {
     expect(out.text).toBe('the "submit" button should be visible')
   })
 
-  it('assert text → Then the subject should contain', () => {
+  it('assert text → Then the subject should have text (exact)', () => {
     const out = mapIRStepToGherkin(
       ir({
         action: 'assert',
         element: buttonEl,
         assertionDetail: { type: 'text', expected: 'Welcome' },
+      }),
+      'Then',
+    )
+    expect(out.text).toBe('the "submit" button should have text "Welcome"')
+    expect(out.pattern).toBe('the {string} button should have text {string}')
+  })
+
+  it('assert text-contains → Then the subject should contain (partial)', () => {
+    const out = mapIRStepToGherkin(
+      ir({
+        action: 'assert',
+        element: buttonEl,
+        assertionDetail: { type: 'text-contains', expected: 'Welcome' },
       }),
       'Then',
     )

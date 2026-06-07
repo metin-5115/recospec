@@ -30,9 +30,9 @@ jobs:
       - name: Zip dist
         run: |
           cd dist
-          zip -r ../playforge-${{ github.ref_name }}.zip .
+          zip -r ../recospec-${{ github.ref_name }}.zip .
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: playforge-${{ github.ref_name }}.zip
+          files: recospec-${{ github.ref_name }}.zip

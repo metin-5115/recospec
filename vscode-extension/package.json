@@ -1,17 +1,17 @@
 {
-  "name": "playforge",
-  "displayName": "PlayForge",
-  "description": "Apply recorded PlayForge sessions to your test project and generate Claude Code prompts — straight from VS Code.",
+  "name": "recospec",
+  "displayName": "Recospec",
+  "description": "Apply recorded Recospec sessions to your test project and generate Claude Code prompts — straight from VS Code.",
   "version": "0.7.0",
-  "publisher": "playforge",
+  "publisher": "recospec",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/metin-5115/playforge.git"
+    "url": "https://github.com/metin-5115/recospec.git"
   },
-  "homepage": "https://github.com/metin-5115/playforge",
+  "homepage": "https://github.com/metin-5115/recospec",
   "bugs": {
-    "url": "https://github.com/metin-5115/playforge/issues"
+    "url": "https://github.com/metin-5115/recospec/issues"
   },
   "engines": {
     "vscode": "^1.85.0"
@@ -28,7 +28,7 @@
     "page-object-model",
     "claude-code"
   ],
-  "icon": "icons/playforge.png",
+  "icon": "icons/recospec.png",
   "main": "./dist/extension.cjs",
   "activationEvents": [
     "onStartupFinished"
@@ -36,120 +36,120 @@
   "contributes": {
     "commands": [
       {
-        "command": "playforge.record",
-        "title": "PlayForge: Record Flow…",
-        "category": "PlayForge",
+        "command": "recospec.record",
+        "title": "Recospec: Record Flow…",
+        "category": "Recospec",
         "icon": "$(record)"
       },
       {
-        "command": "playforge.init",
-        "title": "PlayForge: Init Project (.playforgerc.json)",
-        "category": "PlayForge"
+        "command": "recospec.init",
+        "title": "Recospec: Init Project (.recospecrc.json)",
+        "category": "Recospec"
       },
       {
-        "command": "playforge.applyJson",
-        "title": "PlayForge: Apply Existing JSON…",
-        "category": "PlayForge"
+        "command": "recospec.applyJson",
+        "title": "Recospec: Apply Existing JSON…",
+        "category": "Recospec"
       },
       {
-        "command": "playforge.showPrompt",
-        "title": "PlayForge: Render Claude Prompt…",
-        "category": "PlayForge"
+        "command": "recospec.showPrompt",
+        "title": "Recospec: Render Claude Prompt…",
+        "category": "Recospec"
       },
       {
-        "command": "playforge.recordings.refresh",
+        "command": "recospec.recordings.refresh",
         "title": "Refresh",
-        "category": "PlayForge",
+        "category": "Recospec",
         "icon": "$(refresh)"
       },
       {
-        "command": "playforge.recordings.apply",
+        "command": "recospec.recordings.apply",
         "title": "Apply",
-        "category": "PlayForge",
+        "category": "Recospec",
         "icon": "$(rocket)"
       },
       {
-        "command": "playforge.recordings.reveal",
+        "command": "recospec.recordings.reveal",
         "title": "Reveal in File Explorer",
-        "category": "PlayForge"
+        "category": "Recospec"
       },
       {
-        "command": "playforge.recordings.delete",
+        "command": "recospec.recordings.delete",
         "title": "Delete",
-        "category": "PlayForge",
+        "category": "Recospec",
         "icon": "$(trash)"
       }
     ],
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "playforge",
-          "title": "PlayForge",
-          "icon": "icons/playforge-sidebar.svg"
+          "id": "recospec",
+          "title": "Recospec",
+          "icon": "icons/recospec-sidebar.svg"
         }
       ]
     },
     "views": {
-      "playforge": [
+      "recospec": [
         {
-          "id": "playforge.recordings",
+          "id": "recospec.recordings",
           "name": "Recordings",
-          "icon": "icons/playforge-sidebar.svg",
-          "contextualTitle": "PlayForge"
+          "icon": "icons/recospec-sidebar.svg",
+          "contextualTitle": "Recospec"
         }
       ]
     },
     "viewsWelcome": [
       {
-        "view": "playforge.recordings",
-        "contents": "No recordings yet.\n[Record a flow](command:playforge.record)\nRecordings are stored under `.playforge/sessions/` in the current workspace."
+        "view": "recospec.recordings",
+        "contents": "No recordings yet.\n[Record a flow](command:recospec.record)\nRecordings are stored under `.recospec/sessions/` in the current workspace."
       }
     ],
     "menus": {
       "view/title": [
         {
-          "command": "playforge.record",
-          "when": "view == playforge.recordings",
+          "command": "recospec.record",
+          "when": "view == recospec.recordings",
           "group": "navigation@1"
         },
         {
-          "command": "playforge.recordings.refresh",
-          "when": "view == playforge.recordings",
+          "command": "recospec.recordings.refresh",
+          "when": "view == recospec.recordings",
           "group": "navigation@2"
         }
       ],
       "view/item/context": [
         {
-          "command": "playforge.recordings.apply",
-          "when": "view == playforge.recordings && viewItem == playforgeRecording",
+          "command": "recospec.recordings.apply",
+          "when": "view == recospec.recordings && viewItem == recospecRecording",
           "group": "inline@1"
         },
         {
-          "command": "playforge.recordings.delete",
-          "when": "view == playforge.recordings && viewItem == playforgeRecording",
+          "command": "recospec.recordings.delete",
+          "when": "view == recospec.recordings && viewItem == recospecRecording",
           "group": "inline@2"
         },
         {
-          "command": "playforge.recordings.reveal",
-          "when": "view == playforge.recordings && viewItem == playforgeRecording",
+          "command": "recospec.recordings.reveal",
+          "when": "view == recospec.recordings && viewItem == recospecRecording",
           "group": "1_modify@1"
         }
       ],
       "commandPalette": [
         {
-          "command": "playforge.recordings.refresh",
+          "command": "recospec.recordings.refresh",
           "when": "false"
         },
         {
-          "command": "playforge.recordings.apply",
+          "command": "recospec.recordings.apply",
           "when": "false"
         },
         {
-          "command": "playforge.recordings.reveal",
+          "command": "recospec.recordings.reveal",
           "when": "false"
         },
         {
-          "command": "playforge.recordings.delete",
+          "command": "recospec.recordings.delete",
           "when": "false"
         }
       ]

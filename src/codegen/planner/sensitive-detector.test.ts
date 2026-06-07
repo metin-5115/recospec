@@ -132,19 +132,19 @@ describe('getParameterName', () => {
 })
 
 describe('getEnvVarName', () => {
-  it('produces PLAYFORGE_PASSWORD', () => {
-    expect(getEnvVarName('password')).toBe('PLAYFORGE_PASSWORD')
+  it('produces RECOSPEC_PASSWORD', () => {
+    expect(getEnvVarName('password')).toBe('RECOSPEC_PASSWORD')
   })
 
-  it('produces PLAYFORGE_API_KEY from camelCase', () => {
-    expect(getEnvVarName('apiKey')).toBe('PLAYFORGE_API_KEY')
+  it('produces RECOSPEC_API_KEY from camelCase', () => {
+    expect(getEnvVarName('apiKey')).toBe('RECOSPEC_API_KEY')
   })
 
-  it('produces PLAYFORGE_ONE_TIME_CODE from camelCase', () => {
-    expect(getEnvVarName('oneTimeCode')).toBe('PLAYFORGE_ONE_TIME_CODE')
+  it('produces RECOSPEC_ONE_TIME_CODE from camelCase', () => {
+    expect(getEnvVarName('oneTimeCode')).toBe('RECOSPEC_ONE_TIME_CODE')
   })
 
   it('handles already-snake input', () => {
-    expect(getEnvVarName('user_name')).toBe('PLAYFORGE_USER_NAME')
+    expect(getEnvVarName('user_name')).toBe('RECOSPEC_USER_NAME')
   })
 })

@@ -45,6 +45,25 @@ const DYNAMIC_ID_PATTERNS = [
   // leading underscores. Catches `BVID__517` even when the host strips the
   // leading underscores during rendering (some Bootstrap Vue versions do).
   /^[A-Za-z][A-Za-z0-9_]*__\d+$/,
+
+  // Compound BootstrapVue tab/pane ids like
+  // `__BVID__27___BV_tab_button__` — multiple framework prefixes joined
+  // and trailing with `__` (no digits at the end), so the patterns above
+  // miss them. Three-or-more consecutive underscores anywhere are a
+  // strong signal that the id is framework-generated; semantic snake_case
+  // never reaches that depth.
+  /___/,
+]
+
+/**
+ * Substring markers that unambiguously identify a framework-generated id.
+ * Checked as a plain `includes()` so the marker can sit anywhere in the id
+ * (start, middle, or end). Keep this list conservative — every entry must
+ * be specific enough that no real product would adopt it as a semantic id.
+ */
+const FRAMEWORK_ID_MARKERS = [
+  'BVID', // Bootstrap Vue
+  '_BV_', // Bootstrap Vue tab/tooltip/dropdown internals
 ]
 
 function shannonEntropy(str: string): number {
@@ -64,6 +83,7 @@ export function isDynamicClass(cls: string): boolean {
 }
 
 export function isDynamicId(id: string): boolean {
+  if (FRAMEWORK_ID_MARKERS.some((marker) => id.includes(marker))) return true
   if (DYNAMIC_ID_PATTERNS.some((p) => p.test(id))) return true
   if (NUMERIC_SUFFIX_PATTERN.test(id)) return true
   if (/^\d+$/.test(id)) return true

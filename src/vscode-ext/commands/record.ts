@@ -11,13 +11,13 @@ import { extractFromServiceWorker, NoStepsRecordedError, waitForExport } from '.
 import { resolveWorkspace } from '../workspace-utils'
 import { getSessionsDir } from '../tree-provider'
 import { applyJsonAtPath } from './apply-json'
-import type { PlayforgeStatusBar } from '../status-bar'
+import type { RecospecStatusBar } from '../status-bar'
 
 /**
  * Record orchestrator (Flow 1):
  *
  *   1. Resolve the workspace and the bundled Chrome extension path.
- *   2. Launch Chromium with PlayForge pre-loaded.
+ *   2. Launch Chromium with Recospec pre-loaded.
  *   3. Show a non-modal info message with "Stop & Apply" / "Cancel".
  *   4. Race the user's button choice against `context.on('close')`.
  *   5. On Stop, pull the latest session via the SW global, persist the
@@ -26,11 +26,11 @@ import type { PlayforgeStatusBar } from '../status-bar'
  *      and skip the apply step (the SW is gone, no payload available).
  */
 export function registerRecordCommand(
-  statusBar: PlayforgeStatusBar,
+  statusBar: RecospecStatusBar,
   output: vscode.OutputChannel,
   context: vscode.ExtensionContext,
 ): vscode.Disposable {
-  return vscode.commands.registerCommand('playforge.record', async () => {
+  return vscode.commands.registerCommand('recospec.record', async () => {
     const ws = await resolveWorkspace()
     if (!ws) return
 
@@ -40,7 +40,7 @@ export function registerRecordCommand(
     } catch (err) {
       if (err instanceof BundledExtensionMissingError) {
         void vscode.window.showErrorMessage(err.message)
-        output.appendLine(`[playforge] ERROR: ${err.message}`)
+        output.appendLine(`[recospec] ERROR: ${err.message}`)
         return
       }
       throw err
@@ -48,7 +48,7 @@ export function registerRecordCommand(
 
     output.show(true)
     output.appendLine('')
-    output.appendLine(`[playforge] record: launching Chromium with ${extensionPath}`)
+    output.appendLine(`[recospec] record: launching Chromium with ${extensionPath}`)
 
     statusBar.setBusy('recording')
     let launched
@@ -56,13 +56,13 @@ export function registerRecordCommand(
       launched = await launchChromium({ extensionPath })
     } catch (err) {
       const message = (err as Error).message
-      output.appendLine(`[playforge] ERROR: ${message}`)
-      void vscode.window.showErrorMessage(`PlayForge: failed to launch Chromium — ${message}`)
+      output.appendLine(`[recospec] ERROR: ${message}`)
+      void vscode.window.showErrorMessage(`Recospec: failed to launch Chromium — ${message}`)
       statusBar.setIdle()
       return
     }
 
-    output.appendLine('[playforge] Chromium launched — record your flow, then click Stop.')
+    output.appendLine('[recospec] Chromium launched — record your flow, then click Stop.')
 
     let stopResolve!: () => void
     const stopSignal = new Promise<void>((r) => {
@@ -75,7 +75,7 @@ export function registerRecordCommand(
     // can bail without applying anything.
     const notificationPromise = vscode.window
       .showInformationMessage(
-        'PlayForge: recording in progress. Run the flow in Chromium, then click ' +
+        'Recospec: recording in progress. Run the flow in Chromium, then click ' +
           'Stop in the side panel before pressing "Stop & Apply" here.',
         { modal: false },
         'Stop & Apply',
@@ -89,9 +89,9 @@ export function registerRecordCommand(
     const settlement = await waitForExport(launched.context, stopSignal)
 
     if (settlement.outcome === 'closed') {
-      output.appendLine('[playforge] Chromium was closed before Stop — no payload to apply.')
+      output.appendLine('[recospec] Chromium was closed before Stop — no payload to apply.')
       void vscode.window.showWarningMessage(
-        'PlayForge: Chromium was closed before Stop — no recording was captured.',
+        'Recospec: Chromium was closed before Stop — no recording was captured.',
       )
       statusBar.setIdle()
       return
@@ -103,18 +103,18 @@ export function registerRecordCommand(
     try {
       payload = await extractFromServiceWorker(launched.context)
       output.appendLine(
-        `[playforge] extracted session=${payload.session.name} actions=${payload.actions.length}`,
+        `[recospec] extracted session=${payload.session.name} actions=${payload.actions.length}`,
       )
     } catch (err) {
       if (err instanceof NoStepsRecordedError) {
-        output.appendLine('[playforge] No steps recorded — nothing to apply.')
+        output.appendLine('[recospec] No steps recorded — nothing to apply.')
         void vscode.window.showInformationMessage(
-          'PlayForge: no steps recorded. Start a session in the side panel before stopping.',
+          'Recospec: no steps recorded. Start a session in the side panel before stopping.',
         )
       } else {
         const message = (err as Error).message
-        output.appendLine(`[playforge] ERROR: ${message}`)
-        void vscode.window.showErrorMessage(`PlayForge: extract failed — ${message}`)
+        output.appendLine(`[recospec] ERROR: ${message}`)
+        void vscode.window.showErrorMessage(`Recospec: extract failed — ${message}`)
       }
     } finally {
       await launched.context.close().catch(() => {
@@ -128,7 +128,7 @@ export function registerRecordCommand(
     if (!payload) return
 
     const jsonPath = saveExportToWorkspace(payload, ws.projectDir)
-    output.appendLine(`[playforge] wrote recording → ${jsonPath}`)
+    output.appendLine(`[recospec] wrote recording → ${jsonPath}`)
 
     await applyJsonAtPath({
       jsonPath,
@@ -140,7 +140,7 @@ export function registerRecordCommand(
 }
 
 /**
- * Write the export payload to `<projectDir>/.playforge/sessions/`. The audit
+ * Write the export payload to `<projectDir>/.recospec/sessions/`. The audit
  * copy lives next to the project so the Recordings tree view can list it
  * later and the user can re-apply a past recording without re-recording.
  * The same path is fed straight into `applyJsonAtPath`, so we do not also

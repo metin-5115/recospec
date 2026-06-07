@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question / discussion
+    url: https://github.com/metin-5115/recospec/discussions
+    about: For questions, ideas, and general discussion — please use Discussions.
+  - name: Security or privacy report
+    url: mailto:tuncbilek.51metin@gmail.com
+    about: Report a security or privacy concern privately by email.

@@ -12,7 +12,7 @@ const PROMPT_MODES: PromptMode[] = ['slash', 'claude-md', 'prompt']
 function validatePromptMode(value: string): PromptMode {
   if (!PROMPT_MODES.includes(value as PromptMode)) {
     // eslint-disable-next-line no-console
-    console.error(`[playforge] invalid --mode ${value}. Choose one of: ${PROMPT_MODES.join(', ')}.`)
+    console.error(`[recospec] invalid --mode ${value}. Choose one of: ${PROMPT_MODES.join(', ')}.`)
     process.exit(2)
   }
   return value as PromptMode
@@ -24,7 +24,7 @@ function validateFramework(value: string): FrameworkId {
   if (!FRAMEWORKS.includes(value as FrameworkId)) {
     // eslint-disable-next-line no-console
     console.error(
-      `[playforge] invalid --framework ${value}. Choose one of: ${FRAMEWORKS.join(', ')}.`,
+      `[recospec] invalid --framework ${value}. Choose one of: ${FRAMEWORKS.join(', ')}.`,
     )
     process.exit(2)
   }
@@ -34,17 +34,17 @@ function validateFramework(value: string): FrameworkId {
 const program = new Command()
 
 program
-  .name('playforge')
-  .description('PlayForge — apply a recorded session JSON onto an existing test project.')
+  .name('recospec')
+  .description('Recospec — apply a recorded session JSON onto an existing test project.')
   .version('0.7.0')
 
 program
   .command('add')
   .description(
-    'Apply a PlayForge JSON export to the project in <projectDir> (defaults to cwd).\n' +
+    'Apply a Recospec JSON export to the project in <projectDir> (defaults to cwd).\n' +
       '  Renders page objects + the scenario file via the matching adapter, then prompts on conflicts.',
   )
-  .argument('<json>', 'Path to a PlayForge JSON export (.json)')
+  .argument('<json>', 'Path to a Recospec JSON export (.json)')
   .argument('[projectDir]', 'Target project directory', '.')
   .option('-f, --framework <id>', `Override framework detection: ${FRAMEWORKS.join(' | ')}`)
   .option('--bdd', 'Emit Gherkin .feature + step definitions instead of a vanilla spec')
@@ -63,7 +63,7 @@ program
       })
     } catch (err) {
       // eslint-disable-next-line no-console
-      console.error(`[playforge] ${(err as Error).message}`)
+      console.error(`[recospec] ${(err as Error).message}`)
       process.exit(1)
     }
   })
@@ -71,13 +71,13 @@ program
 program
   .command('init')
   .description(
-    'Write a .playforgerc.json into the project so subsequent `playforge add` calls\n' +
+    'Write a .recospecrc.json into the project so subsequent `recospec add` calls\n' +
       '  skip framework detection. Honours --framework / --bdd; auto-detects otherwise.',
   )
   .argument('[projectDir]', 'Target project directory', '.')
   .option('-f, --framework <id>', `Pin framework: ${FRAMEWORKS.join(' | ')}`)
   .option('--bdd', 'Default to BDD mode for future `add` calls')
-  .option('--force', 'Overwrite an existing .playforgerc.json')
+  .option('--force', 'Overwrite an existing .recospecrc.json')
   .action(async (projectDir: string, options: Record<string, unknown>) => {
     const framework = options.framework ? validateFramework(options.framework as string) : undefined
     try {
@@ -89,7 +89,7 @@ program
       })
     } catch (err) {
       // eslint-disable-next-line no-console
-      console.error(`[playforge] ${(err as Error).message}`)
+      console.error(`[recospec] ${(err as Error).message}`)
       process.exit(1)
     }
   })
@@ -97,11 +97,11 @@ program
 program
   .command('prompt')
   .description(
-    'Render a Claude Code prompt from a PlayForge JSON export.\n' +
-      '  Modes: slash → .claude/commands/playforge-<slug>.md · claude-md → CLAUDE.md\n' +
+    'Render a Claude Code prompt from a Recospec JSON export.\n' +
+      '  Modes: slash → .claude/commands/recospec-<slug>.md · claude-md → CLAUDE.md\n' +
       '  marker block (in-place replace or append) · prompt → prompts/<slug>.md',
   )
-  .argument('<json>', 'Path to a PlayForge JSON export (.json)')
+  .argument('<json>', 'Path to a Recospec JSON export (.json)')
   .argument('[projectDir]', 'Target project directory', '.')
   .option('-m, --mode <mode>', `Output mode: ${PROMPT_MODES.join(' | ')}`, 'slash')
   .option('-n, --slug <slug>', 'Override the flow slug (defaults to slugified session name)')
@@ -129,13 +129,13 @@ program
       })
     } catch (err) {
       // eslint-disable-next-line no-console
-      console.error(`[playforge] ${(err as Error).message}`)
+      console.error(`[recospec] ${(err as Error).message}`)
       process.exit(1)
     }
   })
 
 program.parseAsync(process.argv).catch((err) => {
   // eslint-disable-next-line no-console
-  console.error(`[playforge] fatal: ${(err as Error).message}`)
+  console.error(`[recospec] fatal: ${(err as Error).message}`)
   process.exit(1)
 })

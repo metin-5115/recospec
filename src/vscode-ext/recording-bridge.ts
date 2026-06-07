@@ -16,7 +16,7 @@ export class NoStepsRecordedError extends Error {
 }
 
 /**
- * Resolve the PlayForge background service worker for the supplied context.
+ * Resolve the Recospec background service worker for the supplied context.
  * Playwright registers each MV3 service worker as a `Worker`; in the
  * single-extension launch we do, the only entry is ours. We wait up to
  * `timeoutMs` for registration since the SW may take a beat to spin up.
@@ -33,7 +33,7 @@ export async function findServiceWorker(
       context.off('serviceworker', onWorker)
       reject(
         new Error(
-          `Timed out (${timeoutMs}ms) waiting for the PlayForge service worker. ` +
+          `Timed out (${timeoutMs}ms) waiting for the Recospec service worker. ` +
             'Confirm `chrome-ext/manifest.json` is valid and `pnpm build` ran cleanly.',
         ),
       )
@@ -51,7 +51,7 @@ export async function findServiceWorker(
 /**
  * Pull the latest session as a `JsonExportPayload` by evaluating the
  * service-worker global injected by `src/background/index.ts`. The handler
- * is registered as `self.__playforgeExport` once the message router has
+ * is registered as `self.__recospecExport` once the message router has
  * finished setup, and reads sessions + actions from IndexedDB (Dexie).
  *
  * Throws `NoStepsRecordedError` when the SW reports no actions or no
@@ -69,9 +69,9 @@ export async function extractFromServiceWorker(
   // useful message. Playwright otherwise stringifies them as "Error: e".
   const result = await worker.evaluate(async (filterSessionId: string | undefined) => {
     type Exporter = (id?: string) => Promise<unknown>
-    const fn = (globalThis as unknown as { __playforgeExport?: Exporter }).__playforgeExport
+    const fn = (globalThis as unknown as { __recospecExport?: Exporter }).__recospecExport
     if (typeof fn !== 'function') {
-      return { ok: false as const, error: 'PlayForge service worker has no export handler' }
+      return { ok: false as const, error: 'Recospec service worker has no export handler' }
     }
     try {
       const payload = await fn(filterSessionId)

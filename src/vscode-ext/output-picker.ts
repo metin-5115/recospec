@@ -20,8 +20,8 @@ type PickerMessage = { type: 'submit'; choices: PickerChoices } | { type: 'cance
  */
 export function showOutputPicker(meta: PickerMeta): Promise<PickerChoices | null> {
   const panel = vscode.window.createWebviewPanel(
-    'playforge.outputPicker',
-    'PlayForge — Apply',
+    'recospec.outputPicker',
+    'Recospec — Apply',
     vscode.ViewColumn.Active,
     {
       enableScripts: true,

@@ -1,6 +1,6 @@
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 
-const PREFIX = '[PlayForge]'
+const PREFIX = '[Recospec]'
 const IS_DEV = import.meta.env.DEV
 
 const REDACTED = '***'

@@ -152,7 +152,7 @@ export function startCapture(sessionId: string): void {
   activeSessionId = sessionId
   document.addEventListener('click', onClickCapture, { capture: true })
   document.addEventListener('change', onChangeCapture, { capture: true })
-  window.addEventListener('playforge:network', onNetworkCapture as EventListener)
+  window.addEventListener('recospec:network', onNetworkCapture as EventListener)
   logger.info('[CS] Capture started', sessionId)
 }
 
@@ -162,6 +162,6 @@ export function stopCapture(): void {
   pendingWaitAbort = null
   document.removeEventListener('click', onClickCapture, { capture: true })
   document.removeEventListener('change', onChangeCapture, { capture: true })
-  window.removeEventListener('playforge:network', onNetworkCapture as EventListener)
+  window.removeEventListener('recospec:network', onNetworkCapture as EventListener)
   logger.info('[CS] Capture stopped')
 }

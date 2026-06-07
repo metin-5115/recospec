@@ -40,7 +40,7 @@ export interface MergeResult {
  *
  * The existing class's other members (anything the user has hand-edited) are
  * preserved verbatim — we only ADD, never overwrite. This is what makes the
- * `playforge add` workflow safe to re-run after manual edits.
+ * `recospec add` workflow safe to re-run after manual edits.
  */
 export function mergeTsPageObject(existing: string, incoming: string): MergeResult {
   const existingAst = parseTs(existing)

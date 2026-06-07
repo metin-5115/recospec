@@ -7,9 +7,19 @@ import {
   ITERATION_SIGNATURE_STEPS,
   STORAGE_QUOTA_WARN_RATIO,
 } from '@shared/constants'
+import { IndexedDBQuotaError, isQuotaExceededError } from '@shared/errors'
+
+async function withQuotaGuard<T>(op: () => Promise<T>): Promise<T> {
+  try {
+    return await op()
+  } catch (err) {
+    if (isQuotaExceededError(err)) throw new IndexedDBQuotaError(err)
+    throw err
+  }
+}
 
 export async function createSession(session: Session): Promise<void> {
-  await db.sessions.add(session)
+  await withQuotaGuard(() => db.sessions.add(session))
 }
 
 /**
@@ -161,7 +171,7 @@ export async function createIteration(
     parentSessionId: parent.sessionId,
     flowSignature: parent.flowSignature,
   }
-  await db.sessions.add(session)
+  await withQuotaGuard(() => db.sessions.add(session))
   return session
 }
 
@@ -201,7 +211,7 @@ export async function linkIteration(
     flowSignature: parent.flowSignature,
     name: `${familyName(parent.name)} v${iterationNumber}`,
   }
-  await db.sessions.update(sessionId, patch)
+  await withQuotaGuard(() => db.sessions.update(sessionId, patch))
   return db.sessions.get(sessionId)
 }
 
@@ -228,7 +238,7 @@ export async function updateSession(
     >
   >,
 ): Promise<void> {
-  await db.sessions.update(sessionId, patch)
+  await withQuotaGuard(() => db.sessions.update(sessionId, patch))
 }
 
 export async function listSessions(): Promise<Session[]> {

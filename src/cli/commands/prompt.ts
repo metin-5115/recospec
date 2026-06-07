@@ -12,7 +12,7 @@ import { loadRc } from '../config-loader'
 import { resolveConflict } from '../conflict-resolver'
 
 export interface PromptCmdOptions {
-  /** Absolute or cwd-relative path to a PlayForge JSON export. */
+  /** Absolute or cwd-relative path to a Recospec JSON export. */
   json: string
   /** Project root used to resolve default output paths and rc detection. */
   projectDir: string
@@ -41,7 +41,7 @@ export async function runPrompt(opts: PromptCmdOptions): Promise<void> {
   if (!redact) {
     // eslint-disable-next-line no-console
     console.warn(
-      '⚠️  PLAYFORGE: --no-redact is enabled. Sensitive values (passwords, tokens, ' +
+      '⚠️  RECOSPEC: --no-redact is enabled. Sensitive values (passwords, tokens, ' +
         'secrets) will be written LITERALLY into the output. Treat the result as ' +
         'confidential and rotate any value that may have leaked.',
     )
@@ -51,7 +51,7 @@ export async function runPrompt(opts: PromptCmdOptions): Promise<void> {
   const rc = loadRc(opts.projectDir)
   if (rc) {
     // eslint-disable-next-line no-console
-    console.log(`[playforge] using config from ${rc.source}`)
+    console.log(`[recospec] using config from ${rc.source}`)
   }
   const framework = resolveFramework(opts, rc?.config.framework)
 
@@ -65,20 +65,20 @@ export async function runPrompt(opts: PromptCmdOptions): Promise<void> {
 
   // eslint-disable-next-line no-console
   console.log(
-    `[playforge] session=${payload.session.name} mode=${opts.mode} slug=${doc.flowSlug} framework=${framework ?? 'n/a'}`,
+    `[recospec] session=${payload.session.name} mode=${opts.mode} slug=${doc.flowSlug} framework=${framework ?? 'n/a'}`,
   )
 
   if (opts.dryRun) {
     // eslint-disable-next-line no-console
     console.log(markdown)
     // eslint-disable-next-line no-console
-    console.log(`[playforge] dry-run — nothing written.`)
+    console.log(`[recospec] dry-run — nothing written.`)
     return
   }
 
   const outcome = await writePromptOutput(opts, doc.flowSlug, markdown)
   // eslint-disable-next-line no-console
-  console.log(`[playforge] done — ${outcome}`)
+  console.log(`[recospec] done — ${outcome}`)
 }
 
 function loadJson(jsonPath: string): JsonExportPayload {
@@ -106,13 +106,13 @@ function resolveFramework(
   if (opts.framework) return opts.framework
   if (rcFramework) {
     // eslint-disable-next-line no-console
-    console.log(`[playforge] framework=${rcFramework} (from .playforgerc.json)`)
+    console.log(`[recospec] framework=${rcFramework} (from .recospecrc.json)`)
     return rcFramework
   }
   const detected = detectFramework(opts.projectDir)
   if (detected) {
     // eslint-disable-next-line no-console
-    console.log(`[playforge] auto-detected framework=${detected.framework} via ${detected.source}`)
+    console.log(`[recospec] auto-detected framework=${detected.framework} via ${detected.source}`)
     return detected.framework
   }
   return undefined
@@ -120,7 +120,7 @@ function resolveFramework(
 
 function defaultOutputPath(mode: PromptMode, slug: string, projectDir: string): string {
   if (mode === 'slash') {
-    return resolve(projectDir, '.claude', 'commands', `playforge-${slug}.md`)
+    return resolve(projectDir, '.claude', 'commands', `recospec-${slug}.md`)
   }
   if (mode === 'prompt') {
     return resolve(projectDir, 'prompts', `${slug}.md`)
@@ -144,14 +144,14 @@ async function writePromptOutput(
   if (!existsSync(outputPath)) {
     persist(outputPath, markdown)
     // eslint-disable-next-line no-console
-    console.log(`[playforge] wrote ${outputPath}`)
+    console.log(`[recospec] wrote ${outputPath}`)
     return 'written'
   }
 
   if (opts.force) {
     persist(outputPath, markdown)
     // eslint-disable-next-line no-console
-    console.log(`[playforge] overwrote ${outputPath}`)
+    console.log(`[recospec] overwrote ${outputPath}`)
     return 'written'
   }
 
@@ -163,34 +163,34 @@ async function writePromptOutput(
   })
   if (decision.action === 'skip') {
     // eslint-disable-next-line no-console
-    console.log(`[playforge] skipped ${outputPath}`)
+    console.log(`[recospec] skipped ${outputPath}`)
     return 'skipped'
   }
   if (decision.action === 'overwrite') {
     persist(outputPath, markdown)
     // eslint-disable-next-line no-console
-    console.log(`[playforge] overwrote ${outputPath}`)
+    console.log(`[recospec] overwrote ${outputPath}`)
     return 'written'
   }
   if (decision.action === 'rename' && decision.renamedPath) {
     persist(decision.renamedPath, markdown)
     // eslint-disable-next-line no-console
-    console.log(`[playforge] wrote ${decision.renamedPath} (renamed to avoid conflict)`)
+    console.log(`[recospec] wrote ${decision.renamedPath} (renamed to avoid conflict)`)
     return 'renamed'
   }
   return 'skipped'
 }
 
 /**
- * Idempotent CLAUDE.md updater: replaces the existing `<!-- BEGIN playforge:<slug> -->`
- * … `<!-- END playforge:<slug> -->` block in place, or appends a fresh block if none
+ * Idempotent CLAUDE.md updater: replaces the existing `<!-- BEGIN recospec:<slug> -->`
+ * … `<!-- END recospec:<slug> -->` block in place, or appends a fresh block if none
  * exists. We rely on the marker comments already emitted by
  * {@link renderPromptMarkdown} in `claude-md` mode.
  */
 function upsertClaudeMdBlock(filePath: string, slug: string, markdown: string): WriteOutcome {
   const existing = existsSync(filePath) ? readFileSync(filePath, 'utf8') : ''
-  const beginMarker = `<!-- BEGIN playforge:${slug} -->`
-  const endMarker = `<!-- END playforge:${slug} -->`
+  const beginMarker = `<!-- BEGIN recospec:${slug} -->`
+  const endMarker = `<!-- END recospec:${slug} -->`
 
   const beginIdx = existing.indexOf(beginMarker)
   const endIdx = existing.indexOf(endMarker)
@@ -203,7 +203,7 @@ function upsertClaudeMdBlock(filePath: string, slug: string, markdown: string): 
     const next = before + markdown.trimEnd() + after
     persist(filePath, next.endsWith('\n') ? next : next + '\n')
     // eslint-disable-next-line no-console
-    console.log(`[playforge] replaced block in ${filePath}`)
+    console.log(`[recospec] replaced block in ${filePath}`)
     return 'replaced'
   }
 
@@ -211,7 +211,7 @@ function upsertClaudeMdBlock(filePath: string, slug: string, markdown: string): 
   const next = existing + separator + (existing.length === 0 ? '' : '\n') + markdown
   persist(filePath, next)
   // eslint-disable-next-line no-console
-  console.log(`[playforge] appended block to ${filePath}`)
+  console.log(`[recospec] appended block to ${filePath}`)
   return 'appended'
 }
 

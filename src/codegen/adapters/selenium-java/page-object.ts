@@ -158,6 +158,11 @@ function renderAssertion(d: AssertionDetail, el: IRElement | undefined, indent: 
       const expected = javaStr(String(d.expected ?? ''))
       return `${indent}assert ${fieldRef}.getText().equals(${expected}) : "Expected text " + ${expected};`
     }
+    case 'text-contains': {
+      if (!fieldRef) return `${indent}// assert text contains (no element)`
+      const expected = javaStr(String(d.expected ?? ''))
+      return `${indent}assert ${fieldRef}.getText().contains(${expected}) : "Expected text to contain " + ${expected};`
+    }
     case 'value': {
       if (!fieldRef) return `${indent}// assert value (no element)`
       const expected = javaStr(String(d.expected ?? ''))

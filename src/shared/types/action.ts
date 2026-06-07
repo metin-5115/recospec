@@ -34,6 +34,7 @@ export type AssertionType =
   | 'visible'
   | 'hidden'
   | 'text'
+  | 'text-contains'
   | 'value'
   | 'attribute'
   | 'count'

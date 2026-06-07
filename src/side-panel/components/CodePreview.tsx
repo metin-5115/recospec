@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, Copy, Download, Loader2, Play } from 'lucide-react'
+import { Check, Copy, Download, Loader2, Play, Repeat, X } from 'lucide-react'
 import type { GeneratedCode } from '@shared/types/generated'
 
 interface CodePreviewProps {
@@ -7,6 +7,11 @@ interface CodePreviewProps {
   onValidate?: () => void
   isValidating?: boolean
   validateDisabled?: boolean
+  onReplay?: () => void
+  onAbortReplay?: () => void
+  isReplaying?: boolean
+  replayDisabled?: boolean
+  replaySummary?: { passed: number; failed: number; total: number } | null
 }
 
 export function CodePreview({
@@ -14,6 +19,11 @@ export function CodePreview({
   onValidate,
   isValidating,
   validateDisabled,
+  onReplay,
+  onAbortReplay,
+  isReplaying,
+  replayDisabled,
+  replaySummary,
 }: CodePreviewProps) {
   const [activeIndex, setActiveIndex] = useState(0)
   const [copied, setCopied] = useState(false)
@@ -57,6 +67,36 @@ export function CodePreview({
           ))}
         </div>
         <div className="ml-2 flex shrink-0 gap-1">
+          {onReplay && (
+            <button
+              onClick={isReplaying ? onAbortReplay : onReplay}
+              disabled={!isReplaying && replayDisabled}
+              className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold shadow-sm transition-all disabled:cursor-not-allowed disabled:opacity-60 ${
+                isReplaying
+                  ? 'bg-warning text-white hover:opacity-90'
+                  : 'bg-bg text-text-muted hover:bg-bg/80 hover:text-text'
+              }`}
+              aria-label={isReplaying ? 'Abort replay' : 'Replay recorded steps on the active tab'}
+              title={
+                isReplaying
+                  ? 'Cancel the in-flight replay'
+                  : 'Re-run every recorded step against the page currently focused in your browser'
+              }
+            >
+              {isReplaying ? (
+                <X className="h-3 w-3" aria-hidden="true" />
+              ) : (
+                <Repeat className="h-3 w-3" aria-hidden="true" />
+              )}
+              <span className="hidden sm:inline">
+                {isReplaying
+                  ? 'Stop'
+                  : replaySummary
+                    ? `Replay (${replaySummary.passed}/${replaySummary.total} ✓)`
+                    : 'Replay Steps'}
+              </span>
+            </button>
+          )}
           {onValidate && (
             <button
               onClick={onValidate}

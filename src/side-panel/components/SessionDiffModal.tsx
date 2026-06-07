@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 import { Download, X } from 'lucide-react'
 import type { RecordedAction } from '@shared/types/action'
 import type { Session } from '@shared/types/session'
@@ -8,6 +8,7 @@ import {
   type SessionDiff,
   type SessionDiffChangedEntry,
 } from '@codegen/diff/session-differ'
+import { useFocusTrap } from '@shared/hooks/useFocusTrap'
 
 interface SessionDiffModalProps {
   sessionA: Session
@@ -168,6 +169,9 @@ export function SessionDiffModal({
   const summary = useMemo(() => summarizeDiff(diff), [diff])
   const rows = useMemo(() => buildRows(actionsA, actionsB, diff), [actionsA, actionsB, diff])
 
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(dialogRef, { onEscape: onClose })
+
   const exportJson = (): void => {
     const blob = new Blob(
       [
@@ -188,7 +192,7 @@ export function SessionDiffModal({
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `playforge-diff-${sessionA.sessionId.slice(0, 6)}-vs-${sessionB.sessionId.slice(0, 6)}.json`
+    link.download = `recospec-diff-${sessionA.sessionId.slice(0, 6)}-vs-${sessionB.sessionId.slice(0, 6)}.json`
     link.click()
     URL.revokeObjectURL(url)
   }
@@ -203,7 +207,10 @@ export function SessionDiffModal({
         if (e.target === e.currentTarget) onClose()
       }}
     >
-      <div className="flex h-[80vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-bg shadow-2xl">
+      <div
+        ref={dialogRef}
+        className="flex h-[80vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-bg shadow-2xl outline-none"
+      >
         <header className="flex items-center justify-between border-b border-border px-5 py-3">
           <div className="flex flex-col">
             <h2 className="text-sm font-semibold text-text">

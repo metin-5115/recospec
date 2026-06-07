@@ -81,7 +81,17 @@ export type UIToBackgroundMessage =
       locatorBundle: LocatorBundle | null
       elementSnapshot: ElementSnapshot
       pageMetadata: { url: string; title: string }
+      /**
+       * When set, the new assertion is inserted at `afterActionId + 1` and
+       * every subsequent action's `sequenceNumber` is renumbered. Powers the
+       * "Add Assertion" button on each step row after recording stops.
+       */
+      afterActionId?: string
     }
+  /** Begin replaying every recorded action of a stopped session on the active tab. */
+  | { type: 'REPLAY_REQUEST'; sessionId: string }
+  /** Caller-initiated cancellation. Best-effort — in-flight DOM ops complete. */
+  | { type: 'REPLAY_ABORT'; sessionId: string }
   | { type: 'STEPS_REORDERED'; sessionId: string; orderedActionIds: string[] }
   | { type: 'STEP_UPDATED'; sessionId: string; actionId: string; patch: StepPatch }
   | { type: 'STEP_DELETED'; sessionId: string; actionId: string }
@@ -111,7 +121,7 @@ export type UIToBackgroundMessage =
   /**
    * Out-of-band export request. The VS Code Record flow invokes
    * `handleExportRequest` directly via the service-worker global
-   * (`self.__playforgeExport`) because `chrome.runtime.sendMessage` cannot
+   * (`self.__recospecExport`) because `chrome.runtime.sendMessage` cannot
    * deliver to the sender. The case is wired into the message router so
    * future surfaces (web playground, headless harness) can use the same
    * typed contract through the message bus.
@@ -159,6 +169,36 @@ export type BackgroundToUIMessage =
     }
   /** Reply to `EXPORT_REQUEST`. `payload === null` means no recording was found. */
   | { type: 'EXPORT_RESPONSE'; payload: JsonExportPayload | null; error?: string }
+  /**
+   * Background detected that a Dexie write hit the IndexedDB quota.
+   * Side panel surfaces this through the {@link IndexedDBQuotaError} branch
+   * of the ErrorBoundary so the user can free space from History.
+   */
+  | { type: 'STORAGE_QUOTA_EXCEEDED'; sessionId?: string }
+  /** Replay just started for `sessionId` — UI flips into "replaying" state. */
+  | { type: 'REPLAY_STARTED'; sessionId: string; totalSteps: number }
+  /** Background is about to attempt one action. UI marks it `running`. */
+  | { type: 'REPLAY_STEP_STARTED'; sessionId: string; actionId: string; index: number }
+  /** Outcome for one action. `error` only set when `status === 'fail'`. */
+  | {
+      type: 'REPLAY_STEP_RESULT'
+      sessionId: string
+      actionId: string
+      index: number
+      status: 'pass' | 'fail' | 'skipped'
+      error?: string
+    }
+  /** Final replay tally. `aborted` true when the user cancelled mid-run. */
+  | {
+      type: 'REPLAY_DONE'
+      sessionId: string
+      totalSteps: number
+      passed: number
+      failed: number
+      skipped: number
+      aborted?: boolean
+      error?: string
+    }
 
 export type ContentToBackgroundMessage =
   | { type: 'EVENT_CAPTURED'; sessionId: string; event: CapturedEvent }
@@ -176,6 +216,14 @@ export type ContentToBackgroundMessage =
       results: LocatorValidationResult[]
       durationMs: number
       pageUrl: string
+    }
+  /** Reply from the content script after it ran one replay step. */
+  | {
+      type: 'REPLAY_STEP_RESPONSE'
+      sessionId: string
+      actionId: string
+      status: 'pass' | 'fail' | 'skipped'
+      error?: string
     }
 
 export type BackgroundToContentMessage =
@@ -195,4 +243,20 @@ export type BackgroundToContentMessage =
       frameContext?: FrameContext
       label?: string
       durationMs: number
+    }
+  /**
+   * Run one replay step against the live DOM. Content script resolves the
+   * primary locator (or walks fallbacks on miss) and dispatches the
+   * appropriate event, then replies via `REPLAY_STEP_RESPONSE`.
+   */
+  | {
+      type: 'REPLAY_STEP_RUN'
+      sessionId: string
+      actionId: string
+      actionType: import('./action').ActionType
+      primary: Locator
+      fallbacks: Locator[]
+      shadowContext?: ShadowContext
+      frameContext?: FrameContext
+      payload?: Record<string, unknown>
     }

@@ -137,6 +137,12 @@ describe('cypress renderPageObject — assertions', () => {
         assertionDetail: { type: 'text', expected: 'Sign In' },
       },
       {
+        id: 'a3b',
+        action: 'assert',
+        element: signInEl,
+        assertionDetail: { type: 'text-contains', expected: 'Sign' },
+      },
+      {
         id: 'a4',
         action: 'assert',
         element: signInEl,
@@ -151,6 +157,10 @@ describe('cypress renderPageObject — assertions', () => {
 
   it('renders should("have.text", ...)', () => {
     expect(renderPageObject(page)).toContain(`should('have.text', "Sign In")`)
+  })
+
+  it('renders should("contain.text", ...) for text-contains', () => {
+    expect(renderPageObject(page)).toContain(`should('contain.text', "Sign")`)
   })
 
   it('renders should("have.length", n)', () => {

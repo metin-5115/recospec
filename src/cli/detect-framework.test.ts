@@ -6,7 +6,7 @@ import { detectFramework } from './detect-framework'
 
 let tmp: string
 beforeEach(() => {
-  tmp = mkdtempSync(join(tmpdir(), 'playforge-detect-'))
+  tmp = mkdtempSync(join(tmpdir(), 'recospec-detect-'))
 })
 afterEach(() => {
   rmSync(tmp, { recursive: true, force: true })

@@ -11,21 +11,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **PlayForge VS Code extension (companion)** — a separate marketplace-ready
+- **Recospec VS Code extension (companion)** — a separate marketplace-ready
   bundle that brings the **record → apply → Claude prompt** workflow into
   the editor. Builds via `pnpm build:vscode` (Vite SSR + lib mode → single
   CJS file at `vscode-extension/dist/extension.cjs`, ~2.16 MB). Packaged
   via `pnpm package:vscode` (wraps `@vscode/vsce`) into
-  `releases/playforge-0.7.0.vsix`.
-  - **`PlayForge: Record Flow…`** — launches Chromium with the PlayForge
+  `releases/recospec-0.7.0.vsix`.
+  - **`Recospec: Record Flow…`** — launches Chromium with the Recospec
     Chrome extension pre-loaded (`@playwright/test` `launchPersistentContext`,
     `--load-extension=<vscode-ext>/chrome-ext`, `headless: false` for MV3
     SW lifecycle). Notification with "Stop & Apply" / "Cancel" races
     against `context.on('close')` so an early browser close cannot hang
     the wait. On stop, the recording bridge calls
-    `worker.evaluate(__playforgeExport())` on the Chrome ext service
+    `worker.evaluate(__recospecExport())` on the Chrome ext service
     worker to pull the latest session as a `JsonExportPayload`; the JSON
-    lands in `<workspace>/.playforge/sessions/` and is fed straight into
+    lands in `<workspace>/.recospec/sessions/` and is fed straight into
     the Output Picker. Empty recordings surface a clean
     "No steps recorded" info message.
   - **Output Picker webview** — `src/vscode-ext/output-picker-html.ts`
@@ -46,20 +46,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     `vscode.diff` between the existing file and an untitled buffer
     holding the incoming content.
   - **Recordings tree view** — activity-bar view container with the
-    PlayForge sidebar icon (`icons/playforge-sidebar.svg`, monochrome
+    Recospec sidebar icon (`icons/recospec-sidebar.svg`, monochrome
     `currentColor` so it inherits theme tinting). Items list newest-
     first by mtime; descriptions surface `<stepCount> steps · <date>`.
     Click → re-apply via the Output Picker. Welcome view points users
-    at `PlayForge: Record Flow…` when the sessions dir is empty. A
+    at `Recospec: Record Flow…` when the sessions dir is empty. A
     `vscode.workspace.createFileSystemWatcher` keeps the tree fresh
     across record / delete cycles.
-  - **`PlayForge: Apply Existing JSON…`** + **`PlayForge: Render Claude
-Prompt…`** + **`PlayForge: Init Project…`** static commands wrap the
+  - **`Recospec: Apply Existing JSON…`** + **`Recospec: Render Claude
+Prompt…`** + **`Recospec: Init Project…`** static commands wrap the
     existing `runAdd` / `runPrompt` / `runInit` CLI functions through a
     shared `applyJsonAtPath` helper. Framework is resolved silently from
-    `.playforgerc.json` → marker-file detection → QuickPick.
-  - **Status bar** — right-aligned `$(record) PlayForge` indicator that
-    flips to `$(sync~spin) PlayForge: <task>` during commands and
+    `.recospecrc.json` → marker-file detection → QuickPick.
+  - **Status bar** — right-aligned `$(record) Recospec` indicator that
+    flips to `$(sync~spin) Recospec: <task>` during commands and
     appends the resolved framework label when one is detected.
   - **Bundled Chrome extension** — `vite.config.vscode.ts` ships a
     `closeBundle` plugin that mirrors `dist/` (Chrome ext build) into
@@ -72,7 +72,7 @@ Prompt…`** + **`PlayForge: Init Project…`** static commands wrap the
   `src/background/message-router.ts`. The real path used by the VS Code
   host calls the new `handleExportRequest` (`src/background/export-handler.ts`)
   directly via the service-worker global
-  `globalThis.__playforgeExport`, because `chrome.runtime.sendMessage`
+  `globalThis.__recospecExport`, because `chrome.runtime.sendMessage`
   cannot deliver a message to the sender. The handler reads the most-
   recently-stopped session (or a specific id) from Dexie and returns
   `buildJsonExport(session, actions)` — returning `null` when no
@@ -108,7 +108,7 @@ Prompt…`** + **`PlayForge: Init Project…`** static commands wrap the
   works on cmd.exe / PowerShell / bash. The driver enforces that
   `pnpm build` and `pnpm build:vscode` ran first (and that the
   `chrome-ext/` mirror is populated) before invoking `vsce package`,
-  then emits `releases/playforge-<version>.vsix`.
+  then emits `releases/recospec-<version>.vsix`.
 - New `releases/` directory holds the committed VSIX for tagged
   releases. The CI tag pushes the file alongside the source tag so
   install-from-VSIX works without re-running the toolchain.
@@ -117,16 +117,16 @@ Prompt…`** + **`PlayForge: Init Project…`** static commands wrap the
 
 ### Added
 
-- **`playforge` CLI** — a Node bin that applies a recorded JSON export onto an
+- **`recospec` CLI** — a Node bin that applies a recorded JSON export onto an
   existing test project without producing the framework scaffold. Shipped via
-  the same npm package (`bin: { playforge: "dist/cli/index.js" }`) and built
+  the same npm package (`bin: { recospec: "dist/cli/index.js" }`) and built
   with a dedicated `vite.config.cli.ts` (SSR/lib mode, single ESM bundle,
   `~164 KB` uncompressed).
-  - `playforge add <json> [projectDir]` renders page objects + the scenario
+  - `recospec add <json> [projectDir]` renders page objects + the scenario
     file through the matching adapter and writes them into the target
     project. Adapters are loaded via side-effect imports so all four register
     themselves into `ADAPTER_REGISTRY` at startup.
-  - `playforge init [projectDir]` writes a `.playforgerc.json` so subsequent
+  - `recospec init [projectDir]` writes a `.recospecrc.json` so subsequent
     `add` calls skip framework detection. Honours `--framework` / `--bdd`.
   - `--bdd` reuses the existing `renderBddFeature` / `renderBddSteps`
     adapter hooks; the routing table mirrors `zip-export.ts/resolveZipPath`
@@ -158,12 +158,12 @@ ast; …')` extracts canonical class-member names from each file. When no
   and `package.json` `devDependencies` (`@playwright/test`, `cypress`) in
   descending specificity. Returns the marker file as `source` so the
   console output explains its pick.
-- **`.playforgerc.json`** — `src/cli/config-loader.ts` reads the rc into a
-  typed `PlayforgeRc`. The rc currently pins `framework` and the default
+- **`.recospecrc.json`** — `src/cli/config-loader.ts` reads the rc into a
+  typed `RecospecRc`. The rc currently pins `framework` and the default
   `bdd` value; `paths` is reserved for P7.3.
 - **"JSON for CLI" button** in the side panel — the existing JSON export
   was relabeled and its `aria-label` / tooltip updated to point at the new
-  `playforge add` workflow. Internals unchanged; still calls
+  `recospec add` workflow. Internals unchanged; still calls
   `downloadJsonExport`.
 - **Session versioning & diff explorer** — recordings of the same flow now
   cluster as a version tree instead of standalone rows. After the first
@@ -241,10 +241,10 @@ ast; …')` extracts canonical class-member names from each file. When no
 one-time-code|email|username`) are auto-detected and rendered as env-var
   lookups instead of hardcoded literals. Each adapter uses its idiomatic
   helper:
-  - **Playwright TS** — `process.env.PLAYFORGE_PASSWORD ?? "change-me"`
+  - **Playwright TS** — `process.env.RECOSPEC_PASSWORD ?? "change-me"`
   - **Cypress JS** — `Cypress.env("password") || "change-me"`
-  - **Selenium Python** — `os.environ.get('PLAYFORGE_PASSWORD', 'change-me')`
-  - **Selenium Java (TestNG)** — `System.getenv().getOrDefault("PLAYFORGE_PASSWORD", "change-me")`
+  - **Selenium Python** — `os.environ.get('RECOSPEC_PASSWORD', 'change-me')`
+  - **Selenium Java (TestNG)** — `System.getenv().getOrDefault("RECOSPEC_PASSWORD", "change-me")`
 - New side-panel **Test Data** card lists every parameterized field with an
   inline editor for parameter name, default value, secret toggle, and
   "use env var" checkbox. Manual overrides flow through `CODE_GENERATE` via
@@ -376,7 +376,7 @@ Cypress JS) with self-healing locators, network mocks, and visual regression bak
   methods per page and lets you rename them inline.
 - **Network request capture** — MAIN-world content script (`network-proxy.ts`) wraps
   `window.fetch` and `XMLHttpRequest`; ISOLATED CS forwards captured requests via
-  `playforge:network` CustomEvent → background `EVENT_CAPTURED`. Response bodies capped
+  `recospec:network` CustomEvent → background `EVENT_CAPTURED`. Response bodies capped
   at `NETWORK_BODY_MAX_BYTES` (50 KB). No new permissions required.
 - **Network mock generation** — opt-in `Include mocks for captured network requests`
   checkbox emits Playwright `page.route(... route.fulfill(...))` blocks. JSON bodies

@@ -7,17 +7,17 @@ import {
 } from '@codegen/export/prompt-export'
 import type { JsonExportPayload } from '@codegen/export/json-export'
 import { getActiveFramework, resolveWorkspace } from '../workspace-utils'
-import type { PlayforgeStatusBar } from '../status-bar'
+import type { RecospecStatusBar } from '../status-bar'
 
 const MODES: { label: string; description: string; mode: PromptMode }[] = [
   {
     label: 'Slash command',
-    description: '.claude/commands/playforge-<slug>.md',
+    description: '.claude/commands/recospec-<slug>.md',
     mode: 'slash',
   },
   {
     label: 'CLAUDE.md marker block',
-    description: 'BEGIN/END playforge:<slug> block in CLAUDE.md',
+    description: 'BEGIN/END recospec:<slug> block in CLAUDE.md',
     mode: 'claude-md',
   },
   {
@@ -28,16 +28,16 @@ const MODES: { label: string; description: string; mode: PromptMode }[] = [
 ]
 
 /**
- * Renders a PlayForge JSON export into a Claude Code prompt and previews it
+ * Renders a Recospec JSON export into a Claude Code prompt and previews it
  * in a new untitled editor. We deliberately do not write to disk in Sprint
  * 4 — the preview keeps the user in control while the Output Picker webview
  * (Sprint 5) takes over the persistence concerns.
  */
 export function registerShowPromptCommand(
-  statusBar: PlayforgeStatusBar,
+  statusBar: RecospecStatusBar,
   output: vscode.OutputChannel,
 ): vscode.Disposable {
-  return vscode.commands.registerCommand('playforge.showPrompt', async () => {
+  return vscode.commands.registerCommand('recospec.showPrompt', async () => {
     const ws = await resolveWorkspace()
     if (!ws) return
 
@@ -45,7 +45,7 @@ export function registerShowPromptCommand(
       canSelectFiles: true,
       canSelectFolders: false,
       canSelectMany: false,
-      filters: { 'PlayForge JSON': ['json'] },
+      filters: { 'Recospec JSON': ['json'] },
       openLabel: 'Render',
       defaultUri: ws.folder.uri,
     })
@@ -72,7 +72,7 @@ export function registerShowPromptCommand(
 
       output.appendLine('')
       output.appendLine(
-        `[playforge] rendered prompt — session=${payload.session.name} mode=${modeChoice.mode} slug=${doc.flowSlug} framework=${framework ?? 'n/a'}`,
+        `[recospec] rendered prompt — session=${payload.session.name} mode=${modeChoice.mode} slug=${doc.flowSlug} framework=${framework ?? 'n/a'}`,
       )
 
       const document = await vscode.workspace.openTextDocument({
@@ -82,8 +82,8 @@ export function registerShowPromptCommand(
       await vscode.window.showTextDocument(document, { preview: false })
     } catch (err) {
       const message = (err as Error).message
-      output.appendLine(`[playforge] ERROR: ${message}`)
-      void vscode.window.showErrorMessage(`PlayForge prompt render failed: ${message}`)
+      output.appendLine(`[recospec] ERROR: ${message}`)
+      void vscode.window.showErrorMessage(`Recospec prompt render failed: ${message}`)
     } finally {
       statusBar.setIdle()
     }

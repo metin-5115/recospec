@@ -18,10 +18,10 @@ import type { FrameworkId } from '@shared/types/generated'
  */
 export function activate(context: vscode.ExtensionContext): void {
   const statusBar = createStatusBar()
-  const output = vscode.window.createOutputChannel('PlayForge')
+  const output = vscode.window.createOutputChannel('Recospec')
 
   const treeProvider = new RecordingsTreeProvider()
-  const treeView = vscode.window.createTreeView('playforge.recordings', {
+  const treeView = vscode.window.createTreeView('recospec.recordings', {
     treeDataProvider: treeProvider,
     showCollapseAll: false,
   })
@@ -39,9 +39,9 @@ export function activate(context: vscode.ExtensionContext): void {
     registerApplyJsonCommand(statusBar, output),
     registerShowPromptCommand(statusBar, output),
     registerRecordCommand(statusBar, output, context),
-    vscode.commands.registerCommand('playforge.recordings.refresh', () => treeProvider.refresh()),
+    vscode.commands.registerCommand('recospec.recordings.refresh', () => treeProvider.refresh()),
     vscode.commands.registerCommand(
-      'playforge.recordings.apply',
+      'recospec.recordings.apply',
       async (item?: RecordingTreeItem) => {
         if (!item) return
         const ws = await resolveWorkspace()
@@ -55,18 +55,18 @@ export function activate(context: vscode.ExtensionContext): void {
       },
     ),
     vscode.commands.registerCommand(
-      'playforge.recordings.reveal',
+      'recospec.recordings.reveal',
       async (item?: RecordingTreeItem) => {
         if (!item) return
         await vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(item.meta.fullPath))
       },
     ),
     vscode.commands.registerCommand(
-      'playforge.recordings.delete',
+      'recospec.recordings.delete',
       async (item?: RecordingTreeItem) => {
         if (!item) return
         const pick = await vscode.window.showWarningMessage(
-          `Delete recording "${item.meta.name}"? The JSON file will be removed from .playforge/sessions/.`,
+          `Delete recording "${item.meta.name}"? The JSON file will be removed from .recospec/sessions/.`,
           { modal: true },
           'Delete',
         )
@@ -76,7 +76,7 @@ export function activate(context: vscode.ExtensionContext): void {
           treeProvider.refresh()
         } catch (err) {
           void vscode.window.showErrorMessage(
-            `PlayForge: failed to delete recording — ${(err as Error).message}`,
+            `Recospec: failed to delete recording — ${(err as Error).message}`,
           )
         }
       },

@@ -67,11 +67,11 @@ export function getParameterName(el: IRElement | undefined): string {
 
 /**
  * Converts a camelCase or kebab/snake parameter name to a
- * SCREAMING_SNAKE_CASE env var name, prefixed with `PLAYFORGE_`.
+ * SCREAMING_SNAKE_CASE env var name, prefixed with `RECOSPEC_`.
  *
- *   getEnvVarName('password')      → 'PLAYFORGE_PASSWORD'
- *   getEnvVarName('apiKey')        → 'PLAYFORGE_API_KEY'
- *   getEnvVarName('oneTimeCode')   → 'PLAYFORGE_ONE_TIME_CODE'
+ *   getEnvVarName('password')      → 'RECOSPEC_PASSWORD'
+ *   getEnvVarName('apiKey')        → 'RECOSPEC_API_KEY'
+ *   getEnvVarName('oneTimeCode')   → 'RECOSPEC_ONE_TIME_CODE'
  */
 export function getEnvVarName(paramName: string): string {
   const snake = paramName

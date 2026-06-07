@@ -6,11 +6,11 @@ exports[`assertion codegen — renderPageObject > matches snapshot 1`] = `
 export class HomePage {
   constructor(private readonly page: Page) {}
 
-  get submitBtn() { return page.getByTestId("submit-btn"); }
+  get submitBtn() { return this.page.getByTestId("submit-btn"); }
 
-  get welcomeHeading() { return page.getByText("Welcome"); }
+  get welcomeHeading() { return this.page.getByText("Welcome"); }
 
-  get emailInput() { return page.getByLabel("Email"); }
+  get emailInput() { return this.page.getByLabel("Email"); }
 
   async goto() {
     await this.page.goto("/");
@@ -19,6 +19,7 @@ export class HomePage {
   async performSteps() {
     await expect(this.submitBtn).toBeVisible();
     await expect(this.welcomeHeading).toHaveText("Welcome");
+    await expect(this.welcomeHeading).toContainText("Wel");
     await expect(this.emailInput).toHaveValue("user@example.com");
     await expect(this.submitBtn).toBeHidden();
     await expect(this.emailInput).toHaveAttribute("disabled", "");
@@ -37,6 +38,7 @@ test.describe('Assertion flow', () => {
     await page.goto("/");
     await expect(page.getByTestId("submit-btn")).toBeVisible();
     await expect(page.getByText("Welcome")).toHaveText("Welcome");
+    await expect(page.getByText("Welcome")).toContainText("Wel");
     await expect(page.getByLabel("Email")).toHaveValue("user@example.com");
     await expect(page.getByTestId("submit-btn")).toBeHidden();
     await expect(page.getByLabel("Email")).toHaveAttribute("disabled", "");

@@ -67,7 +67,15 @@ export interface IRElement {
 }
 
 export interface AssertionDetail {
-  type: 'visible' | 'hidden' | 'text' | 'value' | 'attribute' | 'count' | 'screenshot'
+  type:
+    | 'visible'
+    | 'hidden'
+    | 'text'
+    | 'text-contains'
+    | 'value'
+    | 'attribute'
+    | 'count'
+    | 'screenshot'
   expected?: string | number
   attribute?: string
   /** Screenshot file name (no extension). Only set when `type === 'screenshot'`. */
@@ -130,7 +138,7 @@ export interface TestDataParam {
   defaultValue: string
   /** When true, adapters emit `process.env.X ?? default` style lookups. */
   useEnvVar: boolean
-  /** SCREAMING_SNAKE_CASE env var name (without `PLAYFORGE_` prefix). */
+  /** SCREAMING_SNAKE_CASE env var name (without `RECOSPEC_` prefix). */
   envVarName: string
 }
 

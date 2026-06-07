@@ -3,7 +3,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import type { JsonExportPayload } from '@codegen/export/json-export'
 
-export const SESSIONS_DIR = '.playforge/sessions'
+export const SESSIONS_DIR = '.recospec/sessions'
 
 /**
  * Resolve the audit sessions directory for a workspace folder. The Record
@@ -56,10 +56,10 @@ export class RecordingTreeItem extends vscode.TreeItem {
     this.description = `${meta.stepCount} steps · ${date}`
     this.tooltip = `${meta.name}\n${meta.fullPath}`
     this.iconPath = new vscode.ThemeIcon('play-circle')
-    this.contextValue = 'playforgeRecording'
+    this.contextValue = 'recospecRecording'
     this.resourceUri = vscode.Uri.file(meta.fullPath)
     this.command = {
-      command: 'playforge.recordings.apply',
+      command: 'recospec.recordings.apply',
       title: 'Apply Recording',
       arguments: [this],
     }
@@ -67,7 +67,7 @@ export class RecordingTreeItem extends vscode.TreeItem {
 }
 
 /**
- * Lists `.playforge/sessions/*.json` for the active single-folder workspace.
+ * Lists `.recospec/sessions/*.json` for the active single-folder workspace.
  *
  * Multi-root workspaces are out of scope for v0.7 — we show the first folder
  * only, with a welcome view that asks the user to open a single project. The

@@ -36,7 +36,7 @@ describe('StepList — rich locator cell', () => {
     render(<StepList steps={[step]} reorderable={false} onDeleteStep={vi.fn()} />)
     expect(screen.getByText('[data-testid="submit"]')).toBeTruthy()
     expect(screen.getByText('95')).toBeTruthy()
-    expect(screen.getByText('testid')).toBeTruthy()
+    expect(screen.getByText('test-id')).toBeTruthy()
     expect(screen.getByText(/button.*"Submit"/)).toBeTruthy()
   })
 
@@ -67,7 +67,7 @@ describe('StepList — rich locator cell', () => {
     expect(screen.getByRole('dialog', { name: 'Locator detail' })).toBeTruthy()
     expect(screen.getByText('All strategies')).toBeTruthy()
     expect(screen.getByText('Element snapshot')).toBeTruthy()
-    expect(screen.getByText('aria-label')).toBeTruthy()
+    expect(screen.getByText('aria')).toBeTruthy()
   })
 
   it('renders frame-chain selector object as JSON, not <tag> fallback', () => {

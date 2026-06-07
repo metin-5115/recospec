@@ -26,7 +26,7 @@ export function PopupApp() {
   return (
     <div className="w-72 space-y-4 bg-bg p-5 text-text">
       <div className="flex items-center justify-between">
-        <h1 className="text-base font-semibold tracking-tight text-gradient-accent">PlayForge</h1>
+        <h1 className="text-base font-semibold tracking-tight text-gradient-accent">Recospec</h1>
         <span
           className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${palette}`}
         >

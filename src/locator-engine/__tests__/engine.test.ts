@@ -68,6 +68,15 @@ describe('LocatorEngine', () => {
     expect(bundle?.primary.matchCount).toBe(1)
   })
 
+  it('treats data-cy as a top-priority testid (same tier as data-testid)', () => {
+    const doc = parse(`<button data-cy="checkout">Pay</button>`)
+    const btn = doc.querySelector('button') as Element
+    const bundle = engine.evaluate(btn, doc)
+    expect(bundle?.primary.strategy).toBe('testid')
+    expect(bundle?.primary.selector).toBe('checkout')
+    expect(bundle?.primary.framework.cypress).toContain('data-cy')
+  })
+
   it('populates matchCount > 1 for a non-unique class selector', () => {
     const doc = parse(
       `<ul><li class="row"><button>A</button></li><li class="row"><button>B</button></li></ul>`,

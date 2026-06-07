@@ -1,17 +1,21 @@
-import { useState, type ComponentType, type SVGProps } from 'react'
+import { useMemo, useState, type ComponentType, type SVGProps } from 'react'
 import {
   CheckCircle2,
+  CircleDashed,
   Globe,
   GripVertical,
   Hourglass,
   Keyboard,
+  Loader2,
   MousePointerClick,
   MoveVertical,
   Navigation,
   Pencil,
   Play,
+  PlusCircle,
   Video,
   X,
+  XCircle,
 } from 'lucide-react'
 import {
   DndContext,
@@ -33,7 +37,15 @@ import type { RecordedAction, ActionType, NetworkPayload } from '@shared/types/a
 import type { ScoredLocator } from '@shared/types/locator'
 import { LocatorDetail } from './LocatorDetail'
 import { StepEditModal } from './StepEditModal'
-import type { StepPatch } from '@shared/types/messages'
+import { EmptyStateGuide } from './EmptyStateGuide'
+import type { LocatorValidationResult, StepPatch } from '@shared/types/messages'
+import { STRATEGY_DISPLAY_NAME } from '@shared/constants'
+import {
+  STRATEGY_BADGE_CLASS,
+  STRATEGY_HELP_TEXT,
+  networkStatusClass,
+  scoreTier,
+} from './locator-presentation'
 
 type IconComponent = ComponentType<SVGProps<SVGSVGElement>>
 
@@ -80,27 +92,36 @@ function waitLabel(step: RecordedAction): string {
   return `Wait for ${reason}${suffix}`
 }
 
-function networkLabel(step: RecordedAction): string {
+interface NetworkLabelParts {
+  method: string
+  path: string
+  status?: number
+}
+
+function networkLabelParts(step: RecordedAction): NetworkLabelParts | null {
   const np = (step.payload ?? {}) as Partial<NetworkPayload>
-  if (!np.url) return 'network'
-  const status = np.status ? ` ${np.status}` : ''
+  if (!np.url) return null
   let path = np.url
   try {
     path = new URL(np.url).pathname
   } catch {
     /* keep raw url */
   }
-  return `${(np.method ?? 'GET').toUpperCase()} ${path}${status}`
+  return {
+    method: (np.method ?? 'GET').toUpperCase(),
+    path,
+    status: typeof np.status === 'number' ? np.status : undefined,
+  }
+}
+
+function networkLabelText(parts: NetworkLabelParts | null): string {
+  if (!parts) return 'network'
+  const status = parts.status ? ` ${parts.status}` : ''
+  return `${parts.method} ${parts.path}${status}`
 }
 
 function selectorString(loc: ScoredLocator): string {
   return typeof loc.selector === 'string' ? loc.selector : JSON.stringify(loc.selector)
-}
-
-function scoreColor(score: number): string {
-  if (score >= 80) return 'bg-success-soft text-success'
-  if (score >= 50) return 'bg-warning-soft text-warning'
-  return 'bg-danger-soft text-danger'
 }
 
 function snapshotChip(step: RecordedAction): string | null {
@@ -114,25 +135,59 @@ function snapshotChip(step: RecordedAction): string | null {
   return parts.join(' · ')
 }
 
+export type ReplayStepStatus = 'running' | 'pass' | 'fail' | 'skipped'
+
 interface StepListProps {
   steps: RecordedAction[]
   reorderable: boolean
+  isFirstRun?: boolean
+  /** When set, the matching step item plays an 800ms flash animation. */
+  flashStepId?: string | null
   onDeleteStep: (actionId: string) => void
   onReorderStep?: (fromIndex: number, toIndex: number) => void
   onUpdateStep?: (actionId: string, patch: StepPatch) => void
   onPickLocator?: (actionId: string, candidate: ScoredLocator) => void
+  /**
+   * Per-step replay outcomes keyed by actionId. Drives the inline ✓ / ✗
+   * indicator on each row. Omitted = step has not been replayed yet.
+   */
+  replayResults?: Record<string, ReplayStepStatus>
+  /** Currently-running step during replay — receives the spinner icon. */
+  replayRunningActionId?: string | null
+  /**
+   * Per-step locator validation outcomes (from "Test on Page"). Rendered as
+   * a small inline ✓ / ✗ next to the row so users don't have to scroll the
+   * separate `LocatorValidationPanel` to find which step failed.
+   */
+  validationResults?: LocatorValidationResult[]
+  /**
+   * Opens the AssertionBuilder seeded from this step. Only present after a
+   * stopped session is loaded (recording sessions don't get this button).
+   */
+  onAddAssertion?: (actionId: string) => void
 }
 
 export function StepList({
   steps,
   reorderable,
+  isFirstRun = false,
+  flashStepId = null,
   onDeleteStep,
   onReorderStep,
   onUpdateStep,
   onPickLocator,
+  replayResults,
+  replayRunningActionId,
+  validationResults,
+  onAddAssertion,
 }: StepListProps) {
   const [openDetailId, setOpenDetailId] = useState<string | null>(null)
   const [editingStepId, setEditingStepId] = useState<string | null>(null)
+  const validationByAction = useMemo(() => {
+    const map = new Map<string, LocatorValidationResult>()
+    for (const r of validationResults ?? []) map.set(r.actionId, r)
+    return map
+  }, [validationResults])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -149,6 +204,9 @@ export function StepList({
   }
 
   if (steps.length === 0) {
+    if (isFirstRun) {
+      return <EmptyStateGuide />
+    }
     return (
       <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
         <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent-soft">
@@ -169,21 +227,42 @@ export function StepList({
 
   const list = (
     <ol className="divide-y divide-border">
-      {steps.map((step, index) => (
-        <SortableStep
-          key={step.actionId}
-          step={step}
-          index={index}
-          reorderable={reorderable}
-          isOpen={openDetailId === step.actionId}
-          onToggleDetail={() =>
-            setOpenDetailId((prev) => (prev === step.actionId ? null : step.actionId))
-          }
-          onCloseDetail={() => setOpenDetailId(null)}
-          onDelete={() => onDeleteStep(step.actionId)}
-          onEdit={() => setEditingStepId(step.actionId)}
-        />
-      ))}
+      {steps.map((step, index) => {
+        const isRunning = replayRunningActionId === step.actionId
+        const replayStatus: ReplayStepStatus | undefined = isRunning
+          ? 'running'
+          : replayResults?.[step.actionId]
+        const validation = validationByAction.get(step.actionId)
+        return (
+          <SortableStep
+            key={step.actionId}
+            step={step}
+            index={index}
+            reorderable={reorderable}
+            isOpen={openDetailId === step.actionId}
+            flash={flashStepId === step.actionId}
+            replayStatus={replayStatus}
+            validation={validation}
+            onAddAssertion={
+              onAddAssertion && step.target ? () => onAddAssertion(step.actionId) : undefined
+            }
+            onToggleDetail={() =>
+              setOpenDetailId((prev) => (prev === step.actionId ? null : step.actionId))
+            }
+            onCloseDetail={() => setOpenDetailId(null)}
+            onDelete={() => onDeleteStep(step.actionId)}
+            onEdit={() => setEditingStepId(step.actionId)}
+            onPickLocator={
+              onPickLocator
+                ? (candidate) => {
+                    onPickLocator(step.actionId, candidate)
+                    setOpenDetailId(null)
+                  }
+                : undefined
+            }
+          />
+        )
+      })}
     </ol>
   )
 
@@ -224,10 +303,15 @@ interface SortableStepProps {
   index: number
   reorderable: boolean
   isOpen: boolean
+  flash: boolean
+  replayStatus?: ReplayStepStatus
+  validation?: LocatorValidationResult
+  onAddAssertion?: () => void
   onToggleDetail: () => void
   onCloseDetail: () => void
   onDelete: () => void
   onEdit: () => void
+  onPickLocator?: (candidate: ScoredLocator) => void
 }
 
 function SortableStep({
@@ -235,10 +319,15 @@ function SortableStep({
   index,
   reorderable,
   isOpen,
+  flash,
+  replayStatus,
+  validation,
+  onAddAssertion,
   onToggleDetail,
   onCloseDetail,
   onDelete,
   onEdit,
+  onPickLocator,
 }: SortableStepProps) {
   const sortable = useSortable({ id: step.actionId, disabled: !reorderable })
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = sortable
@@ -256,8 +345,9 @@ function SortableStep({
   const primary = step.target?.primaryLocator
   const fallbacks = step.target?.fallbackLocators ?? []
   const allCandidates = step.target?.allCandidates ?? (primary ? [primary, ...fallbacks] : [])
+  const networkParts = isNetwork ? networkLabelParts(step) : null
   const locatorLabel = isNetwork
-    ? networkLabel(step)
+    ? networkLabelText(networkParts)
     : isWait
       ? waitLabel(step)
       : primary
@@ -267,12 +357,18 @@ function SortableStep({
   const Icon = actionIcon(step.type)
   const isOverridden = step.target?.userOverridden === true
   const editable = reorderable
+  const tier = primary ? scoreTier(primary.score) : null
+  const validationOk = validation?.primary.status === 'matched'
+  const validationFail = validation && validation.primary.status !== 'matched'
+  const validationLabel = validation
+    ? `Locator ${validation.primary.status}${validation.primary.matchCount > 1 ? ` (${validation.primary.matchCount} matches)` : ''}${validation.urlMismatch ? ' · URL changed' : ''}`
+    : null
 
   return (
     <li
       ref={setNodeRef}
       style={style}
-      className="group flex items-start gap-2 px-4 py-2.5 text-sm transition-colors hover:bg-bg-elevated"
+      className={`group flex items-start gap-2 px-4 py-2.5 text-sm transition-colors hover:bg-bg-elevated${flash ? ' animate-step-flash' : ''}`}
     >
       {reorderable && (
         <button
@@ -299,22 +395,48 @@ function SortableStep({
             title={locatorLabel}
             aria-label={primary ? 'Show locator detail' : undefined}
           >
-            {locatorLabel}
+            {isNetwork && networkParts ? (
+              <>
+                <span className="font-semibold">{networkParts.method}</span> {networkParts.path}
+                {typeof networkParts.status === 'number' && (
+                  <span className={`ml-1 font-semibold ${networkStatusClass(networkParts.status)}`}>
+                    {networkParts.status}
+                  </span>
+                )}
+              </>
+            ) : (
+              locatorLabel
+            )}
           </button>
-          {primary && (
+          {primary && tier && (
             <span
-              className={`shrink-0 rounded-md px-1.5 py-0.5 font-mono text-[10px] font-semibold ${scoreColor(primary.score)}`}
-              title={`Score ${primary.score}/100 · ${primary.matchCount} match${primary.matchCount === 1 ? '' : 'es'}`}
+              className={`shrink-0 rounded-md px-1.5 py-0.5 font-mono text-[10px] font-semibold ${STRATEGY_BADGE_CLASS[primary.strategy]}`}
+              title={`Score ${primary.score}/100 · ${tier.label} · ${primary.matchCount} match${primary.matchCount === 1 ? '' : 'es'} · ${STRATEGY_HELP_TEXT[primary.strategy]}`}
+              aria-label={`Stability ${tier.label}, score ${primary.score} out of 100`}
             >
               {primary.score}
+              <span className="ml-1 hidden font-sans font-medium opacity-80 sm:inline">
+                · {tier.label}
+              </span>
             </span>
           )}
         </span>
-        {(snapshotLine || primary || isOverridden) && (
+        {(snapshotLine || primary || isOverridden || fallbacks.length > 0) && (
           <span className="mt-0.5 flex items-center gap-2 text-[11px] text-text-muted">
             {primary && (
-              <span className="rounded bg-accent-soft px-1.5 py-0.5 text-[10px] font-medium text-accent">
-                {primary.strategy}
+              <span
+                className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${STRATEGY_BADGE_CLASS[primary.strategy]}`}
+                title={STRATEGY_HELP_TEXT[primary.strategy]}
+              >
+                {STRATEGY_DISPLAY_NAME[primary.strategy]}
+              </span>
+            )}
+            {fallbacks.length > 0 && (
+              <span
+                className="rounded bg-bg-muted px-1.5 py-0.5 text-[10px] font-medium text-text-muted"
+                title="If the primary locator fails during replay, these alternatives are tried in order"
+              >
+                {fallbacks.length} fallback{fallbacks.length === 1 ? '' : 's'}
               </span>
             )}
             {isOverridden && (
@@ -334,14 +456,50 @@ function SortableStep({
             candidates={allCandidates}
             snapshot={step.target?.elementSnapshot}
             onClose={onCloseDetail}
+            onPickLocator={reorderable ? onPickLocator : undefined}
           />
         )}
       </span>
+      {validation && !replayStatus && (
+        <span
+          className="ml-auto inline-flex h-6 w-6 shrink-0 items-center justify-center"
+          aria-label={validationLabel ?? 'Locator validation result'}
+          title={validationLabel ?? undefined}
+        >
+          {validationOk ? (
+            <CheckCircle2 className="h-3.5 w-3.5 text-success" aria-hidden="true" />
+          ) : validationFail ? (
+            <XCircle className="h-3.5 w-3.5 text-danger" aria-hidden="true" />
+          ) : (
+            <CircleDashed className="h-3.5 w-3.5 text-text-subtle" aria-hidden="true" />
+          )}
+        </span>
+      )}
+      {replayStatus && (
+        <span
+          className="ml-auto inline-flex h-6 w-6 shrink-0 items-center justify-center"
+          aria-label={`Replay ${replayStatus}`}
+          title={replayStatusTitle(replayStatus)}
+        >
+          <ReplayStatusIcon status={replayStatus} />
+        </span>
+      )}
+      {onAddAssertion && (
+        <button
+          type="button"
+          onClick={onAddAssertion}
+          className={`${replayStatus || validation ? '' : 'ml-auto'} inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-text-subtle opacity-0 transition-all hover:bg-success-soft hover:text-success group-hover:opacity-100`}
+          aria-label="Add assertion after this step"
+          title="Add assertion after this step"
+        >
+          <PlusCircle className="h-3.5 w-3.5" aria-hidden="true" />
+        </button>
+      )}
       {editable && (
         <button
           type="button"
           onClick={onEdit}
-          className="ml-auto inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-text-subtle opacity-0 transition-all hover:bg-accent-soft hover:text-accent group-hover:opacity-100"
+          className={`${replayStatus || validation || onAddAssertion ? '' : 'ml-auto'} inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-text-subtle opacity-0 transition-all hover:bg-accent-soft hover:text-accent group-hover:opacity-100`}
           aria-label="Edit step"
           title="Edit step"
         >
@@ -351,7 +509,7 @@ function SortableStep({
       <button
         type="button"
         onClick={onDelete}
-        className={`${editable ? '' : 'ml-auto'} inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-text-subtle opacity-0 transition-all hover:bg-danger-soft hover:text-danger group-hover:opacity-100`}
+        className={`${replayStatus || validation || onAddAssertion || editable ? '' : 'ml-auto'} inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-text-subtle opacity-0 transition-all hover:bg-danger-soft hover:text-danger group-hover:opacity-100`}
         aria-label="Remove step"
         title="Remove step"
       >
@@ -359,4 +517,26 @@ function SortableStep({
       </button>
     </li>
   )
+}
+
+function ReplayStatusIcon({ status }: { status: ReplayStepStatus }) {
+  if (status === 'running')
+    return <Loader2 className="h-3.5 w-3.5 animate-spin text-text-muted" aria-hidden="true" />
+  if (status === 'pass')
+    return <CheckCircle2 className="h-3.5 w-3.5 text-success" aria-hidden="true" />
+  if (status === 'fail') return <XCircle className="h-3.5 w-3.5 text-danger" aria-hidden="true" />
+  return <CircleDashed className="h-3.5 w-3.5 text-text-subtle" aria-hidden="true" />
+}
+
+function replayStatusTitle(status: ReplayStepStatus): string {
+  switch (status) {
+    case 'running':
+      return 'Running…'
+    case 'pass':
+      return 'Replay passed'
+    case 'fail':
+      return 'Replay failed'
+    case 'skipped':
+      return 'Skipped — no DOM analog'
+  }
 }

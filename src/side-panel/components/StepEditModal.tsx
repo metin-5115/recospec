@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
+import { useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Check, X } from 'lucide-react'
 import type { RecordedAction } from '@shared/types/action'
 import type { ScoredLocator } from '@shared/types/locator'
 import type { StepPatch } from '@shared/types/messages'
+import { useFocusTrap } from '@shared/hooks/useFocusTrap'
 
 interface StepEditModalProps {
   step: RecordedAction
@@ -54,13 +55,8 @@ export function StepEditModal({ step, onCancel, onApply, onPickLocator }: StepEd
   const [delay, setDelay] = useState<number>(initialDelay)
   const [waitTimeout, setWaitTimeout] = useState<number>(initialWaitTimeout)
 
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onCancel()
-    }
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  }, [onCancel])
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(dialogRef, { onEscape: onCancel })
 
   const candidates = useMemo(() => getCandidates(step), [step])
   const primary = step.target?.primaryLocator
@@ -89,7 +85,8 @@ export function StepEditModal({ step, onCancel, onApply, onPickLocator }: StepEd
       onClick={onCancel}
     >
       <div
-        className="w-full max-w-lg rounded-2xl border border-border bg-bg p-5 shadow-xl motion-safe:animate-in motion-safe:zoom-in-95"
+        ref={dialogRef}
+        className="w-full max-w-lg rounded-2xl border border-border bg-bg p-5 shadow-xl outline-none motion-safe:animate-in motion-safe:zoom-in-95"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-start justify-between gap-3">

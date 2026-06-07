@@ -132,7 +132,10 @@ function renderElementGetter(el: IRElement): string {
   const shadowWarning = el.shadowClosed
     ? `  // WARNING: element is inside a closed shadow root — locator may be unreliable\n`
     : ''
-  const primary = `${shadowWarning}  get ${el.name}() { return ${renderLocator(el)}; }`
+  // Inside the page-object class the Page lives on `this.page`, not a bare
+  // `page` binding (that only exists in spec scope). Re-root the locator.
+  const locator = renderLocator(el).replace(/^page\b/, 'this.page')
+  const primary = `${shadowWarning}  get ${el.name}() { return ${locator}; }`
   if (!el.fallbackLocators?.length) return primary
   const exprs = el.fallbackLocators.map(renderFallbackExpr).join(', ')
   const fallbackComment = `  // Fallbacks: ${exprs}`
@@ -151,6 +154,8 @@ function renderAssertionMatcher(d: AssertionDetail, locator: string, indent: str
       return `${indent}await expect(${locator}).toBeHidden();`
     case 'text':
       return `${indent}await expect(${locator}).toHaveText(${JSON.stringify(d.expected ?? '')});`
+    case 'text-contains':
+      return `${indent}await expect(${locator}).toContainText(${JSON.stringify(d.expected ?? '')});`
     case 'value':
       return `${indent}await expect(${locator}).toHaveValue(${JSON.stringify(d.expected ?? '')});`
     case 'attribute':
@@ -382,7 +387,7 @@ ${testBody}
 function renderEnvExample(): GeneratedFile | null {
   const params = TEST_DATA?.params.filter((p) => p.useEnvVar) ?? []
   if (!params.length) return null
-  const header = '# PlayForge — copy to .env and fill in your test data values.\n'
+  const header = '# Recospec — copy to .env and fill in your test data values.\n'
   const body = params.map((p) => `${p.envVarName}=${p.isSecret ? '' : p.defaultValue}`).join('\n')
   return { filename: '.env.example', content: `${header}${body}\n` }
 }
@@ -390,7 +395,7 @@ function renderEnvExample(): GeneratedFile | null {
 export function renderScaffold(): GeneratedFile[] {
   const packageJson = JSON.stringify(
     {
-      name: 'playforge-generated-tests',
+      name: 'recospec-generated-tests',
       version: '1.0.0',
       private: true,
       scripts: {

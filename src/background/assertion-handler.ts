@@ -1,9 +1,9 @@
-import type { AssertionSuggestion, ElementSnapshot } from '@shared/types/action'
+import type { AssertionSuggestion, ElementSnapshot, RecordedAction } from '@shared/types/action'
 import type { LocatorBundle } from '@shared/types/locator'
 import { getActiveTabId } from './session-manager'
 import { sendToTab, broadcastToUI } from '@shared/messaging/send'
-import { appendAction } from '@storage/action-repo'
-import { getActionsBySession } from '@storage/action-repo'
+import { appendAction, getActionsBySession } from '@storage/action-repo'
+import { db } from '@storage/db'
 import { logger } from '@shared/logger'
 
 async function captureVisibleTabSafe(): Promise<string | undefined> {
@@ -58,9 +58,10 @@ export async function handleAssertionAdd(
   locatorBundle: LocatorBundle | null,
   elementSnapshot: ElementSnapshot,
   pageMetadata: { url: string; title: string },
+  afterActionId?: string,
 ): Promise<void> {
   const existing = await getActionsBySession(sessionId)
-  const sequenceNumber = existing.length
+  const insertIndex = resolveInsertIndex(existing, afterActionId)
 
   const isScreenshot = suggestion.type === 'screenshot'
   const expected =
@@ -80,10 +81,10 @@ export async function handleAssertionAdd(
     payload.attribute = suggestion.attribute
   }
 
-  const action = {
+  const action: RecordedAction = {
     actionId: crypto.randomUUID(),
     sessionId,
-    sequenceNumber,
+    sequenceNumber: insertIndex,
     type: 'assert' as const,
     timestamp: Date.now(),
     pageUrl: pageMetadata.url,
@@ -101,7 +102,36 @@ export async function handleAssertionAdd(
     annotation: suggestion.label,
   }
 
-  await appendAction(action)
-  await broadcastToUI({ type: 'STEP_RECORDED', sessionId, step: action })
-  logger.debug('[BG] Assertion step recorded', action.actionId, suggestion.type)
+  if (afterActionId !== undefined && insertIndex < existing.length) {
+    // Inserting between steps — shift every subsequent sequenceNumber up by
+    // one so the new row lands in place. Done in a single Dexie transaction
+    // so a partial failure cannot leave gaps in the sequence.
+    await db.transaction('rw', db.actions, async () => {
+      for (let i = existing.length - 1; i >= insertIndex; i--) {
+        await db.actions.update(existing[i].actionId, { sequenceNumber: i + 1 })
+      }
+      await db.actions.add(action)
+    })
+    // Broadcast the new ordered list so the side panel re-renders without
+    // having to fetch from Dexie itself.
+    const synced = await getActionsBySession(sessionId)
+    await broadcastToUI({ type: 'STEPS_SYNCED', sessionId, steps: synced })
+  } else {
+    await appendAction(action)
+    await broadcastToUI({ type: 'STEP_RECORDED', sessionId, step: action })
+  }
+
+  logger.debug(
+    '[BG] Assertion step recorded',
+    action.actionId,
+    suggestion.type,
+    afterActionId ? `after ${afterActionId}` : '(append)',
+  )
+}
+
+function resolveInsertIndex(existing: RecordedAction[], afterActionId?: string): number {
+  if (!afterActionId) return existing.length
+  const idx = existing.findIndex((a) => a.actionId === afterActionId)
+  if (idx < 0) return existing.length
+  return idx + 1
 }

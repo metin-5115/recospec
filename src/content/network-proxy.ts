@@ -6,7 +6,7 @@
  * No new permissions required — the second content_scripts entry in
  * manifest.json with `"world": "MAIN"` is what gets us here.
  */
-const EVENT_NAME = 'playforge:network'
+const EVENT_NAME = 'recospec:network'
 const MAX_BYTES = 50_000
 const BLOCKED_PATTERNS = ['chrome-extension://', 'moz-extension://']
 

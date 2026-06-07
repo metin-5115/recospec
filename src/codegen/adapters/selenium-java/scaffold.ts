@@ -12,7 +12,7 @@ const POM_XML = `<?xml version="1.0" encoding="UTF-8"?>
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.playforge</groupId>
+    <groupId>com.recospec</groupId>
     <artifactId>generated-tests</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
@@ -63,7 +63,7 @@ const POM_XML = `<?xml version="1.0" encoding="UTF-8"?>
 
 const TESTNG_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
-<suite name="PlayForge Generated Suite" verbose="1">
+<suite name="Recospec Generated Suite" verbose="1">
     <test name="GeneratedTests">
         <packages>
             <package name="tests"/>
@@ -87,7 +87,7 @@ export function renderScaffold(): GeneratedFile[] {
   ]
   const params = TEST_DATA?.params.filter((p) => p.useEnvVar) ?? []
   if (params.length) {
-    const header = '# PlayForge — copy to test-data.properties and fill in values.\n'
+    const header = '# Recospec — copy to test-data.properties and fill in values.\n'
     const body = params.map((p) => `${p.envVarName}=${p.isSecret ? '' : p.defaultValue}`).join('\n')
     files.push({
       filename: 'src/test/resources/test-data.properties.example',

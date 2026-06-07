@@ -23,44 +23,63 @@ import {
 } from './locator-validation-controller'
 import { handleIterationAccept, handleIterationDismiss } from './iteration-controller'
 import { handleExportRequest } from './export-handler'
+import { startReplay, abortReplay, handleReplayStepResponse } from './replay-controller'
 import { logger } from '@shared/logger'
+import { broadcastToUI } from '@shared/messaging/send'
+import { IndexedDBQuotaError, isQuotaExceededError } from '@shared/errors'
+
+/**
+ * Wrap a handler's catch path. If the rejection originated from an
+ * IndexedDB quota miss (typed {@link IndexedDBQuotaError} from the storage
+ * layer, or a raw Dexie/DOMException with `name === 'QuotaExceededError'`),
+ * fan out a `STORAGE_QUOTA_EXCEEDED` broadcast so the side panel can render
+ * the quota recovery UI. All errors are still logged for diagnostics.
+ */
+function handleBgError(context: string, sessionId?: string) {
+  return async (err: unknown): Promise<void> => {
+    if (err instanceof IndexedDBQuotaError || isQuotaExceededError(err)) {
+      await broadcastToUI({ type: 'STORAGE_QUOTA_EXCEEDED', sessionId })
+    }
+    logger.error(`[BG] ${context} failed`, err)
+  }
+}
 
 export function initMessageRouter(): void {
   onBackgroundMessage((message, _sender) => {
     switch (message.type) {
       case 'SESSION_START':
-        return startSession(message.tabId, message.metadata, message.config).catch((err) =>
-          logger.error('[BG] SESSION_START failed', err),
+        return startSession(message.tabId, message.metadata, message.config).catch(
+          handleBgError('SESSION_START'),
         )
 
       case 'SESSION_STOP':
-        return stopSession(message.sessionId).catch((err) =>
-          logger.error('[BG] SESSION_STOP failed', err),
+        return stopSession(message.sessionId).catch(
+          handleBgError('SESSION_STOP', message.sessionId),
         )
 
       case 'SESSION_PAUSE':
-        return pauseSession(message.sessionId).catch((err) =>
-          logger.error('[BG] SESSION_PAUSE failed', err),
+        return pauseSession(message.sessionId).catch(
+          handleBgError('SESSION_PAUSE', message.sessionId),
         )
 
       case 'SESSION_RESUME':
-        return resumeSession(message.sessionId).catch((err) =>
-          logger.error('[BG] SESSION_RESUME failed', err),
+        return resumeSession(message.sessionId).catch(
+          handleBgError('SESSION_RESUME', message.sessionId),
         )
 
       case 'SESSION_DELETE':
-        return deleteSessionById(message.sessionId).catch((err) =>
-          logger.error('[BG] SESSION_DELETE failed', err),
+        return deleteSessionById(message.sessionId).catch(
+          handleBgError('SESSION_DELETE', message.sessionId),
         )
 
       case 'SESSION_RENAME':
-        return renameSessionById(message.sessionId, message.name).catch((err) =>
-          logger.error('[BG] SESSION_RENAME failed', err),
+        return renameSessionById(message.sessionId, message.name).catch(
+          handleBgError('SESSION_RENAME', message.sessionId),
         )
 
       case 'EVENT_CAPTURED':
-        return aggregateEvent(message.sessionId, message.event).catch((err) =>
-          logger.error('[BG] EVENT_CAPTURED failed', err),
+        return aggregateEvent(message.sessionId, message.event).catch(
+          handleBgError('EVENT_CAPTURED', message.sessionId),
         )
 
       case 'CODE_GENERATE':
@@ -70,16 +89,16 @@ export function initMessageRouter(): void {
           autoWaitEnabled: message.autoWaitEnabled,
           testData: message.testData,
           bdd: message.bdd,
-        }).catch((err) => logger.error('[BG] CODE_GENERATE failed', err))
+        }).catch(handleBgError('CODE_GENERATE', message.sessionId))
 
       case 'ASSERTION_PROBE_START':
-        return handleAssertionProbeStart(message.sessionId).catch((err) =>
-          logger.error('[BG] ASSERTION_PROBE_START failed', err),
+        return handleAssertionProbeStart(message.sessionId).catch(
+          handleBgError('ASSERTION_PROBE_START', message.sessionId),
         )
 
       case 'ASSERTION_PROBE_STOP':
-        return handleAssertionProbeStop(message.sessionId).catch((err) =>
-          logger.error('[BG] ASSERTION_PROBE_STOP failed', err),
+        return handleAssertionProbeStop(message.sessionId).catch(
+          handleBgError('ASSERTION_PROBE_STOP', message.sessionId),
         )
 
       case 'ASSERTION_SUGGESTION':
@@ -89,7 +108,7 @@ export function initMessageRouter(): void {
           message.elementSnapshot,
           message.suggestions,
           message.pageMetadata,
-        ).catch((err) => logger.error('[BG] ASSERTION_SUGGESTION failed', err))
+        ).catch(handleBgError('ASSERTION_SUGGESTION', message.sessionId))
 
       case 'ASSERTION_ADD':
         return handleAssertionAdd(
@@ -99,21 +118,35 @@ export function initMessageRouter(): void {
           message.locatorBundle,
           message.elementSnapshot,
           message.pageMetadata,
-        ).catch((err) => logger.error('[BG] ASSERTION_ADD failed', err))
+          message.afterActionId,
+        ).catch(handleBgError('ASSERTION_ADD', message.sessionId))
+
+      case 'REPLAY_REQUEST':
+        return startReplay(message.sessionId).catch(
+          handleBgError('REPLAY_REQUEST', message.sessionId),
+        )
+
+      case 'REPLAY_ABORT':
+        abortReplay(message.sessionId)
+        return undefined
+
+      case 'REPLAY_STEP_RESPONSE':
+        handleReplayStepResponse(message.sessionId, message.actionId, message.status, message.error)
+        return undefined
 
       case 'STEPS_REORDERED':
-        return handleStepsReordered(message.sessionId, message.orderedActionIds).catch((err) =>
-          logger.error('[BG] STEPS_REORDERED failed', err),
+        return handleStepsReordered(message.sessionId, message.orderedActionIds).catch(
+          handleBgError('STEPS_REORDERED', message.sessionId),
         )
 
       case 'STEP_UPDATED':
-        return handleStepUpdated(message.sessionId, message.actionId, message.patch).catch((err) =>
-          logger.error('[BG] STEP_UPDATED failed', err),
+        return handleStepUpdated(message.sessionId, message.actionId, message.patch).catch(
+          handleBgError('STEP_UPDATED', message.sessionId),
         )
 
       case 'STEP_DELETED':
-        return handleStepDeleted(message.sessionId, message.actionId).catch((err) =>
-          logger.error('[BG] STEP_DELETED failed', err),
+        return handleStepDeleted(message.sessionId, message.actionId).catch(
+          handleBgError('STEP_DELETED', message.sessionId),
         )
 
       case 'VALIDATE_LOCATORS':
@@ -121,7 +154,7 @@ export function initMessageRouter(): void {
           message.sessionId,
           message.targets,
           message.recordedUrl,
-        ).catch((err) => logger.error('[BG] VALIDATE_LOCATORS failed', err))
+        ).catch(handleBgError('VALIDATE_LOCATORS', message.sessionId))
 
       case 'HIGHLIGHT_LOCATOR':
         return handleHighlightLocator(
@@ -130,7 +163,7 @@ export function initMessageRouter(): void {
           message.shadowContext,
           message.frameContext,
           message.label,
-        ).catch((err) => logger.error('[BG] HIGHLIGHT_LOCATOR failed', err))
+        ).catch(handleBgError('HIGHLIGHT_LOCATOR', message.sessionId))
 
       case 'LOCATOR_VALIDATION_RESPONSE':
         return handleValidationResponse(
@@ -138,31 +171,31 @@ export function initMessageRouter(): void {
           message.results,
           message.durationMs,
           message.pageUrl,
-        ).catch((err) => logger.error('[BG] LOCATOR_VALIDATION_RESPONSE failed', err))
+        ).catch(handleBgError('LOCATOR_VALIDATION_RESPONSE', message.sessionId))
 
       case 'SESSION_ITERATION_ACCEPT':
-        return handleIterationAccept(message.sessionId, message.parentSessionId).catch((err) =>
-          logger.error('[BG] SESSION_ITERATION_ACCEPT failed', err),
+        return handleIterationAccept(message.sessionId, message.parentSessionId).catch(
+          handleBgError('SESSION_ITERATION_ACCEPT', message.sessionId),
         )
 
       case 'SESSION_ITERATION_DISMISS':
-        return handleIterationDismiss(message.sessionId).catch((err) =>
-          logger.error('[BG] SESSION_ITERATION_DISMISS failed', err),
+        return handleIterationDismiss(message.sessionId).catch(
+          handleBgError('SESSION_ITERATION_DISMISS', message.sessionId),
         )
 
       // The VS Code host calls `handleExportRequest` directly through the
-      // SW global (`self.__playforgeExport`) — see background/index.ts. The
+      // SW global (`self.__recospecExport`) — see background/index.ts. The
       // case is wired here for contract symmetry and so future request/
       // response surfaces can route through the typed message bus.
       case 'EXPORT_REQUEST':
         // The current `chrome.runtime.onMessage` plumbing is fire-and-forget
         // (see `shared/messaging/listen.ts`). The VS Code host bypasses it
-        // and calls `handleExportRequest` directly via `self.__playforgeExport`,
+        // and calls `handleExportRequest` directly via `self.__recospecExport`,
         // so here we just invoke the handler for side effects and drop the
         // payload to match the void return contract.
         return handleExportRequest(message.sessionId)
           .then(() => undefined)
-          .catch((err) => logger.error('[BG] EXPORT_REQUEST failed', err))
+          .catch(handleBgError('EXPORT_REQUEST', message.sessionId))
     }
   })
 }

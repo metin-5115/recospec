@@ -1,11 +1,11 @@
-# PlayForge
+# Recospec
 
-[![Release](https://img.shields.io/badge/release-v0.7.0-6366f1)](https://github.com/metin-5115/playforge/releases/tag/v0.7.0)
+[![Release](https://img.shields.io/badge/release-v0.7.0-6366f1)](https://github.com/metin-5115/recospec/releases/tag/v0.7.0)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-661%20passing-brightgreen)](#performance)
+[![Tests](https://img.shields.io/badge/tests-734%20passing-brightgreen)](#performance)
 [![VS Code](https://img.shields.io/badge/VS_Code-extension-007ACC)](vscode-extension/README.md)
 
-PlayForge is an open-source Chrome extension that records your browser interactions and generates production-ready test automation code with smart locator strategies and automatic Page Object Model output — no manual editing required.
+Recospec is an open-source Chrome extension that records your browser interactions and generates production-ready test automation code with smart locator strategies and automatic Page Object Model output — no manual editing required.
 
 ## Features
 
@@ -26,8 +26,8 @@ React 18 · TypeScript · Vite · Tailwind CSS · Zustand · Dexie (IndexedDB) �
 ## Install from Source
 
 ```bash
-git clone https://github.com/your-username/playforge.git
-cd playforge
+git clone https://github.com/metin-5115/recospec.git
+cd recospec
 pnpm install
 pnpm build
 ```
@@ -49,21 +49,21 @@ Then load the extension in Chrome:
 
 ## Add to an existing project (CLI)
 
-The `playforge` CLI applies a recorded session onto an already-configured test
+The `recospec` CLI applies a recorded session onto an already-configured test
 project — no scaffolding required, so it slots into repos that already have
 their own `package.json` / `pom.xml` / runner config.
 
 ```bash
 # 1. Record + export from the extension (side panel → "JSON for CLI").
 # 2. Run the CLI inside your existing test project:
-npx playforge add ~/Downloads/login_v1.json
+npx recospec add ~/Downloads/login_v1.json
 
 # Auto-detects the framework from package.json / pom.xml / requirements.txt.
 # Override it explicitly when needed:
-npx playforge add login_v1.json --framework selenium-py
+npx recospec add login_v1.json --framework selenium-py
 
 # Pin the framework once so subsequent runs skip detection:
-npx playforge init --framework playwright-ts
+npx recospec init --framework playwright-ts
 ```
 
 When a target file already exists, the CLI prompts:
@@ -85,25 +85,26 @@ Java).
 
 ## VS Code extension (v0.7.0)
 
-PlayForge ships a companion VS Code extension that brings the **record →
+Recospec ships a companion VS Code extension that brings the **record →
 apply → Claude prompt** workflow directly into the editor. No terminal
 hop required.
 
-- **`PlayForge: Record Flow…`** — launches Chromium with the PlayForge
+- **`Recospec: Record Flow…`** — launches Chromium with the Recospec
   Chrome extension pre-bundled, captures the flow, and round-trips the
   JSON back into VS Code automatically.
 - **Output Picker webview** — checkbox UI for what to emit on each apply
   (test code, Claude prompt, BDD output, network mocks, redaction).
 - **Recordings tree view** — activity-bar sidebar lists every recording
-  in `.playforge/sessions/` for one-click re-apply.
+  in `.recospec/sessions/` for one-click re-apply.
 - **Same merge engine as the CLI** — page-object conflicts surface as a
   QuickPick (Merge / Overwrite / Skip / `.new` / Diff).
 - **Claude Code integration** — every apply optionally emits a
-  `/playforge-<flow>` slash command with locator catalogue + sensitive-
+  `/recospec-<flow>` slash command with locator catalogue + sensitive-
   value contract.
 
-Install: download the VSIX from
-[releases/](releases/) → Extensions → "Install from VSIX…". See
+Install: download the VSIX from the
+[latest GitHub release](https://github.com/metin-5115/recospec/releases/latest)
+→ Extensions → "Install from VSIX…". See
 [vscode-extension/README.md](vscode-extension/README.md) for the full
 walkthrough, requirements (Playwright runtime), and troubleshooting.
 
@@ -113,7 +114,7 @@ Build from source:
 pnpm install
 pnpm build          # Chrome ext dist
 pnpm build:vscode   # VS Code ext dist (mirrors chrome-ext/ next door)
-pnpm package:vscode # → releases/playforge-0.7.0.vsix
+pnpm package:vscode # → releases/recospec-0.7.0.vsix
 ```
 
 ## Performance
@@ -127,11 +128,20 @@ Measured via `benchmarks/performance.test.ts` (jsdom, run on every CI pass):
 | Total dist bundle (uncompressed)             | **~478 KB**   | < 500 KB |
 | CLI bundle (`pnpm build:cli`, uncompressed)  | **~164 KB**   | < 250 KB |
 | VS Code bundle (`pnpm build:vscode`)         | **~2.16 MB**  | — (CJS)  |
-| Unit tests passing                           | **661 / 661** | —        |
+| Unit tests passing                           | **734 / 734** | —        |
 
-## Screenshot
+## Screenshots
 
-_Screenshot / GIF coming soon._
+<!-- Asset eklenecek: replace placeholder PNG/GIF in docs/screenshots/ with real captures. -->
+
+![Recording a flow with Recospec](docs/screenshots/record-flow.gif)
+
+| Side panel overview                                              | Generated code preview                             |
+| ---------------------------------------------------------------- | -------------------------------------------------- |
+| ![Side panel overview](docs/screenshots/side-panel-overview.png) | ![Code preview](docs/screenshots/code-preview.png) |
+
+> Capture the GIF on the bundled demo page (`public/demo/demo-page.html`) — see
+> [docs/screenshots/README.md](docs/screenshots/README.md) for the recording recipe.
 
 ## License
 
@@ -144,8 +154,8 @@ Issues and PRs are welcome.
 ### Setup
 
 ```bash
-git clone https://github.com/your-username/playforge.git
-cd playforge
+git clone https://github.com/metin-5115/recospec.git
+cd recospec
 pnpm install
 ```
 

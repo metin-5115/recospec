@@ -149,6 +149,12 @@ describe('selenium-py renderPageObject — assertions', () => {
         assertionDetail: { type: 'text', expected: 'Sign In' },
       },
       {
+        id: 'a3b',
+        action: 'assert',
+        element: signInEl,
+        assertionDetail: { type: 'text-contains', expected: 'Sign' },
+      },
+      {
         id: 'a4',
         action: 'assert',
         element: signInEl,
@@ -164,6 +170,12 @@ describe('selenium-py renderPageObject — assertions', () => {
   it('renders text equality assertion', () => {
     expect(renderPageObject(page)).toContain(
       `self.driver.find_element(*self.SIGN_IN_BUTTON).text == 'Sign In'`,
+    )
+  })
+
+  it('renders text-contains assertion using `in`', () => {
+    expect(renderPageObject(page)).toContain(
+      `'Sign' in self.driver.find_element(*self.SIGN_IN_BUTTON).text`,
     )
   })
 

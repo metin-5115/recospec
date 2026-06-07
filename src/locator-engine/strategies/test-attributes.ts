@@ -1,7 +1,7 @@
 import type { Locator } from '@shared/types/locator'
 import type { LocatorStrategy } from './base'
 
-const TEST_ATTRIBUTES = ['data-test', 'data-cy', 'data-qa', 'data-automation'] as const
+const TEST_ATTRIBUTES = ['data-test', 'data-qa', 'data-automation'] as const
 
 export class TestAttributesStrategy implements LocatorStrategy {
   readonly name = 'test-attr'

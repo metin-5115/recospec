@@ -3,6 +3,8 @@ import { sendToBackground } from '@shared/messaging/send'
 import { startCapture, stopCapture } from './event-capture'
 import { startProbe, stopProbe } from './element-probe'
 import { highlightLocator, validateTargets } from './locator-validator'
+import { executeReplayStep } from './replay-runner'
+import { mountBadge, unmountBadge } from './recording-badge'
 import { logger } from '@shared/logger'
 
 logger.info('[CS] Content script loaded')
@@ -10,8 +12,10 @@ logger.info('[CS] Content script loaded')
 onContentMessage((message) => {
   if (message.type === 'START_CAPTURE') {
     startCapture(message.sessionId)
+    mountBadge()
   } else if (message.type === 'STOP_CAPTURE') {
     stopCapture()
+    unmountBadge()
   } else if (message.type === 'START_ASSERTION_PROBE') {
     startProbe(message.sessionId)
   } else if (message.type === 'STOP_ASSERTION_PROBE') {
@@ -35,5 +39,21 @@ onContentMessage((message) => {
       message.label,
       message.durationMs,
     )
+  } else if (message.type === 'REPLAY_STEP_RUN') {
+    const outcome = executeReplayStep({
+      actionType: message.actionType,
+      primary: message.primary,
+      fallbacks: message.fallbacks,
+      shadowContext: message.shadowContext,
+      frameContext: message.frameContext,
+      payload: message.payload,
+    })
+    sendToBackground({
+      type: 'REPLAY_STEP_RESPONSE',
+      sessionId: message.sessionId,
+      actionId: message.actionId,
+      status: outcome.status,
+      error: outcome.error,
+    }).catch((err) => logger.error('[CS] Failed to send REPLAY_STEP_RESPONSE', err))
   }
 })

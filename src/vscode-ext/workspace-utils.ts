@@ -22,7 +22,7 @@ export interface ResolvedWorkspace {
 export async function resolveWorkspace(): Promise<ResolvedWorkspace | null> {
   const folders = vscode.workspace.workspaceFolders
   if (!folders || folders.length === 0) {
-    void vscode.window.showErrorMessage('PlayForge: open a folder before running this command.')
+    void vscode.window.showErrorMessage('Recospec: open a folder before running this command.')
     return null
   }
   if (folders.length === 1) {
@@ -30,7 +30,7 @@ export async function resolveWorkspace(): Promise<ResolvedWorkspace | null> {
     return { projectDir: only.uri.fsPath, folder: only }
   }
   const folder = await vscode.window.showWorkspaceFolderPick({
-    placeHolder: 'Pick the project to apply PlayForge to',
+    placeHolder: 'Pick the project to apply Recospec to',
   })
   if (!folder) return null
   return { projectDir: folder.uri.fsPath, folder }
@@ -38,7 +38,7 @@ export async function resolveWorkspace(): Promise<ResolvedWorkspace | null> {
 
 /**
  * Resolve the active framework for a project directory:
- *   1. `.playforgerc.json` framework pin (if present),
+ *   1. `.recospecrc.json` framework pin (if present),
  *   2. marker-file detection (pom.xml / requirements.txt / package.json),
  *   3. fall back to an interactive QuickPick.
  *

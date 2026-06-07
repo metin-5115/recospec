@@ -52,7 +52,7 @@ export function resolveBundledExtensionPath(vscodeExtensionRoot: string): string
 }
 
 /**
- * Launch a Chromium persistent context with the PlayForge Chrome extension
+ * Launch a Chromium persistent context with the Recospec Chrome extension
  * pre-loaded. The context is returned so the caller can later evaluate
  * code in the service worker (recording-bridge.ts) and dispose the
  * browser when recording completes.
@@ -65,14 +65,14 @@ export async function launchChromium(opts: LaunchOptions): Promise<LaunchedBrows
     throw new BundledExtensionMissingError(opts.extensionPath)
   }
 
-  const userDataDir = opts.userDataDir ?? mkdtempSync(join(tmpdir(), 'playforge-rec-'))
+  const userDataDir = opts.userDataDir ?? mkdtempSync(join(tmpdir(), 'recospec-rec-'))
   const context = await chromium.launchPersistentContext(userDataDir, {
     headless: false,
     args: [
       `--disable-extensions-except=${opts.extensionPath}`,
       `--load-extension=${opts.extensionPath}`,
       // Side panel must be opened by user action; this hint surfaces the
-      // PlayForge action icon prominently so the user can click it.
+      // Recospec action icon prominently so the user can click it.
       '--no-first-run',
       '--no-default-browser-check',
     ],

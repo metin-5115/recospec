@@ -1,10 +1,17 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { CheckCircle2, X, Camera } from 'lucide-react'
 import type { AssertionSuggestion } from '@shared/types/action'
 import type { LocatorBundle } from '@shared/types/locator'
 import type { ElementSnapshot } from '@shared/types/action'
+import { useFocusTrap } from '@shared/hooks/useFocusTrap'
 
-const NEEDS_VALUE: AssertionSuggestion['type'][] = ['text', 'value', 'attribute', 'count']
+const NEEDS_VALUE: AssertionSuggestion['type'][] = [
+  'text',
+  'text-contains',
+  'value',
+  'attribute',
+  'count',
+]
 
 interface AssertionBuilderProps {
   suggestions: AssertionSuggestion[]
@@ -34,6 +41,9 @@ export function AssertionBuilder({
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [customValue, setCustomValue] = useState('')
   const [screenshotName, setScreenshotName] = useState('')
+
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(dialogRef, { onEscape: onCancel })
 
   const selected = suggestions[selectedIndex]
   const isScreenshot = selected.type === 'screenshot'
@@ -71,7 +81,10 @@ export function AssertionBuilder({
         if (e.target === e.currentTarget) onCancel()
       }}
     >
-      <div className="animate-modal-in w-80 overflow-hidden rounded-2xl border border-border bg-bg shadow-2xl">
+      <div
+        ref={dialogRef}
+        className="animate-modal-in w-80 overflow-hidden rounded-2xl border border-border bg-bg shadow-2xl outline-none"
+      >
         <div className="flex items-start justify-between border-b border-border px-5 py-4">
           <div className="flex items-start gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-accent shadow-accent-glow">

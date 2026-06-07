@@ -6,9 +6,9 @@ exports[`renderPageObject > matches snapshot 1`] = `
 export class LoginPage {
   constructor(private readonly page: Page) {}
 
-  get usernameInput() { return page.getByTestId("username-input"); }
+  get usernameInput() { return this.page.getByTestId("username-input"); }
 
-  get submitBtn() { return page.getByTestId("submit-btn"); }
+  get submitBtn() { return this.page.getByTestId("submit-btn"); }
 
   async goto() {
     await this.page.goto("/login");

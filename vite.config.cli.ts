@@ -17,7 +17,7 @@ import { resolve } from 'path'
  * and we add it back exactly once via Rollup's `banner` option.
  */
 const stripShebang = (): Plugin => ({
-  name: 'playforge:strip-shebang',
+  name: 'recospec:strip-shebang',
   enforce: 'pre',
   transform(code, id) {
     if (!id.endsWith('/cli/index.ts') && !id.endsWith('\\cli\\index.ts')) return null

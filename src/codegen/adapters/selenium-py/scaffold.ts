@@ -64,7 +64,7 @@ export function renderScaffold(): GeneratedFile[] {
   ]
   const params = TEST_DATA?.params.filter((p) => p.useEnvVar) ?? []
   if (params.length) {
-    const header = '# PlayForge — copy to .env and fill in your test data values.\n'
+    const header = '# Recospec — copy to .env and fill in your test data values.\n'
     const body = params.map((p) => `${p.envVarName}=${p.isSecret ? '' : p.defaultValue}`).join('\n')
     files.push({ filename: '.env.example', content: `${header}${body}\n` })
   }

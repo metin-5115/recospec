@@ -89,6 +89,11 @@ function renderAssertion(d: AssertionDetail, el: IRElement | undefined, indent: 
       const expected = pyStr(String(d.expected ?? ''))
       return `${indent}assert self.driver.find_element(*${constRef}).text == ${expected}`
     }
+    case 'text-contains': {
+      if (!constRef) return `${indent}# assert text contains (no element)`
+      const expected = pyStr(String(d.expected ?? ''))
+      return `${indent}assert ${expected} in self.driver.find_element(*${constRef}).text`
+    }
     case 'value': {
       if (!constRef) return `${indent}# assert value (no element)`
       const expected = pyStr(String(d.expected ?? ''))

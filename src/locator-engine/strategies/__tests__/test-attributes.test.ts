@@ -15,14 +15,10 @@ describe('TestAttributesStrategy', () => {
     expect(result!.selector).toBe('[data-test="submit-btn"]')
   })
 
-  it('returns locator for data-cy attribute', () => {
+  it('does not match data-cy (handled by TestIdStrategy)', () => {
     const el = document.createElement('input')
     el.setAttribute('data-cy', 'email-field')
-    const result = strategy.evaluate(el, doc)
-
-    expect(result!.selector).toBe('[data-cy="email-field"]')
-    expect(result!.framework.cypress).toContain('data-cy')
-    expect(result!.framework.cypress).toContain('email-field')
+    expect(strategy.evaluate(el, doc)).toBeNull()
   })
 
   it('returns locator for data-qa attribute', () => {

@@ -1,0 +1,38 @@
+name: Feature request
+description: Suggest an idea or improvement for Recospec
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Describe the pain point, not just the solution. What workflow is blocked today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What would you like Recospec to do? Sketch the ideal output if relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches or current workarounds you've tried.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Locator engine
+        - Code generation / adapters
+        - Recorder / content capture
+        - Side panel UI
+        - CLI
+        - VS Code extension
+        - Docs
+        - Other
+    validations:
+      required: true

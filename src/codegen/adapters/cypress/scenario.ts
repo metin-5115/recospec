@@ -24,6 +24,8 @@ function renderAssertion(d: AssertionDetail, chain: string, indent: string): str
       return `${indent}${chain}.should('not.be.visible');`
     case 'text':
       return `${indent}${chain}.should('have.text', ${JSON.stringify(d.expected ?? '')});`
+    case 'text-contains':
+      return `${indent}${chain}.should('contain.text', ${JSON.stringify(d.expected ?? '')});`
     case 'value':
       return `${indent}${chain}.should('have.value', ${JSON.stringify(d.expected ?? '')});`
     case 'attribute':

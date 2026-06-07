@@ -122,7 +122,7 @@ export async function handleValidateLocators(
       durationMs: 0,
       pageUrl: tab.url ?? '',
       error:
-        'Could not reach the page. Reload the tab so PlayForge can re-inject its content script.',
+        'Could not reach the page. Reload the tab so Recospec can re-inject its content script.',
     })
   }
 }

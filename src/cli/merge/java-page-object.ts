@@ -27,7 +27,7 @@ interface ClassBlock {
  *
  * We cannot use a real Java parser (javaparser is JVM-only; the npm port is
  * abandoned), so we settle for a balanced-brace walker. It is reliable for
- * the page objects PlayForge emits — single top-level class, no inner
+ * the page objects Recospec emits — single top-level class, no inner
  * classes — and we explicitly bail out when an `existing` file already has
  * nested classes, since brace counting would conflate inner+outer members.
  *

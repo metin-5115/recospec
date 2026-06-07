@@ -1,0 +1,43 @@
+name: Adapter request
+description: Request support for a new test framework / language
+labels: ["adapter", "enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Recospec generates code through a shared IR → adapter pipeline, so a new
+        framework is mostly one self-contained adapter. Concrete examples of the
+        ideal output make this much easier to scope.
+  - type: input
+    id: framework
+    attributes:
+      label: Framework + language + runner
+      placeholder: "WebdriverIO (TypeScript, Mocha) / Robot Framework / Puppeteer …"
+    validations:
+      required: true
+  - type: textarea
+    id: ideal-output
+    attributes:
+      label: Ideal generated output
+      description: A small Page Object + a test for a login flow, written the way an expert in this framework would write it.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: idioms
+    attributes:
+      label: Key idioms to respect
+      description: Locator syntax, wait strategy, assertion style, project scaffold (config, dependencies), POM conventions.
+    validations:
+      required: true
+  - type: input
+    id: popularity
+    attributes:
+      label: Why this framework?
+      description: Who uses it and why current tools don't serve them well.
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contribution
+      options:
+        - label: I'm willing to help implement this adapter (see CONTRIBUTING.md).

@@ -1,4 +1,4 @@
-// One-shot generator for vscode-extension/icons/playforge.png.
+// One-shot generator for vscode-extension/icons/recospec.png.
 // 128×128 PNG, indigo→pink vertical gradient, geometric white "P".
 // No external deps — uses node:zlib for the IDAT chunk only.
 //
@@ -100,7 +100,7 @@ const png = Buffer.concat([
   chunk('IEND', Buffer.alloc(0)),
 ])
 
-const outPath = resolve(process.cwd(), 'vscode-extension/icons/playforge.png')
+const outPath = resolve(process.cwd(), 'vscode-extension/icons/recospec.png')
 mkdirSync(dirname(outPath), { recursive: true })
 writeFileSync(outPath, png)
 // eslint-disable-next-line no-console

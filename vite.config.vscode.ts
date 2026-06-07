@@ -4,7 +4,7 @@ import { builtinModules } from 'node:module'
 import { cpSync, existsSync, rmSync } from 'node:fs'
 
 /**
- * Build config for the PlayForge VS Code extension (`pnpm build:vscode`).
+ * Build config for the Recospec VS Code extension (`pnpm build:vscode`).
  *
  * Output lands inside `vscode-extension/dist/extension.js` so the extension
  * directory is self-contained and can be packaged via `vsce package` from
@@ -49,7 +49,7 @@ const PLAYWRIGHT_EXTERNALS = [
  */
 function copyChromeExt(): Plugin {
   return {
-    name: 'playforge:copy-chrome-ext',
+    name: 'recospec:copy-chrome-ext',
     apply: 'build',
     closeBundle() {
       const source = resolve(__dirname, 'dist')
@@ -57,7 +57,7 @@ function copyChromeExt(): Plugin {
       if (!existsSync(source)) {
         // eslint-disable-next-line no-console
         console.warn(
-          `[playforge] WARNING: ${source} does not exist. Run \`pnpm build\` ` +
+          `[recospec] WARNING: ${source} does not exist. Run \`pnpm build\` ` +
             'before `pnpm build:vscode` so the Chrome extension is bundled ' +
             'alongside the VS Code extension.',
         )
@@ -66,7 +66,7 @@ function copyChromeExt(): Plugin {
       if (existsSync(target)) rmSync(target, { recursive: true, force: true })
       cpSync(source, target, { recursive: true })
       // eslint-disable-next-line no-console
-      console.log(`[playforge] copied Chrome extension → ${target}`)
+      console.log(`[recospec] copied Chrome extension → ${target}`)
     },
   }
 }

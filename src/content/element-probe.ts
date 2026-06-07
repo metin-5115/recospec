@@ -42,6 +42,11 @@ function buildSuggestions(el: Element, snapshot: ElementSnapshot): AssertionSugg
       label: `Expect text: "${text.slice(0, 50)}"`,
       expected: text,
     })
+    suggestions.push({
+      type: 'text-contains',
+      label: `Expect text contains: "${text.slice(0, 30)}"`,
+      expected: text,
+    })
   }
 
   const tag = snapshot.tagName

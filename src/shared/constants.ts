@@ -1,4 +1,6 @@
-export const DB_NAME = 'PlayForgeDB' as const
+import type { LocatorStrategyName } from './types/locator'
+
+export const DB_NAME = 'RecospecDB' as const
 /** Latest schema version. Bumping triggers Dexie upgrade callbacks. */
 export const DB_VERSION = 2 as const
 /**
@@ -72,10 +74,41 @@ export const SENSITIVE_AUTOCOMPLETE_VALUES: readonly string[] = [
 export const SECRET_PARAM_DEFAULT_VALUE = 'change-me' as const
 
 /** Prefix for environment variable names emitted by adapters. */
-export const ENV_VAR_PREFIX = 'PLAYFORGE_' as const
+export const ENV_VAR_PREFIX = 'RECOSPEC_' as const
 
 /** Maximum number of locators evaluated in a single live "Test on Page" run. */
 export const LOCATOR_VALIDATION_MAX_TARGETS = 100 as const
 
 /** Duration (ms) to flash the on-page overlay when the user clicks "Show me". */
 export const LOCATOR_VALIDATION_HIGHLIGHT_DURATION_MS = 1000 as const
+
+/**
+ * Outbound URLs surfaced by the Help dropdown. Centralised so the bug-report
+ * and feedback routes can be updated without grepping the JSX. Internal
+ * paths (demo page, getting-started doc) are resolved via
+ * `chrome.runtime.getURL` at click time rather than encoded here.
+ */
+/**
+ * Short human-readable label shown next to each step's locator. Distinct from
+ * the internal `LocatorStrategyName` so the UI can render compact tags
+ * (e.g. `aria` instead of `aria-label`) without leaking the implementation
+ * naming throughout the side panel.
+ */
+export const STRATEGY_DISPLAY_NAME: Record<LocatorStrategyName, string> = {
+  testid: 'test-id',
+  'test-attr': 'test-attr',
+  'aria-label': 'aria',
+  'aria-labelledby': 'aria-ref',
+  'role-name': 'role',
+  label: 'label',
+  text: 'text',
+  id: 'id',
+  css: 'css',
+  xpath: 'xpath',
+}
+
+export const EXTERNAL_URLS = {
+  reportBug: 'https://github.com/metin-5115/recospec/issues/new?template=bug_report.yml',
+  sendFeedback:
+    'https://github.com/metin-5115/recospec/issues/new?template=feedback.yml&title=Feedback%3A%20',
+} as const

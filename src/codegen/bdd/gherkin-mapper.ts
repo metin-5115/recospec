@@ -357,6 +357,15 @@ export function mapIRStepToGherkin(step: IRStep, keyword: GherkinKeyword): Gherk
     if (d.type === 'text')
       return {
         keyword,
+        text: `the ${JSON.stringify(subject)}${roleSuffix} should have text ${JSON.stringify(String(d.expected ?? ''))}`,
+        pattern: `the {string}${roleSuffix} should have text {string}`,
+        params: [subject, String(d.expected ?? '')],
+        paramTypes: ['string', 'string'],
+        sourceSteps: [step],
+      }
+    if (d.type === 'text-contains')
+      return {
+        keyword,
         text: `the ${JSON.stringify(subject)}${roleSuffix} should contain ${JSON.stringify(String(d.expected ?? ''))}`,
         pattern: `the {string}${roleSuffix} should contain {string}`,
         params: [subject, String(d.expected ?? '')],

@@ -4,6 +4,9 @@ import type { RecordedAction } from '@shared/types/action'
 import type { GeneratedCode, FrameworkId } from '@shared/types/generated'
 import type { ScoredLocator } from '@shared/types/locator'
 import type { StepPatch } from '@shared/types/messages'
+import type { RecospecError } from '@shared/errors'
+
+export type SidePanelTab = 'recording' | 'history'
 
 interface SessionStore {
   activeSession: Session | null
@@ -18,7 +21,18 @@ interface SessionStore {
   autoWaitEnabled: boolean
   /** Emit Gherkin .feature + step definitions alongside the page objects. */
   bddEnabled: boolean
+  /** Active side-panel tab. Lives in the store so the ErrorBoundary can route the user to History. */
+  activeTab: SidePanelTab
+  /**
+   * Async error surfaced from runtime code paths that the React render-time
+   * ErrorBoundary cannot catch on its own (rejected sendMessage, background
+   * broadcasts, etc.). SidePanelApp re-throws this during render to let the
+   * boundary pick the contextual branch.
+   */
+  asyncError: RecospecError | null
   setActiveSession: (session: Session | null) => void
+  setActiveTab: (tab: SidePanelTab) => void
+  setAsyncError: (error: RecospecError | null) => void
   appendStep: (step: RecordedAction) => void
   deleteStep: (actionId: string) => void
   reorderSteps: (fromIndex: number, toIndex: number) => string[]
@@ -37,9 +51,9 @@ interface SessionStore {
   setBddEnabled: (enabled: boolean) => void
 }
 
-const FRAMEWORK_STORAGE_KEY = 'playforge.selectedFramework'
-const AUTO_WAIT_STORAGE_KEY = 'playforge.autoWaitEnabled'
-const BDD_ENABLED_STORAGE_KEY = 'playforge.bddEnabled'
+const FRAMEWORK_STORAGE_KEY = 'recospec.selectedFramework'
+const AUTO_WAIT_STORAGE_KEY = 'recospec.autoWaitEnabled'
+const BDD_ENABLED_STORAGE_KEY = 'recospec.bddEnabled'
 
 function loadInitialAutoWait(): boolean {
   try {
@@ -94,7 +108,11 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
   selectedFramework: loadInitialFramework(),
   autoWaitEnabled: loadInitialAutoWait(),
   bddEnabled: loadInitialBddEnabled(),
+  activeTab: 'recording',
+  asyncError: null,
   setActiveSession: (session) => set({ activeSession: session }),
+  setActiveTab: (tab) => set({ activeTab: tab }),
+  setAsyncError: (error) => set({ asyncError: error }),
   appendStep: (step) => set((state) => ({ steps: [...state.steps, step] })),
   deleteStep: (actionId) =>
     set((state) => ({

@@ -7,8 +7,10 @@
   --color-border: #e2e8f0;
   --color-border-strong: #cbd5e1;
   --color-text: #0f172a;
-  --color-text-muted: #64748b;
-  --color-text-subtle: #94a3b8;
+  /* Darkened so small-text contrast meets WCAG 2.1 AA (4.5:1) against the
+     `--color-bg` / `bg-elevated` / `bg-muted` surfaces. */
+  --color-text-muted: #475569;
+  --color-text-subtle: #64748b;
   --color-accent: #4f46e5;
   --color-accent-hover: #4338ca;
   --color-accent-soft: #eef2ff;
@@ -90,6 +92,18 @@
   .animate-backdrop-in {
     animation: backdrop-in 160ms ease-out;
   }
+
+  .animate-step-flash {
+    animation: step-flash 800ms ease-out;
+  }
+
+  .animate-fade-up {
+    animation: fade-up 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .animate-pulse-ring {
+    animation: pulse-ring 2600ms cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
 }
 
 @keyframes modal-in {
@@ -109,6 +123,49 @@
   }
   to {
     opacity: 1;
+  }
+}
+
+@keyframes step-flash {
+  0% {
+    background-color: var(--color-accent-soft);
+    box-shadow:
+      inset 3px 0 0 0 var(--color-accent),
+      0 10px 25px -10px rgb(99 102 241 / 0.45),
+      0 4px 12px -6px rgb(139 92 246 / 0.35);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow:
+      inset 3px 0 0 0 transparent,
+      0 10px 25px -10px rgb(99 102 241 / 0),
+      0 4px 12px -6px rgb(139 92 246 / 0);
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.45;
+  }
+  70% {
+    transform: scale(1.7);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.7);
+    opacity: 0;
   }
 }
 

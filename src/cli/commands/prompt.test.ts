@@ -130,7 +130,7 @@ let warnSpy: ReturnType<typeof vi.spyOn>
 let errorSpy: ReturnType<typeof vi.spyOn>
 
 beforeEach(() => {
-  tmp = mkdtempSync(join(tmpdir(), 'playforge-prompt-'))
+  tmp = mkdtempSync(join(tmpdir(), 'recospec-prompt-'))
   jsonPath = join(tmp, 'session.json')
   writeFileSync(jsonPath, JSON.stringify(makePayload()), 'utf8')
   logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
@@ -149,23 +149,23 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('runPrompt — slash mode', () => {
-  it('writes .claude/commands/playforge-<slug>.md with YAML frontmatter', async () => {
+  it('writes .claude/commands/recospec-<slug>.md with YAML frontmatter', async () => {
     await runPrompt({
       json: jsonPath,
       projectDir: tmp,
       mode: 'slash',
       framework: 'playwright-ts',
     })
-    const outPath = join(tmp, '.claude', 'commands', 'playforge-login-flow.md')
+    const outPath = join(tmp, '.claude', 'commands', 'recospec-login-flow.md')
     expect(existsSync(outPath)).toBe(true)
     const md = readFileSync(outPath, 'utf8')
     expect(md.startsWith('---\n')).toBe(true)
-    expect(md).toContain('description: PlayForge recorded flow — login-flow')
+    expect(md).toContain('description: Recospec recorded flow — login-flow')
     expect(md).toContain('allowed-tools:')
     expect(md).toContain('framework: playwright-ts')
     // Sensitive value redacted by default.
     expect(md).not.toContain('supersecret123')
-    expect(md).toContain('<REDACTED:PLAYFORGE_PASSWORD>')
+    expect(md).toContain('<REDACTED:RECOSPEC_PASSWORD>')
   })
 
   it('honours -n / slug override for the output filename', async () => {
@@ -175,7 +175,7 @@ describe('runPrompt — slash mode', () => {
       mode: 'slash',
       slug: 'auth-happy-path',
     })
-    expect(existsSync(join(tmp, '.claude', 'commands', 'playforge-auth-happy-path.md'))).toBe(true)
+    expect(existsSync(join(tmp, '.claude', 'commands', 'recospec-auth-happy-path.md'))).toBe(true)
   })
 })
 
@@ -202,8 +202,8 @@ describe('runPrompt — claude-md mode', () => {
       mode: 'claude-md',
     })
     const md = readFileSync(join(tmp, 'CLAUDE.md'), 'utf8')
-    expect(md).toContain('<!-- BEGIN playforge:login-flow -->')
-    expect(md).toContain('<!-- END playforge:login-flow -->')
+    expect(md).toContain('<!-- BEGIN recospec:login-flow -->')
+    expect(md).toContain('<!-- END recospec:login-flow -->')
     // No frontmatter — claude-md uses marker comments instead.
     expect(md.startsWith('---\n')).toBe(false)
   })
@@ -219,14 +219,14 @@ describe('runPrompt — claude-md mode', () => {
     const md = readFileSync(claudeMdPath, 'utf8')
     expect(md).toContain('# My Project')
     expect(md).toContain('Pre-existing rules go here.')
-    expect(md).toContain('<!-- BEGIN playforge:login-flow -->')
+    expect(md).toContain('<!-- BEGIN recospec:login-flow -->')
     // Order: existing content first, then our block.
     expect(md.indexOf('# My Project')).toBeLessThan(
-      md.indexOf('<!-- BEGIN playforge:login-flow -->'),
+      md.indexOf('<!-- BEGIN recospec:login-flow -->'),
     )
   })
 
-  it('replaces the existing playforge block in place (idempotent)', async () => {
+  it('replaces the existing recospec block in place (idempotent)', async () => {
     const claudeMdPath = join(tmp, 'CLAUDE.md')
 
     await runPrompt({
@@ -249,7 +249,7 @@ describe('runPrompt — claude-md mode', () => {
     const secondPass = readFileSync(claudeMdPath, 'utf8')
 
     // Only one block — no duplicate markers.
-    const beginCount = (secondPass.match(/<!-- BEGIN playforge:login-flow -->/g) ?? []).length
+    const beginCount = (secondPass.match(/<!-- BEGIN recospec:login-flow -->/g) ?? []).length
     expect(beginCount).toBe(1)
     expect(secondPass).toContain('https://example.com/login-v2')
     expect(secondPass).not.toContain('https://example.com/login\n')
@@ -267,7 +267,7 @@ describe('runPrompt — claude-md mode', () => {
     })
     const md = readFileSync(claudeMdPath, 'utf8')
     expect(md).toContain('irrelevant')
-    expect(md).toContain('<!-- BEGIN playforge:login-flow -->')
+    expect(md).toContain('<!-- BEGIN recospec:login-flow -->')
   })
 })
 
@@ -279,7 +279,7 @@ describe('runPrompt — conflict handling for slash/prompt modes', () => {
       projectDir: tmp,
       mode: 'slash',
     })
-    const outPath = join(tmp, '.claude', 'commands', 'playforge-login-flow.md')
+    const outPath = join(tmp, '.claude', 'commands', 'recospec-login-flow.md')
     const before = readFileSync(outPath, 'utf8')
 
     // Tamper with the file so we can detect whether it was overwritten.
@@ -297,7 +297,7 @@ describe('runPrompt — conflict handling for slash/prompt modes', () => {
   })
 
   it('overwrites with --force without prompting', async () => {
-    const outPath = join(tmp, '.claude', 'commands', 'playforge-login-flow.md')
+    const outPath = join(tmp, '.claude', 'commands', 'recospec-login-flow.md')
     await runPrompt({ json: jsonPath, projectDir: tmp, mode: 'slash' })
     writeFileSync(outPath, 'USER MODIFIED CONTENT\n', 'utf8')
 
@@ -310,7 +310,7 @@ describe('runPrompt — conflict handling for slash/prompt modes', () => {
     })
     const md = readFileSync(outPath, 'utf8')
     expect(md).not.toContain('USER MODIFIED CONTENT')
-    expect(md).toContain('<!-- Generated by PlayForge')
+    expect(md).toContain('<!-- Generated by Recospec')
   })
 
   it('writes to a .new sibling when the user picks rename', async () => {
@@ -321,7 +321,7 @@ describe('runPrompt — conflict handling for slash/prompt modes', () => {
       projectDir: tmp,
       mode: 'slash',
     })
-    const renamed = join(tmp, '.claude', 'commands', 'playforge-login-flow.new.md')
+    const renamed = join(tmp, '.claude', 'commands', 'recospec-login-flow.new.md')
     expect(existsSync(renamed)).toBe(true)
   })
 })

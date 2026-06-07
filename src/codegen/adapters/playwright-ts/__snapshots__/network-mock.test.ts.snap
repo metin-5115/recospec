@@ -6,11 +6,11 @@ exports[`playwright adapter — network mock generation > matches snapshot with 
 export class LoginPage {
   constructor(private readonly page: Page) {}
 
-  get emailInput() { return page.getByTestId("email"); }
+  get emailInput() { return this.page.getByTestId("email"); }
 
-  get passwordInput() { return page.getByTestId("password"); }
+  get passwordInput() { return this.page.getByTestId("password"); }
 
-  get submitBtn() { return page.getByTestId("submit-btn"); }
+  get submitBtn() { return this.page.getByTestId("submit-btn"); }
 
   async goto() {
     await this.page.goto("/login");

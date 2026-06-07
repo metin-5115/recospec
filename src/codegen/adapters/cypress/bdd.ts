@@ -167,7 +167,7 @@ export default defineConfig({
 function renderBddPackageJson(): string {
   return JSON.stringify(
     {
-      name: 'playforge-generated-tests',
+      name: 'recospec-generated-tests',
       version: '1.0.0',
       private: true,
       scripts: {

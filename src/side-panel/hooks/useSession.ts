@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useMemo, useState } from 'react'
+import { useEffect, useCallback, useMemo, useRef, useState } from 'react'
 import { useSessionStore } from '../sessionStore'
 import { onUIMessage } from '@shared/messaging/listen'
 import { sendToBackground } from '@shared/messaging/send'
@@ -8,6 +8,13 @@ import { downloadJsonExport } from '@codegen/export/json-export'
 import { downloadZipExport } from '@codegen/export/zip-export'
 import { generate } from '@codegen/index'
 import { LOCATOR_VALIDATION_MAX_TARGETS } from '@shared/constants'
+import {
+  ContentScriptMissingError,
+  IndexedDBQuotaError,
+  ServiceWorkerColdError,
+  isPortDisconnectedError,
+} from '@shared/errors'
+import { suggestionsForSnapshot } from '@shared/assertion-suggestions'
 import type { AssertionSuggestion } from '@shared/types/action'
 import type { LocatorBundle, ScoredLocator } from '@shared/types/locator'
 import type { ElementSnapshot, RecordedAction } from '@shared/types/action'
@@ -15,12 +22,40 @@ import type { Session } from '@shared/types/session'
 import type { TestDataConfig } from '@codegen/ir/types'
 import type { LocatorValidationResult, LocatorValidationTarget } from '@shared/types/messages'
 
+export type ReplayResultStatus = 'running' | 'pass' | 'fail' | 'skipped'
+
+export interface ReplayState {
+  running: boolean
+  totalSteps: number
+  passed: number
+  failed: number
+  skipped: number
+  currentActionId: string | null
+  results: Record<string, ReplayResultStatus>
+  aborted: boolean
+  error: string | null
+}
+
+const initialReplayState: ReplayState = {
+  running: false,
+  totalSteps: 0,
+  passed: 0,
+  failed: 0,
+  skipped: 0,
+  currentActionId: null,
+  results: {},
+  aborted: false,
+  error: null,
+}
+
 interface AssertionContext {
   suggestions: AssertionSuggestion[]
   locatorBundle: LocatorBundle | null
   elementSnapshot: ElementSnapshot
   pageMetadata: { url: string; title: string }
   screenshotDataUrl?: string
+  /** Set when the builder was opened from a stopped step row, not the live probe. */
+  afterActionId?: string
 }
 
 interface IterationSuggestion {
@@ -51,6 +86,7 @@ export function useSession() {
     selectedFramework,
     autoWaitEnabled,
     bddEnabled,
+    asyncError,
     setActiveSession,
     appendStep,
     deleteStep,
@@ -67,6 +103,7 @@ export function useSession() {
     setSelectedFramework,
     setAutoWaitEnabled,
     setBddEnabled,
+    setAsyncError,
   } = useSessionStore()
 
   const [isProbeActive, setIsProbeActive] = useState(false)
@@ -81,6 +118,9 @@ export function useSession() {
   const [isValidating, setIsValidating] = useState(false)
   const [iterationSuggestion, setIterationSuggestion] = useState<IterationSuggestion | null>(null)
   const [diffSelection, setDiffSelection] = useState<DiffSelection | null>(null)
+  const [lastStepId, setLastStepId] = useState<string | null>(null)
+  const [replayState, setReplayState] = useState<ReplayState>(initialReplayState)
+  const flashTimerRef = useRef<number | null>(null)
 
   const renameMethod = useCallback((key: string, value: string) => {
     setMethodRenames((prev) => ({ ...prev, [key]: value }))
@@ -98,6 +138,14 @@ export function useSession() {
     const cleanup = onUIMessage((message) => {
       if (message.type === 'STEP_RECORDED') {
         appendStep(message.step)
+        if (flashTimerRef.current !== null) {
+          window.clearTimeout(flashTimerRef.current)
+        }
+        setLastStepId(message.step.actionId)
+        flashTimerRef.current = window.setTimeout(() => {
+          setLastStepId(null)
+          flashTimerRef.current = null
+        }, 800)
       } else if (message.type === 'STEPS_SYNCED') {
         syncSteps(message.steps)
       } else if (message.type === 'SESSION_STATE_CHANGED') {
@@ -133,9 +181,45 @@ export function useSession() {
           parentIterationNumber: message.parentIterationNumber,
           parentTimestamp: message.parentTimestamp,
         })
+      } else if (message.type === 'STORAGE_QUOTA_EXCEEDED') {
+        setAsyncError(new IndexedDBQuotaError())
+      } else if (message.type === 'REPLAY_STARTED') {
+        setReplayState({
+          ...initialReplayState,
+          running: true,
+          totalSteps: message.totalSteps,
+        })
+      } else if (message.type === 'REPLAY_STEP_STARTED') {
+        setReplayState((prev) => ({
+          ...prev,
+          currentActionId: message.actionId,
+          results: { ...prev.results, [message.actionId]: 'running' },
+        }))
+      } else if (message.type === 'REPLAY_STEP_RESULT') {
+        setReplayState((prev) => ({
+          ...prev,
+          results: { ...prev.results, [message.actionId]: message.status },
+          passed: prev.passed + (message.status === 'pass' ? 1 : 0),
+          failed: prev.failed + (message.status === 'fail' ? 1 : 0),
+          skipped: prev.skipped + (message.status === 'skipped' ? 1 : 0),
+        }))
+      } else if (message.type === 'REPLAY_DONE') {
+        setReplayState((prev) => ({
+          ...prev,
+          running: false,
+          currentActionId: null,
+          aborted: message.aborted ?? false,
+          error: message.error ?? null,
+        }))
       }
     })
-    return cleanup
+    return () => {
+      cleanup()
+      if (flashTimerRef.current !== null) {
+        window.clearTimeout(flashTimerRef.current)
+        flashTimerRef.current = null
+      }
+    }
   }, [
     appendStep,
     syncSteps,
@@ -144,6 +228,7 @@ export function useSession() {
     setCodeGenError,
     upsertSession,
     removeSession,
+    setAsyncError,
   ])
 
   const [isStarting, setIsStarting] = useState(false)
@@ -170,6 +255,7 @@ export function useSession() {
       elementSnapshot: ElementSnapshot,
       pageMetadata: { url: string; title: string },
       customExpected?: string,
+      afterActionId?: string,
     ) => {
       if (!activeSession) return
       setAssertionContext(null)
@@ -181,10 +267,57 @@ export function useSession() {
         locatorBundle,
         elementSnapshot,
         pageMetadata,
+        afterActionId,
       })
     },
     [activeSession],
   )
+
+  /**
+   * Open the AssertionBuilder seeded from a stopped step. The element
+   * snapshot + recorded locators live on the action itself, so we can build
+   * suggestions without re-probing the live page.
+   */
+  const openAssertionForStep = useCallback(
+    (actionId: string) => {
+      if (!activeSession) return
+      const step = steps.find((s) => s.actionId === actionId)
+      if (!step?.target?.elementSnapshot) return
+      const snapshot = step.target.elementSnapshot
+      const value = (step.payload?.value as string | undefined) ?? undefined
+      const suggestions = suggestionsForSnapshot(snapshot, step.pageTitle ?? '', value)
+      const bundle: LocatorBundle = {
+        primary: step.target.primaryLocator,
+        fallbacks: step.target.fallbackLocators,
+        rejected: [],
+        allCandidates: step.target.allCandidates ?? [
+          step.target.primaryLocator,
+          ...step.target.fallbackLocators,
+        ],
+      }
+      setAssertionContext({
+        suggestions,
+        locatorBundle: bundle,
+        elementSnapshot: snapshot,
+        pageMetadata: { url: step.pageUrl, title: step.pageTitle ?? '' },
+        afterActionId: actionId,
+      })
+    },
+    [activeSession, steps],
+  )
+
+  const replayCurrentSession = useCallback(async () => {
+    if (!activeSession) return
+    if (replayState.running) return
+    if (steps.length === 0) return
+    setReplayState({ ...initialReplayState, running: true, totalSteps: steps.length })
+    await sendToBackground({ type: 'REPLAY_REQUEST', sessionId: activeSession.sessionId })
+  }, [activeSession, replayState.running, steps.length])
+
+  const abortReplay = useCallback(async () => {
+    if (!activeSession || !replayState.running) return
+    await sendToBackground({ type: 'REPLAY_ABORT', sessionId: activeSession.sessionId })
+  }, [activeSession, replayState.running])
 
   const startRecording = useCallback(async () => {
     if (isStarting) return
@@ -205,20 +338,44 @@ export function useSession() {
       clearSteps()
       setGeneratedCode(null)
       setCodeGenError(null)
-      await sendToBackground({
-        type: 'SESSION_START',
-        tabId: tab.id,
-        metadata: {
-          userAgent: navigator.userAgent,
-          viewport: { width: window.screen.width, height: window.screen.height },
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        },
-        config: {
-          captureClicks: true,
-          captureInputs: true,
-          captureNavigation: true,
-        },
-      })
+
+      // Strict send — chrome.runtime.sendMessage rejects with "Receiving end
+      // does not exist" when the SW is dead. We surface that through the
+      // typed boundary so the retry CTA can wake the worker via PING.
+      try {
+        await chrome.runtime.sendMessage({
+          type: 'SESSION_START',
+          tabId: tab.id,
+          metadata: {
+            userAgent: navigator.userAgent,
+            viewport: { width: window.screen.width, height: window.screen.height },
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          },
+          config: {
+            captureClicks: true,
+            captureInputs: true,
+            captureNavigation: true,
+          },
+        })
+      } catch (err) {
+        if (isPortDisconnectedError(err)) {
+          setAsyncError(new ServiceWorkerColdError(err))
+          return
+        }
+        throw err
+      }
+
+      // Probe the content script. `chrome.tabs.sendMessage` rejects with
+      // "Receiving end does not exist" only when no listener exists in the
+      // tab — i.e. the recorder content script never loaded (chrome:// page,
+      // extension was just reloaded, etc.). Live tabs answer with undefined.
+      try {
+        await chrome.tabs.sendMessage(tab.id, { type: 'PROBE' })
+      } catch (err) {
+        if (isPortDisconnectedError(err)) {
+          setAsyncError(new ContentScriptMissingError(tab.id, err))
+        }
+      }
     } finally {
       setIsStarting(false)
     }
@@ -572,5 +729,11 @@ export function useSession() {
     diffSelection,
     openDiff,
     closeDiff,
+    lastStepId,
+    asyncError,
+    replayState,
+    replayCurrentSession,
+    abortReplay,
+    openAssertionForStep,
   }
 }

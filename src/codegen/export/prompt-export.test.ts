@@ -170,7 +170,7 @@ const loginFlow: RecordedAction[] = [
 ]
 
 const searchFlow: RecordedAction[] = [
-  fillAction(0, 'Search', 'PlayForge', { type: 'search' }, 'https://example.com/search'),
+  fillAction(0, 'Search', 'Recospec', { type: 'search' }, 'https://example.com/search'),
   keyAction(1, 'Enter'),
 ]
 
@@ -197,12 +197,12 @@ describe('buildPromptDocument — login flow (sensitive redaction)', () => {
     const md = renderPromptMarkdown(doc)
 
     expect(md).not.toContain('supersecret123')
-    expect(md).toContain('<REDACTED:PLAYFORGE_PASSWORD>')
+    expect(md).toContain('<REDACTED:RECOSPEC_PASSWORD>')
 
-    const pwEntry = doc.redactionMap.find((r) => r.envVarName === 'PLAYFORGE_PASSWORD')
+    const pwEntry = doc.redactionMap.find((r) => r.envVarName === 'RECOSPEC_PASSWORD')
     expect(pwEntry).toBeDefined()
     expect(pwEntry?.rawValue).toBe('supersecret123')
-    expect(pwEntry?.placeholder).toBe('<REDACTED:PLAYFORGE_PASSWORD>')
+    expect(pwEntry?.placeholder).toBe('<REDACTED:RECOSPEC_PASSWORD>')
 
     expect(md).toContain('## Sensitive values contract')
     expect(md).toContain('`password` 🔒')
@@ -223,7 +223,7 @@ describe('buildPromptDocument — search flow (single inferred method)', () => {
 
     const md = renderPromptMarkdown(doc)
     expect(md).toContain('search')
-    expect(md).toContain('PlayForge')
+    expect(md).toContain('Recospec')
     expect(md).toContain('## Pages & inferred methods')
     expect(md).toMatchSnapshot()
   })
@@ -271,7 +271,7 @@ describe('buildPromptDocument — frontmatter only in slash mode', () => {
     expect(doc.frontmatter).toBeDefined()
     const md = renderPromptMarkdown(doc)
     expect(md.startsWith('---\n')).toBe(true)
-    expect(md).toContain('description: PlayForge recorded flow')
+    expect(md).toContain('description: Recospec recorded flow')
     expect(md).toContain('allowed-tools:')
   })
 
@@ -292,16 +292,16 @@ describe('buildPromptDocument — frontmatter only in slash mode', () => {
 })
 
 describe('buildPromptDocument — claude-md marker block', () => {
-  it('wraps the document in BEGIN/END playforge:<slug> markers', () => {
+  it('wraps the document in BEGIN/END recospec:<slug> markers', () => {
     const doc = buildPromptDocument(makePayload(loginFlow), {
       mode: 'claude-md',
       flowSlug: 'login',
     })
     const md = renderPromptMarkdown(doc)
-    expect(md).toContain('<!-- BEGIN playforge:login -->')
-    expect(md).toContain('<!-- END playforge:login -->')
-    expect(md.indexOf('<!-- BEGIN playforge:login -->')).toBeLessThan(
-      md.indexOf('<!-- END playforge:login -->'),
+    expect(md).toContain('<!-- BEGIN recospec:login -->')
+    expect(md).toContain('<!-- END recospec:login -->')
+    expect(md.indexOf('<!-- BEGIN recospec:login -->')).toBeLessThan(
+      md.indexOf('<!-- END recospec:login -->'),
     )
   })
 })

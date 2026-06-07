@@ -34,7 +34,7 @@ function legacyPlaceholderSignature(startUrl: string): string {
   return `legacy::${startUrl}`
 }
 
-export class PlayForgeDB extends Dexie {
+export class RecospecDB extends Dexie {
   sessions!: Table<Session, string>
   actions!: Table<RecordedAction, string>
   generations!: Table<GeneratedCode, string>
@@ -81,4 +81,4 @@ export class PlayForgeDB extends Dexie {
   }
 }
 
-export const db = new PlayForgeDB()
+export const db = new RecospecDB()

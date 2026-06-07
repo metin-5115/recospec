@@ -7,7 +7,7 @@ import { loadRc, RC_FILENAME } from './config-loader'
 let tmp: string
 
 beforeEach(() => {
-  tmp = mkdtempSync(join(tmpdir(), 'playforge-rc-'))
+  tmp = mkdtempSync(join(tmpdir(), 'recospec-rc-'))
 })
 afterEach(() => {
   rmSync(tmp, { recursive: true, force: true })
@@ -24,7 +24,7 @@ describe('loadRc', () => {
     const loaded = loadRc(tmp)
     expect(loaded).not.toBeNull()
     expect(loaded?.config).toEqual(rc)
-    expect(loaded?.source).toMatch(/\.playforgerc\.json$/)
+    expect(loaded?.source).toMatch(/\.recospecrc\.json$/)
   })
 
   it('returns null for malformed JSON (caller logs)', () => {

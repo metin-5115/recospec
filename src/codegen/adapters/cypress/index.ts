@@ -15,7 +15,7 @@ let TEST_DATA: TestDataConfig | undefined
 export function renderScaffold(): GeneratedFile[] {
   const packageJson = JSON.stringify(
     {
-      name: 'playforge-generated-tests',
+      name: 'recospec-generated-tests',
       version: '1.0.0',
       private: true,
       scripts: {

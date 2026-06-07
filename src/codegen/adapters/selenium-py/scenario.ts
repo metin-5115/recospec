@@ -36,6 +36,11 @@ function renderAssertion(d: AssertionDetail, el: IRElement | undefined, indent: 
       const expected = pyStr(String(d.expected ?? ''))
       return `${indent}assert driver.find_element(*${tuple}).text == ${expected}`
     }
+    case 'text-contains': {
+      if (!tuple) return `${indent}# assert text contains (no element)`
+      const expected = pyStr(String(d.expected ?? ''))
+      return `${indent}assert ${expected} in driver.find_element(*${tuple}).text`
+    }
     case 'value': {
       if (!tuple) return `${indent}# assert value (no element)`
       const expected = pyStr(String(d.expected ?? ''))

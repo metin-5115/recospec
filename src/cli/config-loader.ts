@@ -2,9 +2,9 @@ import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import type { FrameworkId } from '@shared/types/generated'
 
-/** Persisted CLI configuration. Mirrors the schema written by `playforge init`. */
-export interface PlayforgeRc {
-  /** Pinned framework — when set, `playforge add` skips auto-detection. */
+/** Persisted CLI configuration. Mirrors the schema written by `recospec init`. */
+export interface RecospecRc {
+  /** Pinned framework — when set, `recospec add` skips auto-detection. */
   framework?: FrameworkId
   /** Default value for the `--bdd` flag. */
   bdd?: boolean
@@ -18,20 +18,20 @@ export interface PlayforgeRc {
   version?: 1
 }
 
-export const RC_FILENAME = '.playforgerc.json'
+export const RC_FILENAME = '.recospecrc.json'
 
 export interface LoadedRc {
-  config: PlayforgeRc
+  config: RecospecRc
   /** Absolute path of the rc file the config was read from. */
   source: string
 }
 
-/** Read `.playforgerc.json` from `projectDir`, or `null` if missing/malformed. */
+/** Read `.recospecrc.json` from `projectDir`, or `null` if missing/malformed. */
 export function loadRc(projectDir: string): LoadedRc | null {
   const abs = resolve(projectDir, RC_FILENAME)
   if (!existsSync(abs)) return null
   try {
-    const parsed = JSON.parse(readFileSync(abs, 'utf8')) as PlayforgeRc
+    const parsed = JSON.parse(readFileSync(abs, 'utf8')) as RecospecRc
     return { config: parsed, source: abs }
   } catch {
     // Malformed file — surface to the caller by returning null; caller logs.
@@ -39,6 +39,6 @@ export function loadRc(projectDir: string): LoadedRc | null {
   }
 }
 
-export const DEFAULT_RC: PlayforgeRc = {
+export const DEFAULT_RC: RecospecRc = {
   version: 1,
 }

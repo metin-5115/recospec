@@ -57,7 +57,7 @@ describe('test-data parameterization — playwright-ts', () => {
 
   it('renders process.env.X ?? default for password fields by default', () => {
     const out = playwrightTsAdapter.renderScenario(scenario)
-    expect(out.content).toContain(`process.env.PLAYFORGE_PASSWORD ?? "change-me"`)
+    expect(out.content).toContain(`process.env.RECOSPEC_PASSWORD ?? "change-me"`)
     expect(out.content).not.toContain(`fill("hunter2")`)
   })
 
@@ -75,13 +75,13 @@ describe('test-data parameterization — playwright-ts', () => {
           isSecret: true,
           defaultValue: 'demo123',
           useEnvVar: true,
-          envVarName: 'PLAYFORGE_PASSWORD',
+          envVarName: 'RECOSPEC_PASSWORD',
         },
       ],
     }
     playwrightTsAdapter.applyOptions?.({ testData: cfg })
     const out = playwrightTsAdapter.renderScenario(scenario)
-    expect(out.content).toContain(`process.env.PLAYFORGE_PASSWORD ?? "demo123"`)
+    expect(out.content).toContain(`process.env.RECOSPEC_PASSWORD ?? "demo123"`)
   })
 
   it('emits .env.example only when env-var params exist', () => {
@@ -98,13 +98,13 @@ describe('test-data parameterization — playwright-ts', () => {
             isSecret: true,
             defaultValue: 'change-me',
             useEnvVar: true,
-            envVarName: 'PLAYFORGE_PASSWORD',
+            envVarName: 'RECOSPEC_PASSWORD',
           },
         ],
       },
     })
     const env = playwrightTsAdapter.renderScaffold().find((f) => f.filename === '.env.example')
-    expect(env?.content).toContain('PLAYFORGE_PASSWORD=')
+    expect(env?.content).toContain('RECOSPEC_PASSWORD=')
   })
 })
 
@@ -129,7 +129,7 @@ describe('test-data parameterization — cypress', () => {
             isSecret: true,
             defaultValue: 'change-me',
             useEnvVar: true,
-            envVarName: 'PLAYFORGE_PASSWORD',
+            envVarName: 'RECOSPEC_PASSWORD',
           },
         ],
       },
@@ -148,7 +148,7 @@ describe('test-data parameterization — selenium-py', () => {
 
   it('renders os.environ.get(VAR, default) for password fields', () => {
     const out = seleniumPyAdapter.renderScenario(scenario)
-    expect(out.content).toContain(`os.environ.get('PLAYFORGE_PASSWORD', 'change-me')`)
+    expect(out.content).toContain(`os.environ.get('RECOSPEC_PASSWORD', 'change-me')`)
   })
 
   it('inserts `import os` only when env-var lookups are present', () => {
@@ -161,7 +161,7 @@ describe('test-data parameterization — selenium-py', () => {
             isSecret: true,
             defaultValue: 'change-me',
             useEnvVar: true,
-            envVarName: 'PLAYFORGE_PASSWORD',
+            envVarName: 'RECOSPEC_PASSWORD',
           },
         ],
       },
@@ -180,13 +180,13 @@ describe('test-data parameterization — selenium-py', () => {
             isSecret: true,
             defaultValue: 'change-me',
             useEnvVar: true,
-            envVarName: 'PLAYFORGE_PASSWORD',
+            envVarName: 'RECOSPEC_PASSWORD',
           },
         ],
       },
     })
     const env = seleniumPyAdapter.renderScaffold().find((f) => f.filename === '.env.example')
-    expect(env?.content).toContain('PLAYFORGE_PASSWORD=')
+    expect(env?.content).toContain('RECOSPEC_PASSWORD=')
   })
 })
 
@@ -197,7 +197,7 @@ describe('test-data parameterization — selenium-java', () => {
 
   it('renders System.getenv().getOrDefault for password fields', () => {
     const out = seleniumJavaAdapter.renderScenario(scenario)
-    expect(out.content).toContain(`System.getenv().getOrDefault("PLAYFORGE_PASSWORD", "change-me")`)
+    expect(out.content).toContain(`System.getenv().getOrDefault("RECOSPEC_PASSWORD", "change-me")`)
   })
 
   it('emits test-data.properties.example under src/test/resources when params exist', () => {
@@ -210,7 +210,7 @@ describe('test-data parameterization — selenium-java', () => {
             isSecret: true,
             defaultValue: 'change-me',
             useEnvVar: true,
-            envVarName: 'PLAYFORGE_PASSWORD',
+            envVarName: 'RECOSPEC_PASSWORD',
           },
         ],
       },
@@ -218,7 +218,7 @@ describe('test-data parameterization — selenium-java', () => {
     const props = seleniumJavaAdapter
       .renderScaffold()
       .find((f) => f.filename === 'src/test/resources/test-data.properties.example')
-    expect(props?.content).toContain('PLAYFORGE_PASSWORD=')
+    expect(props?.content).toContain('RECOSPEC_PASSWORD=')
   })
 })
 

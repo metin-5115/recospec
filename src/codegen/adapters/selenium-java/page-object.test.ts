@@ -154,6 +154,12 @@ describe('selenium-java renderPageObject — assertions', () => {
         assertionDetail: { type: 'text', expected: 'Sign In' },
       },
       {
+        id: 'a3b',
+        action: 'assert',
+        element: signInEl,
+        assertionDetail: { type: 'text-contains', expected: 'Sign' },
+      },
+      {
         id: 'a4',
         action: 'assert',
         element: signInEl,
@@ -168,6 +174,10 @@ describe('selenium-java renderPageObject — assertions', () => {
 
   it('renders text equality assertion', () => {
     expect(renderPageObject(page)).toContain(`signInButton.getText().equals("Sign In")`)
+  })
+
+  it('renders text-contains assertion via getText().contains(...)', () => {
+    expect(renderPageObject(page)).toContain(`signInButton.getText().contains("Sign")`)
   })
 
   it('renders count assertion via findElements', () => {

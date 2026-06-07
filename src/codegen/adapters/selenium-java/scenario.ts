@@ -44,6 +44,10 @@ function renderAssertion(d: AssertionDetail, el: IRElement | undefined, indent: 
       const expected = javaStr(String(d.expected ?? ''))
       return `${indent}assert driver.findElement(${byExpr}).getText().equals(${expected}) : "Expected text " + ${expected};`
     }
+    case 'text-contains': {
+      const expected = javaStr(String(d.expected ?? ''))
+      return `${indent}assert driver.findElement(${byExpr}).getText().contains(${expected}) : "Expected text to contain " + ${expected};`
+    }
     case 'value': {
       const expected = javaStr(String(d.expected ?? ''))
       return `${indent}assert driver.findElement(${byExpr}).getAttribute("value").equals(${expected}) : "Expected value " + ${expected};`

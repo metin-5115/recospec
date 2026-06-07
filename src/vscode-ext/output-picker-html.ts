@@ -29,7 +29,7 @@ export interface PickerChoices {
   bdd: boolean
   /** Forward captured network requests to the adapter as `page.route(...)` mocks. */
   mocks: boolean
-  /** Redact sensitive values in the prompt (`<REDACTED:PLAYFORGE_*>`). */
+  /** Redact sensitive values in the prompt (`<REDACTED:RECOSPEC_*>`). */
   redact: boolean
 }
 
@@ -96,7 +96,7 @@ export function renderOutputPickerHtml(
       http-equiv="Content-Security-Policy"
       content="${csp}"
     />
-    <title>PlayForge — Output Picker</title>
+    <title>Recospec — Output Picker</title>
     <style>
       :root {
         color-scheme: light dark;
@@ -231,7 +231,7 @@ export function renderOutputPickerHtml(
     </style>
   </head>
   <body>
-    <h1>Apply PlayForge session</h1>
+    <h1>Apply Recospec session</h1>
     <p class="subtitle" id="subtitle"></p>
 
     <dl class="meta" id="meta"></dl>
@@ -272,7 +272,7 @@ export function renderOutputPickerHtml(
         <span>
           <span class="label">Generate prompt</span>
           <span class="desc">
-            Write a Claude Code prompt so <code>/playforge-&lt;slug&gt;</code> can update the
+            Write a Claude Code prompt so <code>/recospec-&lt;slug&gt;</code> can update the
             test later with the locator catalogue as ground truth.
           </span>
         </span>
@@ -280,7 +280,7 @@ export function renderOutputPickerHtml(
       <div class="nested" id="prompt-mode-wrap">
         <label>
           <input type="radio" name="prompt-mode" value="slash" checked />
-          <span>Slash command — <code>.claude/commands/playforge-&lt;slug&gt;.md</code></span>
+          <span>Slash command — <code>.claude/commands/recospec-&lt;slug&gt;.md</code></span>
         </label>
         <label>
           <input type="radio" name="prompt-mode" value="claude-md" />
@@ -297,7 +297,7 @@ export function renderOutputPickerHtml(
           <span class="label">Redact sensitive values</span>
           <span class="desc">
             Replace passwords / tokens / secrets with
-            <code>&lt;REDACTED:PLAYFORGE_*&gt;</code> placeholders.
+            <code>&lt;REDACTED:RECOSPEC_*&gt;</code> placeholders.
           </span>
         </span>
       </label>
@@ -310,7 +310,7 @@ export function renderOutputPickerHtml(
 
     <p class="footnote">
       Choices are not remembered between runs. You can re-open this picker any time by
-      re-running <strong>PlayForge: Apply Existing JSON…</strong>.
+      re-running <strong>Recospec: Apply Existing JSON…</strong>.
     </p>
 
     <script nonce="${nonce}">

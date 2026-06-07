@@ -134,6 +134,18 @@ describe('isDynamicId', () => {
       expect(isDynamicId('BVID__517')).toBe(true)
     })
 
+    it('detects compound Bootstrap Vue tab button id (multiple prefixes joined)', () => {
+      expect(isDynamicId('__BVID__27___BV_tab_button__')).toBe(true)
+    })
+
+    it('detects Bootstrap Vue id with BVID marker anywhere in the id', () => {
+      expect(isDynamicId('my-component__BVID__42')).toBe(true)
+    })
+
+    it('detects ids with 3+ consecutive underscores as framework-generated', () => {
+      expect(isDynamicId('component___internal__42')).toBe(true)
+    })
+
     // Negative: snake_case semantic IDs must NOT trip the framework filter.
     it('keeps snake_case semantic IDs (single underscore separator)', () => {
       expect(isDynamicId('user_id_1')).toBe(false)

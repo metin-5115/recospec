@@ -1,12 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "PlayForge",
+  "name": "Recospec",
   "version": "0.7.0",
   "description": "Record browser interactions and generate production-ready test automation code.",
-  "permissions": ["storage", "tabs", "activeTab", "sidePanel"],
+  "permissions": ["storage", "tabs", "activeTab", "sidePanel", "alarms", "scripting"],
   "action": {
     "default_popup": "src/popup/popup.html",
-    "default_title": "PlayForge"
+    "default_title": "Recospec"
   },
   "side_panel": {
     "default_path": "src/side-panel/side-panel.html"
@@ -25,6 +25,12 @@
       "js": ["src/content/network-proxy.ts"],
       "world": "MAIN",
       "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["demo/demo-page.html", "docs/getting-started.html"],
+      "matches": ["<all_urls>"]
     }
   ]
 }
