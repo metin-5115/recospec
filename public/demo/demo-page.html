@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Recospec Demo — Login</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #f0f4f8;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #1a202c;
+      }
+
+      .card {
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow:
+          0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        padding: 40px;
+        width: 100%;
+        max-width: 400px;
+      }
+
+      .logo {
+        text-align: center;
+        margin-bottom: 32px;
+      }
+
+      .logo-icon {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        margin-bottom: 12px;
+      }
+
+      .logo h1 {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1a202c;
+      }
+
+      .logo p {
+        font-size: 14px;
+        color: #718096;
+        margin-top: 4px;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        color: #4a5568;
+        margin-bottom: 6px;
+      }
+
+      label .required {
+        color: #e53e3e;
+        margin-left: 2px;
+      }
+
+      input[type='email'],
+      input[type='password'] {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 15px;
+        color: #1a202c;
+        background: #fff;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+        outline: none;
+      }
+
+      input[type='email']:focus,
+      input[type='password']:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+      }
+
+      input[type='email'].invalid,
+      input[type='password'].invalid {
+        border-color: #e53e3e;
+        box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.1);
+      }
+
+      .field-error {
+        font-size: 13px;
+        color: #e53e3e;
+        margin-top: 5px;
+        display: none;
+      }
+
+      .field-error.visible {
+        display: block;
+      }
+
+      .checkbox-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 24px;
+      }
+
+      .checkbox-row input[type='checkbox'] {
+        width: 18px;
+        height: 18px;
+        border: 1.5px solid #cbd5e0;
+        border-radius: 4px;
+        cursor: pointer;
+        accent-color: #667eea;
+      }
+
+      .checkbox-row label {
+        margin: 0;
+        font-size: 14px;
+        color: #4a5568;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .btn-submit {
+        width: 100%;
+        padding: 12px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #ffffff;
+        font-size: 15px;
+        font-weight: 600;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition:
+          opacity 0.2s,
+          transform 0.1s;
+        letter-spacing: 0.01em;
+      }
+
+      .btn-submit:hover {
+        opacity: 0.92;
+      }
+
+      .btn-submit:active {
+        transform: scale(0.98);
+      }
+
+      .btn-submit:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .alert {
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        margin-bottom: 20px;
+        display: none;
+      }
+
+      .alert.visible {
+        display: block;
+      }
+
+      .alert-error {
+        background: #fff5f5;
+        border: 1px solid #feb2b2;
+        color: #c53030;
+      }
+
+      .alert-success {
+        background: #f0fff4;
+        border: 1px solid #9ae6b4;
+        color: #276749;
+      }
+
+      .footer-link {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 14px;
+        color: #718096;
+      }
+
+      .footer-link a {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+      }
+
+      .footer-link a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="logo">
+        <div class="logo-icon">🎭</div>
+        <h1>Welcome back</h1>
+        <p>Sign in to your account</p>
+      </div>
+
+      <!-- Global error / success banners -->
+      <div
+        id="alert-error"
+        class="alert alert-error"
+        role="alert"
+        aria-live="assertive"
+        data-testid="alert-error"
+      >
+        Invalid email or password. Please try again.
+      </div>
+      <div
+        id="alert-success"
+        class="alert alert-success"
+        role="status"
+        aria-live="polite"
+        data-testid="alert-success"
+      >
+        Login successful! Redirecting…
+      </div>
+
+      <form id="login-form" novalidate>
+        <!-- Email -->
+        <div class="form-group">
+          <label for="login-email">
+            Email Address <span class="required" aria-hidden="true">*</span>
+          </label>
+          <input
+            type="email"
+            id="login-email"
+            name="email"
+            data-testid="login-email"
+            aria-label="Email Address"
+            aria-required="true"
+            aria-describedby="email-error"
+            autocomplete="email"
+            placeholder="you@example.com"
+          />
+          <span id="email-error" class="field-error" role="alert" data-testid="email-error">
+            Please enter a valid email address.
+          </span>
+        </div>
+
+        <!-- Password -->
+        <div class="form-group">
+          <label for="login-password">
+            Password <span class="required" aria-hidden="true">*</span>
+          </label>
+          <input
+            type="password"
+            id="login-password"
+            name="password"
+            data-testid="login-password"
+            aria-label="Password"
+            aria-required="true"
+            aria-describedby="password-error"
+            autocomplete="current-password"
+            placeholder="••••••••"
+          />
+          <span id="password-error" class="field-error" role="alert" data-testid="password-error">
+            Password must be at least 8 characters.
+          </span>
+        </div>
+
+        <!-- Remember Me -->
+        <div class="checkbox-row">
+          <input
+            type="checkbox"
+            id="remember-me"
+            name="remember"
+            data-testid="remember-me"
+            aria-label="Remember me for 30 days"
+          />
+          <label for="remember-me">Remember me for 30 days</label>
+        </div>
+
+        <!-- Submit -->
+        <button
+          type="submit"
+          id="submit-login"
+          data-testid="submit-login"
+          role="button"
+          aria-label="Sign In"
+        >
+          Sign In
+        </button>
+      </form>
+
+      <div class="footer-link">
+        Don't have an account? <a href="#signup" data-testid="signup-link">Sign up</a>
+      </div>
+    </div>
+
+    <script>
+      const form = document.getElementById('login-form')
+      const emailInput = document.getElementById('login-email')
+      const passwordInput = document.getElementById('login-password')
+      const emailError = document.getElementById('email-error')
+      const passwordError = document.getElementById('password-error')
+      const alertError = document.getElementById('alert-error')
+      const alertSuccess = document.getElementById('alert-success')
+      const submitBtn = document.getElementById('submit-login')
+
+      function validateEmail(value) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+      }
+
+      function clearErrors() {
+        ;[emailInput, passwordInput].forEach((el) => el.classList.remove('invalid'))
+        ;[emailError, passwordError].forEach((el) => el.classList.remove('visible'))
+        alertError.classList.remove('visible')
+        alertSuccess.classList.remove('visible')
+      }
+
+      emailInput.addEventListener('input', () => {
+        if (emailInput.classList.contains('invalid') && validateEmail(emailInput.value)) {
+          emailInput.classList.remove('invalid')
+          emailError.classList.remove('visible')
+        }
+      })
+
+      passwordInput.addEventListener('input', () => {
+        if (passwordInput.classList.contains('invalid') && passwordInput.value.length >= 8) {
+          passwordInput.classList.remove('invalid')
+          passwordError.classList.remove('visible')
+        }
+      })
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault()
+        clearErrors()
+
+        let valid = true
+
+        if (!validateEmail(emailInput.value)) {
+          emailInput.classList.add('invalid')
+          emailError.classList.add('visible')
+          valid = false
+        }
+
+        if (passwordInput.value.length < 8) {
+          passwordInput.classList.add('invalid')
+          passwordError.classList.add('visible')
+          valid = false
+        }
+
+        if (!valid) return
+
+        submitBtn.disabled = true
+        submitBtn.textContent = 'Signing in…'
+
+        // Simulate auth: demo@example.com / password123
+        setTimeout(() => {
+          const isSuccess =
+            emailInput.value === 'demo@example.com' && passwordInput.value === 'password123'
+
+          if (isSuccess) {
+            alertSuccess.classList.add('visible')
+            form.reset()
+          } else {
+            alertError.classList.add('visible')
+          }
+
+          submitBtn.disabled = false
+          submitBtn.textContent = 'Sign In'
+        }, 800)
+      })
+    </script>
+  </body>
+</html>

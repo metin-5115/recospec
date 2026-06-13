@@ -1,0 +1,49 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`assertion codegen — renderPageObject > matches snapshot 1`] = `
+"import { type Page } from '@playwright/test';
+
+export class HomePage {
+  constructor(private readonly page: Page) {}
+
+  get submitBtn() { return this.page.getByTestId("submit-btn"); }
+
+  get welcomeHeading() { return this.page.getByText("Welcome"); }
+
+  get emailInput() { return this.page.getByLabel("Email"); }
+
+  async goto() {
+    await this.page.goto("/");
+  }
+
+  async performSteps() {
+    await expect(this.submitBtn).toBeVisible();
+    await expect(this.welcomeHeading).toHaveText("Welcome");
+    await expect(this.welcomeHeading).toContainText("Wel");
+    await expect(this.emailInput).toHaveValue("user@example.com");
+    await expect(this.submitBtn).toBeHidden();
+    await expect(this.emailInput).toHaveAttribute("disabled", "");
+    await expect(this.submitBtn).toHaveCount(2);
+  }
+}
+"
+`;
+
+exports[`assertion codegen — renderScenario > matches snapshot 1`] = `
+"import { test, expect } from '@playwright/test';
+import { HomePage } from './HomePage';
+
+test.describe('Assertion flow', () => {
+  test('full flow', async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByTestId("submit-btn")).toBeVisible();
+    await expect(page.getByText("Welcome")).toHaveText("Welcome");
+    await expect(page.getByText("Welcome")).toContainText("Wel");
+    await expect(page.getByLabel("Email")).toHaveValue("user@example.com");
+    await expect(page.getByTestId("submit-btn")).toBeHidden();
+    await expect(page.getByLabel("Email")).toHaveAttribute("disabled", "");
+    await expect(page.getByTestId("submit-btn")).toHaveCount(2);
+  });
+});
+"
+`;

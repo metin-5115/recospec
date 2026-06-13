@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Recospec Harness — Text / ID / CSS</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav class="site-nav" data-testid="site-nav" aria-label="Test pages">
+      <a href="index.html">Home</a>
+      <a href="01-attributes.html">Attributes</a>
+      <a href="02-aria-roles.html">ARIA &amp; Roles</a>
+      <a href="03-forms.html">Forms</a>
+      <a href="04-text-id-css.html" class="active">Text / ID / CSS</a>
+      <a href="05-promotion.html">Click Promotion</a>
+      <a href="06-cards.html">Card Lists</a>
+      <a href="07-dynamic-fallback.html">Dynamic &amp; Fallback</a>
+    </nav>
+
+    <main>
+      <h1>04 — Text, ID &amp; CSS</h1>
+      <p class="subtitle">The lower-priority strategies, each isolated so it genuinely wins.</p>
+
+      <section class="case text-demo">
+        <h2>Visible text <span class="expect">→ text</span></h2>
+        <p class="hint">
+          No test-id, no implicit role (a <code>&lt;div&gt;</code>/<code>&lt;span&gt;</code> is not
+          a button/link/heading), no useful class — only unique, stable text.
+        </p>
+        <span data-expect="text" data-expect-self data-expect-pw="Download invoice"
+          >Download invoice</span
+        >
+        <span data-expect="text" data-expect-self data-expect-pw="View order history"
+          >View order history</span
+        >
+      </section>
+
+      <section class="case">
+        <h2>Stable id <span class="expect">→ id</span></h2>
+        <p class="hint">A hand-authored, non-dynamic id with no label, name or placeholder.</p>
+        <div class="field">
+          <input
+            id="newsletter-email"
+            type="email"
+            data-expect="id"
+            data-expect-min="40"
+            data-expect-self
+            data-expect-pw="newsletter-email"
+          />
+        </div>
+        <div class="controls">
+          <div
+            id="checkout-summary"
+            tabindex="0"
+            data-expect="id"
+            data-expect-min="40"
+            data-expect-self
+            data-expect-pw="checkout-summary"
+          >
+            <span class="tag">Order summary</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="case">
+        <h2>Stable-class CSS <span class="expect">→ css</span></h2>
+        <p class="hint">
+          No id / text / role, but a unique, human-authored class name (not framework-generated).
+        </p>
+        <div class="controls">
+          <div
+            class="map-canvas-overlay"
+            tabindex="0"
+            data-expect="css"
+            data-expect-min="20"
+            data-expect-self
+            data-expect-pw="map-canvas-overlay"
+          ></div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

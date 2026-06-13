@@ -1,0 +1,23 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`renderPageObject > matches snapshot 1`] = `
+"import { type Page } from '@playwright/test';
+
+export class LoginPage {
+  constructor(private readonly page: Page) {}
+
+  get usernameInput() { return this.page.getByTestId("username-input"); }
+
+  get submitBtn() { return this.page.getByTestId("submit-btn"); }
+
+  async goto() {
+    await this.page.goto("/login");
+  }
+
+  async performSteps() {
+    await this.usernameInput.fill("admin");
+    await this.submitBtn.click();
+  }
+}
+"
+`;

@@ -1,0 +1,54 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`selenium-java renderScenario > matches snapshot 1`] = `
+"package tests;
+
+import java.time.Duration;
+import org.openqa.selenium.By;
+import org.openqa.selenium.Keys;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+import pages.LoginPage;
+
+public class TestLoginFlow {
+    private WebDriver driver;
+    private WebDriverWait wait;
+
+    @BeforeMethod
+    public void setUp() {
+        ChromeOptions options = new ChromeOptions();
+        if (!Boolean.parseBoolean(System.getProperty("headed", "false"))) {
+            options.addArguments("--headless=new");
+        }
+        options.addArguments("--disable-gpu");
+        options.addArguments("--window-size=1280,720");
+        driver = new ChromeDriver(options);
+        wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+    }
+
+    @Test
+    public void loginFlow() {
+        LoginPage loginPage = new LoginPage(driver);
+        driver.get("/login");
+        WebElement _el = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("[data-testid=\\"login-email\\"]")));
+        _el.clear();
+        _el.sendKeys("foo@bar.com");
+        wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//button[normalize-space()='Submit']"))).click();
+    }
+
+    @AfterMethod
+    public void tearDown() {
+        if (driver != null) {
+            driver.quit();
+        }
+    }
+}
+"
+`;

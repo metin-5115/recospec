@@ -1,0 +1,50 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`selenium-java renderPageObject > matches snapshot for LoginPage with login() method 1`] = `
+"package pages;
+
+import java.time.Duration;
+import org.openqa.selenium.By;
+import org.openqa.selenium.Keys;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
+import org.openqa.selenium.support.PageFactory;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
+public class LoginPage {
+    private final WebDriver driver;
+    private final WebDriverWait wait;
+
+    @FindBy(css = "[data-testid=\\"login-email\\"]")
+    private WebElement emailInput;
+
+    @FindBy(css = "[data-testid=\\"login-password\\"]")
+    private WebElement passwordInput;
+
+    @FindBy(xpath = "//button[normalize-space()='Sign In']")
+    private WebElement signInButton;
+
+    public LoginPage(WebDriver driver) {
+        this.driver = driver;
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        PageFactory.initElements(driver, this);
+    }
+
+    public void goTo() {
+        driver.get("/login");
+    }
+
+    public void login(String email, String password) {
+        wait.until(ExpectedConditions.visibilityOf(emailInput));
+        emailInput.clear();
+        emailInput.sendKeys(email);
+        wait.until(ExpectedConditions.visibilityOf(passwordInput));
+        passwordInput.clear();
+        passwordInput.sendKeys(password);
+        wait.until(ExpectedConditions.elementToBeClickable(signInButton)).click();
+    }
+}
+"
+`;

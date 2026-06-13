@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Recospec Harness — Card Lists</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav class="site-nav" data-testid="site-nav" aria-label="Test pages">
+      <a href="index.html">Home</a>
+      <a href="01-attributes.html">Attributes</a>
+      <a href="02-aria-roles.html">ARIA &amp; Roles</a>
+      <a href="03-forms.html">Forms</a>
+      <a href="04-text-id-css.html">Text / ID / CSS</a>
+      <a href="05-promotion.html">Click Promotion</a>
+      <a href="06-cards.html" class="active">Card Lists</a>
+      <a href="07-dynamic-fallback.html">Dynamic &amp; Fallback</a>
+    </nav>
+
+    <main>
+      <h1>06 — Repeated card lists</h1>
+      <p class="subtitle">
+        The etstur case. A leaf with a dynamic value (price / date) inside a repeated card, with no
+        unique class or test-id, must be scoped by a <em>stable</em> sibling label — never a score-0
+        positional XPath, and the dynamic value must never appear in the locator.
+      </p>
+
+      <section class="case">
+        <h2>
+          No test-id → container anchor by stable name
+          <span class="expect">→ composed (filter hasText)</span>
+        </h2>
+        <p class="hint">
+          Cards share a class, prices/dates are dynamic. The engine should scope each row by its
+          hotel name and target the leaf within.
+        </p>
+        <div class="card-grid" lang="tr">
+          <article class="hotel-card">
+            <h3
+              class="hotel-name"
+              data-expect="role-name"
+              data-expect-self
+              data-expect-pw="getByRole|Acapulco Resort Convention Spa"
+            >
+              Acapulco Resort Convention Spa
+            </h3>
+            <p
+              class="stay-dates"
+              data-expect="composed"
+              data-expect-min="1"
+              data-expect-pw="filter|hasText|Acapulco Resort Convention Spa"
+              data-expect-absent="27-31 Temmuz"
+            >
+              27-31 Temmuz 2026
+            </p>
+            <p
+              class="price"
+              data-expect="composed"
+              data-expect-min="1"
+              data-expect-self
+              data-expect-pw="filter|hasText|Acapulco Resort Convention Spa"
+              data-expect-absent="76.800"
+            >
+              76.800 TL
+            </p>
+            <button class="btn-book">Rezervasyon</button>
+          </article>
+
+          <article class="hotel-card">
+            <h3 class="hotel-name">Liberty Hotels Lykia</h3>
+            <p class="stay-dates">3-7 Ağustos 2026</p>
+            <p class="price">54.300 TL</p>
+            <button
+              class="btn-book"
+              data-expect="composed"
+              data-expect-min="1"
+              data-expect-self
+              data-expect-pw="filter|hasText|Liberty Hotels Lykia"
+              data-expect-absent="54.300"
+            >
+              Rezervasyon
+            </button>
+          </article>
+
+          <article class="hotel-card">
+            <h3 class="hotel-name">Maxx Royal Belek Golf Resort</h3>
+            <p class="stay-dates">12-19 Temmuz 2026</p>
+            <p class="price">92.150 TL</p>
+            <button class="btn-book">Rezervasyon</button>
+          </article>
+
+          <article class="hotel-card">
+            <h3 class="hotel-name">Rixos Premium Tekirova</h3>
+            <p class="stay-dates">1-5 Eylül 2026</p>
+            <p class="price">63.900 TL</p>
+            <button class="btn-book">Rezervasyon</button>
+          </article>
+        </div>
+      </section>
+
+      <section class="case">
+        <h2>
+          Per-card test-id → test-id-anchored leaf
+          <span class="expect">→ composed (getByTestId scope)</span>
+        </h2>
+        <p class="hint">
+          When the card itself carries a test-id, the dynamic leaf is taken directly — scoped to the
+          test-id and targeted by its stable class, with the volatile value never in the locator.
+        </p>
+        <div class="card-grid">
+          <article class="product-card" data-testid="product-card-aurora">
+            <h3 class="product-name">Aurora Desk Lamp</h3>
+            <p
+              class="product-price"
+              data-expect="composed"
+              data-expect-min="1"
+              data-expect-self
+              data-expect-pw="product-card-aurora|product-price"
+              data-expect-absent="1.299"
+            >
+              1.299 TL
+            </p>
+            <button class="btn-add">Sepete ekle</button>
+          </article>
+          <article class="product-card" data-testid="product-card-nimbus">
+            <h3 class="product-name">Nimbus Office Chair</h3>
+            <p class="product-price">4.750 TL</p>
+            <button class="btn-add">Sepete ekle</button>
+          </article>
+          <article class="product-card" data-testid="product-card-vertex">
+            <h3 class="product-name">Vertex Standing Desk</h3>
+            <p class="product-price">8.900 TL</p>
+            <button class="btn-add">Sepete ekle</button>
+          </article>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

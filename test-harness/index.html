@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Recospec Locator Harness — Home</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav class="site-nav" data-testid="site-nav" aria-label="Test pages">
+      <a href="index.html" class="active">Home</a>
+      <a href="01-attributes.html">Attributes</a>
+      <a href="02-aria-roles.html">ARIA &amp; Roles</a>
+      <a href="03-forms.html">Forms</a>
+      <a href="04-text-id-css.html">Text / ID / CSS</a>
+      <a href="05-promotion.html">Click Promotion</a>
+      <a href="06-cards.html">Card Lists</a>
+      <a href="07-dynamic-fallback.html">Dynamic &amp; Fallback</a>
+    </nav>
+
+    <main>
+      <h1>Recospec Locator Test Harness</h1>
+      <p class="subtitle">
+        Eight interlinked pages that exercise every locator strategy and combination. Record across
+        them with the extension, or run the automated oracle: <code>pnpm test test-harness</code>.
+      </p>
+
+      <section class="case legend">
+        <h2>How this works</h2>
+        <p class="hint">
+          Every testable element is annotated with what the engine is <em>expected</em> to produce.
+          The companion spec (<code>harness.test.ts</code>) reads these annotations, runs the real
+          locator engine against each element, and asserts the result.
+        </p>
+        <ul>
+          <li>
+            <code>data-expect="testid"</code> — the engine's primary strategy must equal this.
+          </li>
+          <li><code>data-expect-min="80"</code> — primary score must be ≥ this.</li>
+          <li><code>data-expect-self</code> — the primary must resolve to exactly this element.</li>
+          <li>
+            <code>data-expect-pw="getByTestId|filter"</code> — the Playwright expression must
+            contain each <code>|</code>-separated substring.
+          </li>
+          <li>
+            <code>data-expect-absent="76.800"</code> — the value(s) must appear in <em>no</em> part
+            of the generated locator (dynamic-value leakage guard).
+          </li>
+          <li>
+            <code>data-promote="button"</code> — a leaf click here must be promoted to an ancestor
+            of this tag before any locator is built.
+          </li>
+        </ul>
+      </section>
+
+      <section class="case">
+        <h2>Page map</h2>
+        <p class="hint">Each page focuses on one part of the decision pipeline.</p>
+        <ul>
+          <li>
+            <a class="link" href="01-attributes.html">01 — Attributes</a>: full test-id family +
+            name / placeholder / alt / title.
+          </li>
+          <li>
+            <a class="link" href="02-aria-roles.html">02 — ARIA &amp; Roles</a>: aria-label,
+            aria-labelledby, role + accessible name.
+          </li>
+          <li>
+            <a class="link" href="03-forms.html">03 — Forms</a>: label[for], wrapped labels,
+            sensitive fields (env-var params).
+          </li>
+          <li>
+            <a class="link" href="04-text-id-css.html">04 — Text / ID / CSS</a>: visible text,
+            stable id, stable-class CSS, nth-of-type.
+          </li>
+          <li>
+            <a class="link" href="05-promotion.html">05 — Click Promotion</a>: icon/text leaf clicks
+            promoted to button / anchor / card.
+          </li>
+          <li>
+            <a class="link" href="06-cards.html">06 — Card Lists</a>: repeated rows → container
+            anchor keyed by a stable label.
+          </li>
+          <li>
+            <a class="link" href="07-dynamic-fallback.html">07 — Dynamic &amp; Fallback</a>: dynamic
+            class/id rejection, relative-scoped XPath last resort.
+          </li>
+        </ul>
+      </section>
+
+      <section class="case">
+        <h2>Start a flow</h2>
+        <p class="hint">
+          A text link has the link role, so it resolves by role + accessible name. (Pure
+          <code>href</code> — an icon link with no text — is exercised on the promotion page.)
+        </p>
+        <div class="controls">
+          <a
+            class="link"
+            href="https://recospec.dev/docs/getting-started"
+            data-expect="role-name"
+            data-expect-self
+            data-expect-pw="getByRole|Read the docs"
+          >
+            Read the docs →
+          </a>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

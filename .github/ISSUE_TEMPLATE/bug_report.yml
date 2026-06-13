@@ -1,0 +1,60 @@
+name: Bug report
+description: Report something that isn't working as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug! A minimal, **offline** reproduction (an HTML
+        snippet) helps far more than a link to a live site.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug, plus what you expected instead.
+      placeholder: Recospec generated a `nth-child` selector instead of using the data-testid…
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps. Include the HTML snippet or fixture if you can.
+      placeholder: |
+        1. Record a click on `<button data-testid="submit">`
+        2. Generate Playwright code
+        3. See selector `…`
+    validations:
+      required: true
+  - type: dropdown
+    id: framework
+    attributes:
+      label: Target framework
+      options:
+        - Playwright (TypeScript)
+        - Cypress (JavaScript)
+        - Selenium Python (pytest)
+        - Selenium Java (TestNG)
+        - N/A — recorder/locator engine
+        - N/A — CLI
+        - N/A — VS Code extension
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Recospec version
+      placeholder: "v0.7.0"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: "Chrome 124, Windows 11"
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant output / logs
+      description: Generated code, console errors, or the JSON export (redact secrets).
+      render: shell

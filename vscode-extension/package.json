@@ -1,0 +1,173 @@
+{
+  "name": "recospec",
+  "displayName": "Recospec",
+  "description": "Apply recorded Recospec sessions to your test project and generate Claude Code prompts — straight from VS Code.",
+  "version": "0.7.0",
+  "publisher": "recospec",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/metin-5115/recospec.git"
+  },
+  "homepage": "https://github.com/metin-5115/recospec",
+  "bugs": {
+    "url": "https://github.com/metin-5115/recospec/issues"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Testing",
+    "Other"
+  ],
+  "keywords": [
+    "playwright",
+    "cypress",
+    "selenium",
+    "test-automation",
+    "page-object-model",
+    "claude-code"
+  ],
+  "icon": "icons/recospec.png",
+  "main": "./dist/extension.cjs",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "recospec.record",
+        "title": "Recospec: Record Flow…",
+        "category": "Recospec",
+        "icon": "$(record)"
+      },
+      {
+        "command": "recospec.init",
+        "title": "Recospec: Init Project (.recospecrc.json)",
+        "category": "Recospec"
+      },
+      {
+        "command": "recospec.applyJson",
+        "title": "Recospec: Apply Existing JSON…",
+        "category": "Recospec"
+      },
+      {
+        "command": "recospec.showPrompt",
+        "title": "Recospec: Render Claude Prompt…",
+        "category": "Recospec"
+      },
+      {
+        "command": "recospec.recordings.refresh",
+        "title": "Refresh",
+        "category": "Recospec",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "recospec.recordings.apply",
+        "title": "Apply",
+        "category": "Recospec",
+        "icon": "$(rocket)"
+      },
+      {
+        "command": "recospec.recordings.reveal",
+        "title": "Reveal in File Explorer",
+        "category": "Recospec"
+      },
+      {
+        "command": "recospec.recordings.delete",
+        "title": "Delete",
+        "category": "Recospec",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "recospec.exportCorrections",
+        "title": "Recospec: Export Locator Corrections",
+        "category": "Recospec"
+      }
+    ],
+    "configuration": {
+      "title": "Recospec",
+      "properties": {
+        "recospec.collectCorrections": {
+          "type": "boolean",
+          "default": false,
+          "description": "Opt-in: when you replace a generated locator by hand, record the (rejected, chosen, fingerprint) triple to .recospec/corrections.jsonl to improve future locator scoring. Selector strings and structural features only — no page URLs, input values, or PII. Default off."
+        }
+      }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "recospec",
+          "title": "Recospec",
+          "icon": "icons/recospec-sidebar.svg"
+        }
+      ]
+    },
+    "views": {
+      "recospec": [
+        {
+          "id": "recospec.recordings",
+          "name": "Recordings",
+          "icon": "icons/recospec-sidebar.svg",
+          "contextualTitle": "Recospec"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "recospec.recordings",
+        "contents": "No recordings yet.\n[Record a flow](command:recospec.record)\nRecordings are stored under `.recospec/sessions/` in the current workspace."
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "recospec.record",
+          "when": "view == recospec.recordings",
+          "group": "navigation@1"
+        },
+        {
+          "command": "recospec.recordings.refresh",
+          "when": "view == recospec.recordings",
+          "group": "navigation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "recospec.recordings.apply",
+          "when": "view == recospec.recordings && viewItem == recospecRecording",
+          "group": "inline@1"
+        },
+        {
+          "command": "recospec.recordings.delete",
+          "when": "view == recospec.recordings && viewItem == recospecRecording",
+          "group": "inline@2"
+        },
+        {
+          "command": "recospec.recordings.reveal",
+          "when": "view == recospec.recordings && viewItem == recospecRecording",
+          "group": "1_modify@1"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "recospec.recordings.refresh",
+          "when": "false"
+        },
+        {
+          "command": "recospec.recordings.apply",
+          "when": "false"
+        },
+        {
+          "command": "recospec.recordings.reveal",
+          "when": "false"
+        },
+        {
+          "command": "recospec.recordings.delete",
+          "when": "false"
+        }
+      ]
+    }
+  }
+}

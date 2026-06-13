@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Recospec Harness — Click Promotion</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav class="site-nav" data-testid="site-nav" aria-label="Test pages">
+      <a href="index.html">Home</a>
+      <a href="01-attributes.html">Attributes</a>
+      <a href="02-aria-roles.html">ARIA &amp; Roles</a>
+      <a href="03-forms.html">Forms</a>
+      <a href="04-text-id-css.html">Text / ID / CSS</a>
+      <a href="05-promotion.html" class="active">Click Promotion</a>
+      <a href="06-cards.html">Card Lists</a>
+      <a href="07-dynamic-fallback.html">Dynamic &amp; Fallback</a>
+    </nav>
+
+    <main>
+      <h1>05 — Click-target promotion</h1>
+      <p class="subtitle">
+        Clicking a presentational leaf (an icon path, a span) should record the nearest
+        <em>actionable</em> ancestor — never the leaf. Form controls and bare text are never
+        promoted.
+      </p>
+
+      <section class="case">
+        <h2>Icon path inside a button <span class="expect">→ button → testid</span></h2>
+        <p class="hint">Clicking the <code>&lt;path&gt;</code> promotes to the enclosing button.</p>
+        <div class="controls">
+          <button data-testid="icon-save-btn" class="icon-btn">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M5 5h14v14H5z"
+                data-promote="button"
+                data-expect="testid"
+                data-expect-pw="icon-save-btn"
+              />
+            </svg>
+            Save
+          </button>
+        </div>
+      </section>
+
+      <section class="case">
+        <h2>Icon inside an anchor (no text) <span class="expect">→ a → href</span></h2>
+        <p class="hint">A text-less icon link promotes to the anchor, which keys on its href.</p>
+        <div class="controls">
+          <a href="https://github.com/metin-5115/recospec" class="icon-btn">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 2L2 7l10 5 10-5z"
+                data-promote="a"
+                data-expect="href"
+                data-expect-pw="github.com/metin-5115/recospec"
+              />
+            </svg>
+          </a>
+        </div>
+      </section>
+
+      <section class="case">
+        <h2>Text span inside an anchor <span class="expect">→ a → role-name</span></h2>
+        <p class="hint">
+          Promotes to the anchor; an <code>a[href]</code> has the link role, so role + name wins.
+        </p>
+        <div class="controls">
+          <a href="03-forms.html" class="link">
+            <span
+              data-promote="a"
+              data-expect="role-name"
+              data-expect-pw="getByRole|Continue to checkout"
+              >Continue to checkout</span
+            >
+          </a>
+        </div>
+      </section>
+
+      <section class="case">
+        <h2>Chevron inside a test-id card <span class="expect">→ article → testid</span></h2>
+        <p class="hint">
+          The card carries a test-id, which makes it an actionable promotion target even though it
+          is not a button.
+        </p>
+        <article data-testid="product-card-42" class="card" tabindex="0">
+          <h3>Wireless headphones</h3>
+          <span class="tag">In stock</span>
+          <span
+            class="chevron"
+            data-promote="article"
+            data-expect="testid"
+            data-expect-pw="product-card-42"
+            >›</span
+          >
+        </article>
+      </section>
+
+      <section class="case">
+        <h2>Form control is never promoted <span class="expect">→ input → role-name</span></h2>
+        <p class="hint">Clicking an input keeps the input — its value must stay on the control.</p>
+        <div class="field">
+          <label for="qty-input">Quantity</label>
+          <input
+            id="qty-input"
+            type="number"
+            data-promote="input"
+            data-expect="role-name"
+            data-expect-pw="getByRole|Quantity"
+          />
+        </div>
+      </section>
+
+      <section class="case">
+        <h2>Bare text with no actionable ancestor <span class="expect">→ span → text</span></h2>
+        <p class="hint">No button/link/role above it, so the leaf is left untouched.</p>
+        <p>
+          Read our
+          <span data-promote="span" data-expect="text" data-expect-pw="highlighted phrase"
+            >highlighted phrase</span
+          >
+          in this paragraph.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

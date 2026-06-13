@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Recospec Harness — Attributes</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav class="site-nav" data-testid="site-nav" aria-label="Test pages">
+      <a href="index.html">Home</a>
+      <a href="01-attributes.html" class="active">Attributes</a>
+      <a href="02-aria-roles.html">ARIA &amp; Roles</a>
+      <a href="03-forms.html">Forms</a>
+      <a href="04-text-id-css.html">Text / ID / CSS</a>
+      <a href="05-promotion.html">Click Promotion</a>
+      <a href="06-cards.html">Card Lists</a>
+      <a href="07-dynamic-fallback.html">Dynamic &amp; Fallback</a>
+    </nav>
+
+    <main>
+      <h1>01 — Attribute strategies</h1>
+      <p class="subtitle">
+        Test-id family (highest priority) plus name / placeholder / alt / title.
+      </p>
+
+      <section class="case">
+        <h2>Test-id family <span class="expect">→ testid</span></h2>
+        <p class="hint">
+          All six recognized attributes. <code>data-testid</code>, <code>data-test-id</code> and
+          <code>data-cy</code> map to the <strong>testid</strong> strategy; the rest to
+          <strong>test-attr</strong>.
+        </p>
+        <div class="controls">
+          <button
+            data-testid="checkout-btn"
+            data-expect="testid"
+            data-expect-min="80"
+            data-expect-self
+            data-expect-pw="getByTestId|checkout-btn"
+          >
+            Checkout
+          </button>
+          <button
+            data-test-id="save-draft"
+            data-expect="testid"
+            data-expect-min="80"
+            data-expect-self
+            data-expect-pw="save-draft"
+          >
+            Save draft
+          </button>
+          <button
+            data-cy="cancel-action"
+            data-expect="testid"
+            data-expect-min="80"
+            data-expect-self
+            data-expect-pw="cancel-action"
+          >
+            Cancel
+          </button>
+        </div>
+      </section>
+
+      <section class="case">
+        <h2>Secondary test attributes <span class="expect">→ test-attr</span></h2>
+        <p class="hint">
+          <code>data-test</code>, <code>data-qa</code>, <code>data-automation</code>.
+        </p>
+        <div class="controls">
+          <button
+            data-test="apply-filter"
+            data-expect="test-attr"
+            data-expect-min="70"
+            data-expect-self
+            data-expect-pw="apply-filter"
+          >
+            Apply filter
+          </button>
+          <button
+            data-qa="export-csv"
+            data-expect="test-attr"
+            data-expect-min="70"
+            data-expect-self
+            data-expect-pw="export-csv"
+          >
+            Export CSV
+          </button>
+          <button
+            data-automation="open-settings"
+            data-expect="test-attr"
+            data-expect-min="70"
+            data-expect-self
+            data-expect-pw="open-settings"
+          >
+            Settings
+          </button>
+        </div>
+      </section>
+
+      <section class="case">
+        <h2>Form-control attributes</h2>
+        <p class="hint">No id / label nearby, so each control falls to its own attribute.</p>
+
+        <div class="field">
+          <label>Search (name only)</label>
+          <input
+            type="text"
+            name="search_query"
+            data-expect="name"
+            data-expect-self
+            data-expect-pw="search_query"
+          />
+        </div>
+
+        <div class="field">
+          <label>Coupon (placeholder only)</label>
+          <!-- A placeholder IS the accessible name, so role-name wins over the
+               placeholder strategy — the engine emits getByRole(textbox,{name}). -->
+          <input
+            type="text"
+            placeholder="Enter coupon code"
+            data-expect="role-name"
+            data-expect-self
+            data-expect-pw="Enter coupon code"
+          />
+        </div>
+      </section>
+
+      <section class="case">
+        <h2>Image alt &amp; title <span class="expect">→ role-name / title</span></h2>
+        <p class="hint">
+          An <code>alt</code> becomes the image's accessible name (→ role-name); a control-less icon
+          with no name falls back to <code>title</code>.
+        </p>
+        <div class="controls">
+          <img
+            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E"
+            alt="Recospec company logo"
+            width="40"
+            height="40"
+            data-expect="role-name"
+            data-expect-self
+            data-expect-pw="Recospec company logo"
+          />
+          <span
+            title="Dismiss notification"
+            data-expect="title"
+            data-expect-self
+            data-expect-pw="Dismiss notification"
+          ></span>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

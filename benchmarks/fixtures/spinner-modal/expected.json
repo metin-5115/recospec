@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "description": "Modal that exposes a spinner (role=progressbar + .spinner + aria-busy). Verifies the locator engine prefers stable identifiers over the spinner class names.",
+  "entries": [
+    {
+      "name": "openModal",
+      "querySelector": "[data-testid='open-modal']",
+      "expectedStrategy": "testid",
+      "expectedSelector": "open-modal",
+      "minScore": 80
+    },
+    {
+      "name": "loadingModal",
+      "querySelector": "[data-testid='loading-modal']",
+      "expectedStrategy": "testid",
+      "expectedSelector": "loading-modal",
+      "minScore": 80
+    }
+  ]
+}

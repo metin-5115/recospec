@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Recospec Harness — Dynamic &amp; Fallback</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav class="site-nav" data-testid="site-nav" aria-label="Test pages">
+      <a href="index.html">Home</a>
+      <a href="01-attributes.html">Attributes</a>
+      <a href="02-aria-roles.html">ARIA &amp; Roles</a>
+      <a href="03-forms.html">Forms</a>
+      <a href="04-text-id-css.html">Text / ID / CSS</a>
+      <a href="05-promotion.html">Click Promotion</a>
+      <a href="06-cards.html">Card Lists</a>
+      <a href="07-dynamic-fallback.html" class="active">Dynamic &amp; Fallback</a>
+    </nav>
+
+    <main>
+      <h1>07 — Dynamic rejection &amp; fallback</h1>
+      <p class="subtitle">
+        Framework-generated classes/ids must be rejected, dynamic values must never leak, and the
+        last resort is a <em>relative-scoped</em> XPath — never a body-rooted absolute path.
+      </p>
+
+      <section class="case">
+        <h2>Dynamic class ignored, role+name wins <span class="expect">→ role-name</span></h2>
+        <p class="hint">
+          <code>css-1a2b3c</code> / <code>MuiButton-root</code> are framework hashes — they must not
+          appear in the locator; the button resolves by its accessible name instead.
+        </p>
+        <div class="controls">
+          <button
+            class="css-1a2b3c MuiButton-root"
+            data-expect="role-name"
+            data-expect-min="60"
+            data-expect-self
+            data-expect-pw="getByRole|Place order"
+            data-expect-absent="css-1a2b3c|MuiButton-root"
+          >
+            Place order
+          </button>
+        </div>
+      </section>
+
+      <section class="case">
+        <h2>Dynamic id rejected, stable class wins <span class="expect">→ css</span></h2>
+        <p class="hint"><code>ember1234</code> is framework-generated; the human class survives.</p>
+        <div class="controls">
+          <div
+            id="ember1234"
+            class="settings-drawer-toggle"
+            tabindex="0"
+            data-expect="css"
+            data-expect-min="20"
+            data-expect-self
+            data-expect-pw="settings-drawer-toggle"
+            data-expect-absent="ember1234"
+          ></div>
+        </div>
+      </section>
+
+      <section class="case">
+        <h2>Dynamic value, single occurrence, stable class <span class="expect">→ css</span></h2>
+        <p class="hint">
+          A volatile amount, but a unique stable class — no repeated container, so a plain CSS
+          locator is correct (the value must not leak).
+        </p>
+        <div class="controls">
+          <span
+            class="order-total-amount"
+            data-expect="css"
+            data-expect-min="20"
+            data-expect-self
+            data-expect-pw="order-total-amount"
+            data-expect-absent="2.499"
+          >
+            2.499 TL
+          </span>
+        </div>
+      </section>
+
+      <section class="case">
+        <h2>
+          No stable signal → relative-scoped XPath
+          <span class="expect">→ xpath (not absolute)</span>
+        </h2>
+        <p class="hint">
+          A leaf with only dynamic classes and no text, deep inside a panel with a stable id. The
+          XPath must anchor to <code>#billing-panel</code>, not the document root.
+        </p>
+        <section id="billing-panel">
+          <div class="css-9z8y7x">
+            <div class="sc-AbCdEf12">
+              <span
+                class="jss42"
+                data-expect="xpath"
+                data-expect-self
+                data-expect-relative
+                data-expect-pw="billing-panel"
+              ></span>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

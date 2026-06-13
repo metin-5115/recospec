@@ -1,0 +1,108 @@
+{
+  "name": "recospec",
+  "version": "0.7.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:cli": "vite build --config vite.config.cli.ts",
+    "build:vscode": "vite build --config vite.config.vscode.ts",
+    "package:vscode": "pnpm build && pnpm build:vscode && node scripts/package-vscode.mjs",
+    "preview": "vite preview",
+    "pretest": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ci": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "bench": "vitest run benchmarks/survival.test.ts",
+    "bench:calibrate": "vitest run --config vitest.calibrate.config.ts",
+    "lint": "eslint src --max-warnings 0",
+    "format": "prettier --write src",
+    "typecheck": "tsc --noEmit",
+    "prepare": "husky"
+  },
+  "bin": {
+    "recospec": "dist/cli/index.js"
+  },
+  "description": "Chrome extension that records browser interactions and generates production-ready Playwright / Cypress / Selenium test code with Page Object Model output.",
+  "keywords": [
+    "chrome-extension",
+    "test-automation",
+    "playwright",
+    "codeless",
+    "page-object-model"
+  ],
+  "author": "Metin Tunçbilek <tuncbilek.51metin@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/metin-5115/recospec.git"
+  },
+  "license": "MIT",
+  "packageManager": "pnpm@10.32.1",
+  "dependencies": {
+    "@babel/generator": "^7.25.0",
+    "@babel/parser": "^7.25.0",
+    "@babel/traverse": "^7.25.0",
+    "@babel/types": "^7.25.0",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "commander": "^12.1.0",
+    "date-fns": "^4.4.0",
+    "dexie": "^4.4.2",
+    "dom-accessibility-api": "^0.7.1",
+    "jszip": "^3.10.1",
+    "lucide-react": "^1.14.0",
+    "prompts": "^2.4.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^4.5.7"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,css,html}": [
+      "prettier --write"
+    ]
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.11.3",
+    "@crxjs/vite-plugin": "^2.4.0",
+    "@cucumber/gherkin": "^39.1.0",
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.51.0",
+    "@tailwindcss/postcss": "^4.2.4",
+    "@testing-library/react": "^16.3.2",
+    "@types/babel__generator": "^7.6.8",
+    "@types/babel__traverse": "^7.20.6",
+    "@types/chrome": "^0.1.40",
+    "@types/jszip": "^3.4.1",
+    "@types/node": "^20.0.0",
+    "@types/prompts": "^2.4.9",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^8.59.2",
+    "@typescript-eslint/parser": "^8.59.2",
+    "@vitejs/plugin-react": "^4.7.0",
+    "@vitest/coverage-v8": "^2.1.9",
+    "@vscode/vsce": "^3.6.0",
+    "autoprefixer": "^10.5.0",
+    "eslint": "^10.3.0",
+    "eslint-config-prettier": "^10.1.8",
+    "fake-indexeddb": "^6.2.5",
+    "husky": "^9.1.7",
+    "jsdom": "^29.1.1",
+    "lint-staged": "^16.4.0",
+    "marked": "^18.0.4",
+    "postcss": "^8.5.14",
+    "prettier": "^3.8.3",
+    "tailwindcss": "^4.2.4",
+    "typescript": "^5.9.3",
+    "vite": "^5.4.21",
+    "vitest": "^2.1.9"
+  }
+}

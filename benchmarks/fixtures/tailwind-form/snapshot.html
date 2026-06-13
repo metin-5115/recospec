@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Tailwind CSS Form Fixture</title>
+  </head>
+  <body class="bg-gray-50">
+    <main class="mx-auto max-w-xl py-10">
+      <form id="checkout-form" class="space-y-6">
+        <div>
+          <label for="cardholderName" class="block text-sm font-medium text-gray-700">
+            Cardholder name
+          </label>
+          <input
+            id="cardholderName"
+            name="cardholder"
+            type="text"
+            placeholder="Full name on card"
+            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500"
+            required=""
+          />
+        </div>
+        <div>
+          <label for="cardNumber" class="block text-sm font-medium text-gray-700">
+            Card number
+          </label>
+          <input
+            id="cardNumber"
+            name="cardNumber"
+            type="text"
+            inputmode="numeric"
+            placeholder="1234 5678 9012 3456"
+            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500"
+            required=""
+          />
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label for="expiry" class="block text-sm font-medium text-gray-700">Expiry</label>
+            <input
+              id="expiry"
+              name="expiry"
+              type="text"
+              placeholder="MM/YY"
+              class="mt-1 block w-full rounded-md border-gray-300"
+            />
+          </div>
+          <div>
+            <label for="cvc" class="block text-sm font-medium text-gray-700">CVC</label>
+            <input
+              id="cvc"
+              name="cvc"
+              type="text"
+              placeholder="123"
+              class="mt-1 block w-full rounded-md border-gray-300"
+            />
+          </div>
+        </div>
+        <div class="flex items-center">
+          <input
+            id="saveCard"
+            type="checkbox"
+            name="saveCard"
+            class="h-4 w-4 rounded border-gray-300 text-indigo-600"
+          />
+          <label for="saveCard" class="ml-2 text-sm text-gray-900">
+            Save this card for next time
+          </label>
+        </div>
+        <div class="flex justify-end gap-3">
+          <button
+            type="button"
+            class="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-gray-300"
+          >
+            Back
+          </button>
+          <button
+            type="submit"
+            data-testid="checkout-submit"
+            class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white"
+          >
+            Pay now
+          </button>
+        </div>
+      </form>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,31 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`playwright adapter — network mock generation > matches snapshot with mocks enabled 1`] = `
+"import { type Page } from '@playwright/test';
+
+export class LoginPage {
+  constructor(private readonly page: Page) {}
+
+  get emailInput() { return this.page.getByTestId("email"); }
+
+  get passwordInput() { return this.page.getByTestId("password"); }
+
+  get submitBtn() { return this.page.getByTestId("submit-btn"); }
+
+  async goto() {
+    await this.page.goto("/login");
+  }
+
+  async login(email: string, password: string) {
+    await this.emailInput.fill(email);
+    await this.passwordInput.fill(password);
+    await this.submitBtn.click();
+    await this.page.route("**/login", (route) => route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({"token":"abc","user":{"id":1}}),
+    }));
+  }
+}
+"
+`;

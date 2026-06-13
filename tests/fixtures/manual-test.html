@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Recospec Manual Test Fixture</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        max-width: 400px;
+        margin: 60px auto;
+        padding: 0 20px;
+      }
+      label {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 14px;
+        color: #374151;
+      }
+      input,
+      button {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 8px 12px;
+        margin-bottom: 16px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 14px;
+      }
+      button {
+        background: #2563eb;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      button:hover {
+        background: #1d4ed8;
+      }
+      #message {
+        color: #16a34a;
+        font-weight: 600;
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 style="font-size: 20px; margin-bottom: 24px">Login</h1>
+    <form id="login-form" onsubmit="handleSubmit(event)">
+      <label for="username">Username</label>
+      <input
+        id="username"
+        data-testid="username-input"
+        type="text"
+        placeholder="Enter username"
+        autocomplete="off"
+      />
+
+      <label for="password">Password</label>
+      <input
+        id="password"
+        data-testid="password-input"
+        type="password"
+        placeholder="Enter password"
+        autocomplete="off"
+      />
+
+      <button data-testid="login-btn" type="submit">Log In</button>
+    </form>
+    <p id="message">Login successful!</p>
+
+    <script>
+      function handleSubmit(e) {
+        e.preventDefault()
+        document.getElementById('message').style.display = 'block'
+      }
+    </script>
+  </body>
+</html>

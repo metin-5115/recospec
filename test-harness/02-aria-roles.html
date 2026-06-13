@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Recospec Harness — ARIA &amp; Roles</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav class="site-nav" data-testid="site-nav" aria-label="Test pages">
+      <a href="index.html">Home</a>
+      <a href="01-attributes.html">Attributes</a>
+      <a href="02-aria-roles.html" class="active">ARIA &amp; Roles</a>
+      <a href="03-forms.html">Forms</a>
+      <a href="04-text-id-css.html">Text / ID / CSS</a>
+      <a href="05-promotion.html">Click Promotion</a>
+      <a href="06-cards.html">Card Lists</a>
+      <a href="07-dynamic-fallback.html">Dynamic &amp; Fallback</a>
+    </nav>
+
+    <main>
+      <h1>02 — ARIA &amp; roles</h1>
+      <p class="subtitle">aria-label, aria-labelledby, and role + accessible-name.</p>
+
+      <section class="case">
+        <h2>aria-label <span class="expect">→ aria-label</span></h2>
+        <p class="hint">An icon button whose only readable name is the aria-label.</p>
+        <div class="controls">
+          <button
+            aria-label="Close dialog"
+            data-expect="aria-label"
+            data-expect-min="60"
+            data-expect-self
+            data-expect-pw="Close dialog"
+          >
+            ✕
+          </button>
+        </div>
+      </section>
+
+      <section class="case">
+        <h2>aria-labelledby <span class="expect">→ aria-labelledby</span></h2>
+        <p class="hint">Name comes from a referenced element via id.</p>
+        <div class="controls">
+          <span id="lbl-save-changes">Save changes</span>
+          <button
+            aria-labelledby="lbl-save-changes"
+            data-expect="aria-labelledby"
+            data-expect-min="60"
+            data-expect-self
+            data-expect-pw="Save changes"
+          >
+            💾
+          </button>
+        </div>
+      </section>
+
+      <section class="case">
+        <h2>role + accessible name <span class="expect">→ role-name</span></h2>
+        <p class="hint">
+          A non-native widget with an explicit role; the name is computed from its text content.
+        </p>
+        <div class="controls">
+          <div
+            role="button"
+            tabindex="0"
+            data-expect="role-name"
+            data-expect-min="60"
+            data-expect-self
+            data-expect-pw="getByRole|Submit order"
+          >
+            Submit order
+          </div>
+          <div
+            role="tab"
+            tabindex="0"
+            data-expect="role-name"
+            data-expect-min="60"
+            data-expect-self
+            data-expect-pw="getByRole|Overview"
+          >
+            Overview
+          </div>
+        </div>
+      </section>
+
+      <section class="case">
+        <h2>Native control + name <span class="expect">→ role-name</span></h2>
+        <p class="hint">A real link with text but no stable href path resolves by role + name.</p>
+        <div class="controls">
+          <a
+            role="button"
+            tabindex="0"
+            data-expect="role-name"
+            data-expect-min="60"
+            data-expect-self
+            data-expect-pw="getByRole|Add to wishlist"
+          >
+            Add to wishlist
+          </a>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

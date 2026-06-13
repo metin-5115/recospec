@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Recospec Harness — Forms</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav class="site-nav" data-testid="site-nav" aria-label="Test pages">
+      <a href="index.html">Home</a>
+      <a href="01-attributes.html">Attributes</a>
+      <a href="02-aria-roles.html">ARIA &amp; Roles</a>
+      <a href="03-forms.html" class="active">Forms</a>
+      <a href="04-text-id-css.html">Text / ID / CSS</a>
+      <a href="05-promotion.html">Click Promotion</a>
+      <a href="06-cards.html">Card Lists</a>
+      <a href="07-dynamic-fallback.html">Dynamic &amp; Fallback</a>
+    </nav>
+
+    <main>
+      <h1>03 — Forms &amp; labels</h1>
+      <p class="subtitle">
+        label[for], wrapped labels, select / textarea. A label is a control's accessible name, so
+        the engine emits the idiomatic <code>getByRole(…, { name })</code> (role-name), not a raw
+        id.
+      </p>
+
+      <section class="case">
+        <h2>Explicit label[for] <span class="expect">→ role-name / label</span></h2>
+        <p class="hint">
+          A stable id is present, but the label-derived accessible name wins. The password field has
+          no ARIA role, so it resolves via the label instead.
+        </p>
+        <form class="auth-form" data-testid="signin-form">
+          <div class="field">
+            <label for="username-field">Username</label>
+            <input
+              id="username-field"
+              type="text"
+              autocomplete="username"
+              data-expect="role-name"
+              data-expect-min="60"
+              data-expect-self
+              data-expect-pw="getByRole|Username"
+            />
+          </div>
+
+          <div class="field">
+            <label for="password-field">Password</label>
+            <!-- A password input has NO ARIA role, so it must NOT resolve via
+                 role-name (getByRole would not match it at runtime) — it falls
+                 to the label. -->
+            <input
+              id="password-field"
+              type="password"
+              autocomplete="current-password"
+              data-expect="label"
+              data-expect-min="40"
+              data-expect-self
+              data-expect-pw="getByLabel|Password"
+              data-expect-absent="getByRole"
+            />
+          </div>
+
+          <div class="controls">
+            <button
+              type="submit"
+              data-testid="signin-submit"
+              data-expect="testid"
+              data-expect-self
+              data-expect-pw="signin-submit"
+            >
+              Sign in
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section class="case">
+        <h2>Wrapped label <span class="expect">→ role-name</span></h2>
+        <p class="hint">Input nested inside its label, no <code>for</code> attribute.</p>
+        <form class="profile-form">
+          <label class="field">
+            Email address
+            <input
+              type="email"
+              name="email"
+              autocomplete="email"
+              data-expect="role-name"
+              data-expect-min="60"
+              data-expect-self
+              data-expect-pw="getByRole|Email address"
+            />
+          </label>
+        </form>
+      </section>
+
+      <section class="case">
+        <h2>Select &amp; textarea <span class="expect">→ role-name</span></h2>
+        <p class="hint">Non-input controls still resolve through their accessible name.</p>
+        <div class="field">
+          <label for="country-select">Country</label>
+          <select
+            id="country-select"
+            data-expect="role-name"
+            data-expect-min="60"
+            data-expect-self
+            data-expect-pw="getByRole|Country"
+          >
+            <option>Türkiye</option>
+            <option>Germany</option>
+            <option>United Kingdom</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="comments-area">Comments</label>
+          <textarea
+            id="comments-area"
+            rows="3"
+            data-expect="role-name"
+            data-expect-min="60"
+            data-expect-self
+            data-expect-pw="getByRole|Comments"
+          ></textarea>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
