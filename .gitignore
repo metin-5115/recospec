@@ -36,6 +36,10 @@ docs/v0.7.0-test-guide.md
 # Markdown kept local, not published. Public set = README.md, PRIVACY.md, and
 # the GitHub community-health files (CODE_OF_CONDUCT, CONTRIBUTING, PR template).
 docs/**/*.md
+# …except the getting-started guide: it is a product asset rendered into the
+# extension at build time (vite.config.ts) and declared as a web-accessible
+# resource in the manifest, so the build needs it in a clean checkout.
+!docs/getting-started.md
 CHANGELOG.md
 test-harness/README.md
 vscode-extension/README.md
