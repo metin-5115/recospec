@@ -32,6 +32,9 @@ export default defineConfig({
         'src/content/element-probe.ts',
         'src/shared/messaging/**',
         'src/shared/logger.ts',
+        // VS Code extension host (requires the `vscode` runtime + a real editor;
+        // exercised via the extension host, not jsdom unit tests)
+        'src/vscode-ext/**',
         // UI components without unit tests (covered via E2E in later phases)
         'src/popup/PopupApp.tsx',
         'src/side-panel/SidePanelApp.tsx',

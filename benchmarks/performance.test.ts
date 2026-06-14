@@ -13,6 +13,10 @@ const LARGE_DOM_SINGLE_BUDGET_MS = isCI ? 6000 : 500
 const ITERATIONS = 100
 const LARGE_DOM_SIZE = 1000
 const SAMPLE_COUNT = 25
+// Under `test:ci` the source is V8-coverage-instrumented, which slows each
+// evaluate ~10×, so the loop can exceed Vitest's 5s default. Give these timing
+// benchmarks generous headroom — the budgets above are the real pass/fail gate.
+const PERF_TEST_TIMEOUT_MS = 60_000
 
 function buildSingleElementDoc(): { doc: Document; el: Element } {
   const doc = new DOMParser().parseFromString(
@@ -44,53 +48,61 @@ function percentile(samples: number[], p: number): number {
 describe('Locator engine performance', () => {
   const engine = new LocatorEngine()
 
-  it(`single locator p99 < ${SINGLE_LOCATOR_P99_MS}ms across ${ITERATIONS} iterations`, () => {
-    const { doc, el } = buildSingleElementDoc()
-    const samples: number[] = []
+  it(
+    `single locator p99 < ${SINGLE_LOCATOR_P99_MS}ms across ${ITERATIONS} iterations`,
+    () => {
+      const { doc, el } = buildSingleElementDoc()
+      const samples: number[] = []
 
-    engine.evaluate(el, doc) // warmup
+      engine.evaluate(el, doc) // warmup
 
-    for (let i = 0; i < ITERATIONS; i++) {
-      const start = performance.now()
-      engine.evaluate(el, doc)
-      samples.push(performance.now() - start)
-    }
+      for (let i = 0; i < ITERATIONS; i++) {
+        const start = performance.now()
+        engine.evaluate(el, doc)
+        samples.push(performance.now() - start)
+      }
 
-    const p50 = percentile(samples, 50)
-    const p95 = percentile(samples, 95)
-    const p99 = percentile(samples, 99)
-    const max = Math.max(...samples)
+      const p50 = percentile(samples, 50)
+      const p95 = percentile(samples, 95)
+      const p99 = percentile(samples, 99)
+      const max = Math.max(...samples)
 
-    console.log(
-      `[perf] single-locator p50=${p50.toFixed(3)}ms p95=${p95.toFixed(3)}ms p99=${p99.toFixed(3)}ms max=${max.toFixed(3)}ms`,
-    )
+      console.log(
+        `[perf] single-locator p50=${p50.toFixed(3)}ms p95=${p95.toFixed(3)}ms p99=${p99.toFixed(3)}ms max=${max.toFixed(3)}ms`,
+      )
 
-    expect(p99).toBeLessThan(SINGLE_LOCATOR_P99_MS)
-  })
+      expect(p99).toBeLessThan(SINGLE_LOCATOR_P99_MS)
+    },
+    PERF_TEST_TIMEOUT_MS,
+  )
 
-  it(`single evaluate on a ${LARGE_DOM_SIZE}-element DOM < ${LARGE_DOM_SINGLE_BUDGET_MS}ms`, () => {
-    const doc = buildLargeDoc(LARGE_DOM_SIZE)
-    const buttons = Array.from(doc.querySelectorAll('button'))
-    const samples: number[] = []
+  it(
+    `single evaluate on a ${LARGE_DOM_SIZE}-element DOM < ${LARGE_DOM_SINGLE_BUDGET_MS}ms`,
+    () => {
+      const doc = buildLargeDoc(LARGE_DOM_SIZE)
+      const buttons = Array.from(doc.querySelectorAll('button'))
+      const samples: number[] = []
 
-    engine.evaluate(buttons[0]!, doc) // warmup
+      engine.evaluate(buttons[0]!, doc) // warmup
 
-    const stride = Math.max(1, Math.floor(buttons.length / SAMPLE_COUNT))
-    for (let i = 0; i < buttons.length && samples.length < SAMPLE_COUNT; i += stride) {
-      const start = performance.now()
-      engine.evaluate(buttons[i]!, doc)
-      samples.push(performance.now() - start)
-    }
+      const stride = Math.max(1, Math.floor(buttons.length / SAMPLE_COUNT))
+      for (let i = 0; i < buttons.length && samples.length < SAMPLE_COUNT; i += stride) {
+        const start = performance.now()
+        engine.evaluate(buttons[i]!, doc)
+        samples.push(performance.now() - start)
+      }
 
-    const p50 = percentile(samples, 50)
-    const p95 = percentile(samples, 95)
-    const p99 = percentile(samples, 99)
-    const max = Math.max(...samples)
+      const p50 = percentile(samples, 50)
+      const p95 = percentile(samples, 95)
+      const p99 = percentile(samples, 99)
+      const max = Math.max(...samples)
 
-    console.log(
-      `[perf] large-dom (size=${LARGE_DOM_SIZE}, samples=${samples.length}) p50=${p50.toFixed(2)}ms p95=${p95.toFixed(2)}ms p99=${p99.toFixed(2)}ms max=${max.toFixed(2)}ms`,
-    )
+      console.log(
+        `[perf] large-dom (size=${LARGE_DOM_SIZE}, samples=${samples.length}) p50=${p50.toFixed(2)}ms p95=${p95.toFixed(2)}ms p99=${p99.toFixed(2)}ms max=${max.toFixed(2)}ms`,
+      )
 
-    expect(max).toBeLessThan(LARGE_DOM_SINGLE_BUDGET_MS)
-  })
+      expect(max).toBeLessThan(LARGE_DOM_SINGLE_BUDGET_MS)
+    },
+    PERF_TEST_TIMEOUT_MS,
+  )
 })
