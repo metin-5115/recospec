@@ -65,6 +65,10 @@ export function SidePanelApp() {
     renameMethod,
     testData,
     setTestData,
+    composedModes,
+    templateModes,
+    setComposedMode,
+    setTemplateMode,
     startRecording,
     stopRecording,
     pauseRecording,
@@ -317,6 +321,10 @@ export function SidePanelApp() {
             replayRunningActionId={replayState.currentActionId}
             validationResults={validationResults}
             onAddAssertion={!isActive ? openAssertionForStep : undefined}
+            composedModes={composedModes}
+            templateModes={templateModes}
+            onSetComposedMode={!isActive ? setComposedMode : undefined}
+            onSetTemplateMode={!isActive ? setTemplateMode : undefined}
           />
         ) : (
           <SessionList

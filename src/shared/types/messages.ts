@@ -3,7 +3,8 @@ import type { CapturedEvent, RecordedAction, AssertionSuggestion } from './actio
 import type { GeneratedCode, FrameworkId, OutputSelection } from './generated'
 import type { FrameContext, Locator, LocatorBundle, ScoredLocator, ShadowContext } from './locator'
 import type { ElementSnapshot } from './action'
-import type { TestDataConfig } from '@codegen/ir/types'
+import type { TestDataConfig, TemplateParamMode } from '@codegen/ir/types'
+import type { ComposedParamMode } from '@codegen/planner/template-modes'
 import type { JsonExportPayload } from '@codegen/export/json-export'
 
 export type StepPatch = Partial<Pick<RecordedAction, 'payload' | 'annotation' | 'target' | 'type'>>
@@ -72,6 +73,14 @@ export type UIToBackgroundMessage =
       bdd?: boolean
       /** Which file groups to emit (page objects / test / scaffold). Defaults to all. */
       selection?: OutputSelection
+      /**
+       * Per-element render mode for container-anchored composed locators, keyed
+       * by `locatorValue`: `scoped` (hardcoded label, default) or `param` (label
+       * becomes a `select<Name>(name)` method parameter).
+       */
+      composedModes?: Record<string, ComposedParamMode>
+      /** Per-element render mode for template (data-value) locators, keyed by `locatorValue`. */
+      templateModes?: Record<string, TemplateParamMode>
     }
   | { type: 'ASSERTION_PROBE_START'; sessionId: string }
   | { type: 'ASSERTION_PROBE_STOP'; sessionId: string }

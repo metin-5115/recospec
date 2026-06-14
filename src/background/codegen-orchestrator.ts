@@ -2,7 +2,8 @@ import { generate } from '@codegen/index'
 import { broadcastToUI } from '@shared/messaging/send'
 import { logger } from '@shared/logger'
 import type { FrameworkId, OutputSelection } from '@shared/types/generated'
-import type { TestDataConfig } from '@codegen/ir/types'
+import type { TestDataConfig, TemplateParamMode } from '@codegen/ir/types'
+import type { ComposedParamMode } from '@codegen/planner/template-modes'
 
 export async function handleCodeGenerate(
   sessionId: string,
@@ -14,6 +15,8 @@ export async function handleCodeGenerate(
     testData?: TestDataConfig
     bdd?: boolean
     selection?: OutputSelection
+    composedModes?: Record<string, ComposedParamMode>
+    templateModes?: Record<string, TemplateParamMode>
   } = {},
 ): Promise<void> {
   try {
@@ -24,6 +27,8 @@ export async function handleCodeGenerate(
       testData: options.testData,
       bdd: options.bdd,
       selection: options.selection,
+      composedModes: options.composedModes,
+      templateModes: options.templateModes,
     })
     await broadcastToUI({ type: 'CODE_GENERATED', sessionId, code })
   } catch (err) {

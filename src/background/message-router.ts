@@ -98,6 +98,8 @@ export function initMessageRouter(): void {
           testData: message.testData,
           bdd: message.bdd,
           selection: message.selection,
+          composedModes: message.composedModes,
+          templateModes: message.templateModes,
         }).catch(handleBgError('CODE_GENERATE', message.sessionId))
 
       case 'ASSERTION_PROBE_START':

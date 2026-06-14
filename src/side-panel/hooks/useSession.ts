@@ -20,7 +20,8 @@ import type { AssertionSuggestion } from '@shared/types/action'
 import type { LocatorBundle, ScoredLocator } from '@shared/types/locator'
 import type { ElementSnapshot, RecordedAction } from '@shared/types/action'
 import type { Session } from '@shared/types/session'
-import type { TestDataConfig } from '@codegen/ir/types'
+import type { TestDataConfig, TemplateParamMode } from '@codegen/ir/types'
+import type { ComposedParamMode } from '@codegen/planner/template-modes'
 import type { LocatorValidationResult, LocatorValidationTarget } from '@shared/types/messages'
 
 export type ReplayResultStatus = 'running' | 'pass' | 'fail' | 'skipped'
@@ -116,6 +117,11 @@ export function useSession() {
   const [assertionContext, setAssertionContext] = useState<AssertionContext | null>(null)
   const [methodRenames, setMethodRenames] = useState<Record<string, string>>({})
   const [testData, setTestData] = useState<TestDataConfig>({ params: [] })
+  // Per-element render modes for dynamic-content locators, keyed by the
+  // element's locator string (== IR `locatorValue`). Drive the inline
+  // "Sabit ad ↔ Parametre" toggle on container/template steps.
+  const [composedModes, setComposedModes] = useState<Record<string, ComposedParamMode>>({})
+  const [templateModes, setTemplateModes] = useState<Record<string, TemplateParamMode>>({})
   const [validationResults, setValidationResults] = useState<LocatorValidationResult[]>([])
   const [validationDurationMs, setValidationDurationMs] = useState(0)
   const [validationError, setValidationError] = useState<string | null>(null)
@@ -129,6 +135,14 @@ export function useSession() {
 
   const renameMethod = useCallback((key: string, value: string) => {
     setMethodRenames((prev) => ({ ...prev, [key]: value }))
+  }, [])
+
+  const setComposedMode = useCallback((key: string, mode: ComposedParamMode) => {
+    setComposedModes((prev) => ({ ...prev, [key]: mode }))
+  }, [])
+
+  const setTemplateMode = useCallback((key: string, mode: TemplateParamMode) => {
+    setTemplateModes((prev) => ({ ...prev, [key]: mode }))
   }, [])
 
   // Load session list from DB on mount
@@ -417,6 +431,8 @@ export function useSession() {
           testData,
           bdd: bddEnabled,
           selection: outputSelection,
+          composedModes,
+          templateModes,
         })
         return
       } catch {
@@ -436,6 +452,8 @@ export function useSession() {
     testData,
     bddEnabled,
     outputSelection,
+    composedModes,
+    templateModes,
     setCodeGenError,
   ])
 
@@ -665,6 +683,8 @@ export function useSession() {
           testData,
           bdd: bddEnabled,
           selection: outputSelection,
+          composedModes,
+          templateModes,
         })
         await downloadZipExport(session, code)
       } catch (err) {
@@ -680,6 +700,8 @@ export function useSession() {
       testData,
       bddEnabled,
       outputSelection,
+      composedModes,
+      templateModes,
       setCodeGenError,
     ],
   )
@@ -713,6 +735,10 @@ export function useSession() {
     renameMethod,
     testData,
     setTestData,
+    composedModes,
+    templateModes,
+    setComposedMode,
+    setTemplateMode,
     startRecording,
     stopRecording,
     pauseRecording,

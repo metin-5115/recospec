@@ -36,6 +36,8 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import type { RecordedAction, ActionType, NetworkPayload } from '@shared/types/action'
 import type { ScoredLocator } from '@shared/types/locator'
+import type { TemplateParamMode } from '@codegen/ir/types'
+import type { ComposedParamMode } from '@codegen/planner/template-modes'
 import { classifyStep, type LocatorQualityLevel } from '@shared/locator-quality'
 import { LocatorDetail } from './LocatorDetail'
 import { StepEditModal } from './StepEditModal'
@@ -159,6 +161,92 @@ function snapshotChip(step: RecordedAction): string | null {
 
 export type ReplayStepStatus = 'running' | 'pass' | 'fail' | 'skipped'
 
+/**
+ * Inline intent control for a dynamic-content step (price/name/date). Lets the
+ * user choose how the variable part is handled in the generated code:
+ *  - container row → Sabit ad (hardcoded label) | Parametre (`select(name)`)
+ *  - template value → Parametre | Sabit | Bugüne göre (date only)
+ * Renders nothing for non-dynamic steps.
+ */
+function DynamicModeControl({
+  primary,
+  composedMode,
+  templateMode,
+  onSetComposedMode,
+  onSetTemplateMode,
+}: {
+  primary: ScoredLocator
+  composedMode: ComposedParamMode
+  templateMode: TemplateParamMode
+  onSetComposedMode: (mode: ComposedParamMode) => void
+  onSetTemplateMode: (mode: TemplateParamMode) => void
+}) {
+  const isContainer =
+    primary.composed?.anchor.kind === 'container' && Boolean(primary.composed.anchor.filterText)
+  const isTemplate = Boolean(primary.template)
+  if (!isContainer && !isTemplate) return null
+
+  const seg = (active: boolean) =>
+    `rounded px-1.5 py-0.5 text-[10px] font-medium transition ${
+      active ? 'bg-accent text-white' : 'bg-bg-muted text-text-muted hover:text-text'
+    }`
+
+  return (
+    <span className="mt-1 flex flex-wrap items-center gap-1.5 text-[10px] text-text-muted">
+      <span className="font-medium">Değişken içerik:</span>
+      {isContainer ? (
+        <>
+          <button
+            type="button"
+            className={seg(composedMode === 'scoped')}
+            onClick={() => onSetComposedMode('scoped')}
+            title="Satırı kayıttaki sabit etiketle bul (varsayılan)"
+          >
+            Sabit ad
+          </button>
+          <button
+            type="button"
+            className={seg(composedMode === 'param')}
+            onClick={() => onSetComposedMode('param')}
+            title="Etiketi method parametresine çevir — select(name)"
+          >
+            Parametre
+          </button>
+        </>
+      ) : (
+        <>
+          <button
+            type="button"
+            className={seg(templateMode === 'param')}
+            onClick={() => onSetTemplateMode('param')}
+            title="Değeri method parametresine çevir (varsayılan)"
+          >
+            Parametre
+          </button>
+          <button
+            type="button"
+            className={seg(templateMode === 'fixed')}
+            onClick={() => onSetTemplateMode('fixed')}
+            title="Kayıttaki değeri sabit kullan"
+          >
+            Sabit
+          </button>
+          {primary.template?.kind === 'date' && (
+            <button
+              type="button"
+              className={seg(templateMode === 'relative')}
+              onClick={() => onSetTemplateMode('relative')}
+              title="Çalışma gününe göre tarihi yeniden hesapla"
+            >
+              Bugüne göre
+            </button>
+          )}
+        </>
+      )}
+    </span>
+  )
+}
+
 interface StepListProps {
   steps: RecordedAction[]
   reorderable: boolean
@@ -187,6 +275,11 @@ interface StepListProps {
    * stopped session is loaded (recording sessions don't get this button).
    */
   onAddAssertion?: (actionId: string) => void
+  /** Per-element dynamic-locator render modes, keyed by the locator string. */
+  composedModes?: Record<string, ComposedParamMode>
+  templateModes?: Record<string, TemplateParamMode>
+  onSetComposedMode?: (key: string, mode: ComposedParamMode) => void
+  onSetTemplateMode?: (key: string, mode: TemplateParamMode) => void
 }
 
 export function StepList({
@@ -202,6 +295,10 @@ export function StepList({
   replayRunningActionId,
   validationResults,
   onAddAssertion,
+  composedModes,
+  templateModes,
+  onSetComposedMode,
+  onSetTemplateMode,
 }: StepListProps) {
   const [openDetailId, setOpenDetailId] = useState<string | null>(null)
   const [editingStepId, setEditingStepId] = useState<string | null>(null)
@@ -255,6 +352,9 @@ export function StepList({
           ? 'running'
           : replayResults?.[step.actionId]
         const validation = validationByAction.get(step.actionId)
+        const modeKey = step.target?.primaryLocator
+          ? selectorString(step.target.primaryLocator)
+          : ''
         return (
           <SortableStep
             key={step.actionId}
@@ -265,6 +365,14 @@ export function StepList({
             flash={flashStepId === step.actionId}
             replayStatus={replayStatus}
             validation={validation}
+            composedMode={composedModes?.[modeKey] ?? 'scoped'}
+            templateMode={templateModes?.[modeKey] ?? 'param'}
+            onSetComposedMode={
+              onSetComposedMode ? (mode) => onSetComposedMode(modeKey, mode) : undefined
+            }
+            onSetTemplateMode={
+              onSetTemplateMode ? (mode) => onSetTemplateMode(modeKey, mode) : undefined
+            }
             onAddAssertion={
               onAddAssertion && step.target ? () => onAddAssertion(step.actionId) : undefined
             }
@@ -328,6 +436,10 @@ interface SortableStepProps {
   flash: boolean
   replayStatus?: ReplayStepStatus
   validation?: LocatorValidationResult
+  composedMode?: ComposedParamMode
+  templateMode?: TemplateParamMode
+  onSetComposedMode?: (mode: ComposedParamMode) => void
+  onSetTemplateMode?: (mode: TemplateParamMode) => void
   onAddAssertion?: () => void
   onToggleDetail: () => void
   onCloseDetail: () => void
@@ -344,6 +456,10 @@ function SortableStep({
   flash,
   replayStatus,
   validation,
+  composedMode,
+  templateMode,
+  onSetComposedMode,
+  onSetTemplateMode,
   onAddAssertion,
   onToggleDetail,
   onCloseDetail,
@@ -487,6 +603,15 @@ function SortableStep({
             )}
             {snapshotLine && <span className="truncate font-mono">{snapshotLine}</span>}
           </span>
+        )}
+        {primary && onSetComposedMode && onSetTemplateMode && (
+          <DynamicModeControl
+            primary={primary}
+            composedMode={composedMode ?? 'scoped'}
+            templateMode={templateMode ?? 'param'}
+            onSetComposedMode={onSetComposedMode}
+            onSetTemplateMode={onSetTemplateMode}
+          />
         )}
         {isOpen && primary && (
           <LocatorDetail
