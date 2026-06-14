@@ -8,6 +8,7 @@ import { useFocusTrap } from '@shared/hooks/useFocusTrap'
 const NEEDS_VALUE: AssertionSuggestion['type'][] = [
   'text',
   'text-contains',
+  'matches',
   'value',
   'attribute',
   'count',
@@ -38,8 +39,13 @@ export function AssertionBuilder({
   onConfirm,
   onCancel,
 }: AssertionBuilderProps) {
+  const valueFor = (s: AssertionSuggestion): string =>
+    NEEDS_VALUE.includes(s.type) && s.expected !== undefined ? String(s.expected) : ''
+
   const [selectedIndex, setSelectedIndex] = useState(0)
-  const [customValue, setCustomValue] = useState('')
+  // Pre-fill so the suggested value/pattern is visible and editable (e.g. the
+  // `matches` regex source). Blank-but-needed still falls back to the default.
+  const [customValue, setCustomValue] = useState(() => valueFor(suggestions[0]))
   const [screenshotName, setScreenshotName] = useState('')
 
   const dialogRef = useRef<HTMLDivElement>(null)
@@ -64,8 +70,8 @@ export function AssertionBuilder({
 
   function handleSelect(index: number) {
     setSelectedIndex(index)
-    setCustomValue('')
     const next = suggestions[index]
+    setCustomValue(valueFor(next))
     if (next.type === 'screenshot') {
       setScreenshotName(next.name ?? '')
     }
@@ -124,7 +130,9 @@ export function AssertionBuilder({
           {needsValue && (
             <input
               type="text"
-              placeholder="Custom value (optional)"
+              placeholder={
+                selected.type === 'matches' ? 'Regex pattern' : 'Custom value (optional)'
+              }
               value={customValue}
               onChange={(e) => setCustomValue(e.target.value)}
               className="mt-2 w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"

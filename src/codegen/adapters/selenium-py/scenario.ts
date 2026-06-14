@@ -41,6 +41,15 @@ function renderAssertion(d: AssertionDetail, el: IRElement | undefined, indent: 
       const expected = pyStr(String(d.expected ?? ''))
       return `${indent}assert ${expected} in driver.find_element(*${tuple}).text`
     }
+    case 'not-empty': {
+      if (!tuple) return `${indent}# assert not empty (no element)`
+      return `${indent}assert driver.find_element(*${tuple}).text.strip() != ""`
+    }
+    case 'matches': {
+      if (!tuple) return `${indent}# assert matches (no element)`
+      const pattern = pyStr(String(d.expected ?? ''))
+      return `${indent}assert re.search(${pattern}, driver.find_element(*${tuple}).text)`
+    }
     case 'value': {
       if (!tuple) return `${indent}# assert value (no element)`
       const expected = pyStr(String(d.expected ?? ''))
@@ -155,7 +164,13 @@ export function renderScenario(scenario: IRScenario): string {
   const pomBlock = pomReferences ? `${pomReferences}\n` : ''
 
   const needsOsImport = (TEST_DATA?.params ?? []).some((p) => p.useEnvVar)
-  const osImportLine = needsOsImport ? 'import os\n' : ''
+  const needsReImport = scenario.pages.some((p) =>
+    p.steps.some((s) => s.assertionDetail?.type === 'matches'),
+  )
+  const stdlibImports = [needsReImport ? 'import re' : '', needsOsImport ? 'import os' : ''].filter(
+    Boolean,
+  )
+  const osImportLine = stdlibImports.length ? stdlibImports.join('\n') + '\n' : ''
 
   return `${osImportLine}from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys

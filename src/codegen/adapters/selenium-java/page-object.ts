@@ -201,6 +201,15 @@ function renderAssertion(d: AssertionDetail, el: IRElement | undefined, indent: 
       const expected = javaStr(String(d.expected ?? ''))
       return `${indent}assert ${fieldRef}.getText().contains(${expected}) : "Expected text to contain " + ${expected};`
     }
+    case 'not-empty': {
+      if (!fieldRef) return `${indent}// assert not empty (no element)`
+      return `${indent}assert !${fieldRef}.getText().trim().isEmpty() : "Expected non-empty text";`
+    }
+    case 'matches': {
+      if (!fieldRef) return `${indent}// assert matches (no element)`
+      const pattern = javaStr(String(d.expected ?? ''))
+      return `${indent}assert java.util.regex.Pattern.compile(${pattern}).matcher(${fieldRef}.getText()).find() : "Expected text to match " + ${pattern};`
+    }
     case 'value': {
       if (!fieldRef) return `${indent}// assert value (no element)`
       const expected = javaStr(String(d.expected ?? ''))

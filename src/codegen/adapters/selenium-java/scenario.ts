@@ -48,6 +48,12 @@ function renderAssertion(d: AssertionDetail, el: IRElement | undefined, indent: 
       const expected = javaStr(String(d.expected ?? ''))
       return `${indent}assert driver.findElement(${byExpr}).getText().contains(${expected}) : "Expected text to contain " + ${expected};`
     }
+    case 'not-empty':
+      return `${indent}assert !driver.findElement(${byExpr}).getText().trim().isEmpty() : "Expected non-empty text";`
+    case 'matches': {
+      const pattern = javaStr(String(d.expected ?? ''))
+      return `${indent}assert java.util.regex.Pattern.compile(${pattern}).matcher(driver.findElement(${byExpr}).getText()).find() : "Expected text to match " + ${pattern};`
+    }
     case 'value': {
       const expected = javaStr(String(d.expected ?? ''))
       return `${indent}assert driver.findElement(${byExpr}).getAttribute("value").equals(${expected}) : "Expected value " + ${expected};`

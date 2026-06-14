@@ -136,6 +136,15 @@ function renderAssertion(d: AssertionDetail, el: IRElement | undefined, indent: 
       const expected = pyStr(String(d.expected ?? ''))
       return `${indent}assert ${expected} in self.driver.find_element(*${constRef}).text`
     }
+    case 'not-empty': {
+      if (!constRef) return `${indent}# assert not empty (no element)`
+      return `${indent}assert self.driver.find_element(*${constRef}).text.strip() != ""`
+    }
+    case 'matches': {
+      if (!constRef) return `${indent}# assert matches (no element)`
+      const pattern = pyStr(String(d.expected ?? ''))
+      return `${indent}assert re.search(${pattern}, self.driver.find_element(*${constRef}).text)`
+    }
     case 'value': {
       if (!constRef) return `${indent}# assert value (no element)`
       const expected = pyStr(String(d.expected ?? ''))
@@ -270,7 +279,12 @@ export function renderPageObject(page: IRPage): string {
   const constantsBlock = constants ? `${constants}\n\n` : ''
 
   const needsOsImport = (TEST_DATA?.params ?? []).some((p) => p.useEnvVar)
-  const osImportLine = needsOsImport ? 'import os\n' : ''
+  const allSteps = [...page.steps, ...(page.inferredMethods ?? []).flatMap((m) => m.steps)]
+  const needsReImport = allSteps.some((s) => s.assertionDetail?.type === 'matches')
+  const stdlibImports = [needsReImport ? 'import re' : '', needsOsImport ? 'import os' : ''].filter(
+    Boolean,
+  )
+  const osImportLine = stdlibImports.length ? stdlibImports.join('\n') + '\n' : ''
 
   return `${osImportLine}from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys

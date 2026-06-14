@@ -66,3 +66,29 @@ describe('suggestionsForSnapshot', () => {
     expect(screenshot?.name).toBe('snapshot')
   })
 })
+
+const priceSnap: ElementSnapshot = {
+  tagName: 'p',
+  attributes: {},
+  textContent: '294.840 TRY',
+}
+
+describe('suggestionsForSnapshot — dynamic value', () => {
+  it('offers not-empty + matches but NOT exact text (which would break as it changes)', () => {
+    const types = suggestionsForSnapshot(priceSnap, 'Hotels').map((s) => s.type)
+    expect(types).toContain('not-empty')
+    expect(types).toContain('matches')
+    expect(types).not.toContain('text')
+  })
+
+  it('the matches default is a shape regex that omits the literal digits', () => {
+    const m = suggestionsForSnapshot(priceSnap, 'Hotels').find((s) => s.type === 'matches')
+    expect(String(m?.expected)).toContain('\\d+')
+    expect(String(m?.expected)).not.toContain('294')
+  })
+
+  it('offers a stable-substring contains (the unit word, not the number)', () => {
+    const c = suggestionsForSnapshot(priceSnap, 'Hotels').find((s) => s.type === 'text-contains')
+    expect(c?.expected).toBe('TRY')
+  })
+})

@@ -115,10 +115,13 @@ export interface AssertionDetail {
     | 'hidden'
     | 'text'
     | 'text-contains'
+    | 'not-empty'
+    | 'matches'
     | 'value'
     | 'attribute'
     | 'count'
     | 'screenshot'
+  /** For `matches`, this holds the regex source. */
   expected?: string | number
   attribute?: string
   /** Screenshot file name (no extension). Only set when `type === 'screenshot'`. */

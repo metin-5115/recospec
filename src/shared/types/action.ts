@@ -44,6 +44,10 @@ export type AssertionType =
   | 'hidden'
   | 'text'
   | 'text-contains'
+  /** Element text is non-empty (robust for dynamic values — "a price is shown"). */
+  | 'not-empty'
+  /** Element text matches a regex pattern (the `expected` field holds the source). */
+  | 'matches'
   | 'value'
   | 'attribute'
   | 'count'

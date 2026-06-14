@@ -164,6 +164,38 @@ describe('assertion codegen — screenshot', () => {
   })
 })
 
+describe('assertion codegen — dynamic value modes (not-empty / matches)', () => {
+  const pattern = '\\d+ TRY'
+  const dynPage: IRPage = {
+    name: 'Hotels',
+    className: 'HotelsPage',
+    normalizedUrl: '/',
+    elements: [headingEl],
+    steps: [
+      { id: 'd1', action: 'assert', element: headingEl, assertionDetail: { type: 'not-empty' } },
+      {
+        id: 'd2',
+        action: 'assert',
+        element: headingEl,
+        assertionDetail: { type: 'matches', expected: pattern },
+      },
+    ],
+  }
+
+  it('renders not.toBeEmpty for not-empty', () => {
+    expect(renderPageObject(dynPage)).toContain(
+      'await expect(this.welcomeHeading).not.toBeEmpty();',
+    )
+  })
+
+  it('renders toHaveText(new RegExp(...)) for matches (literal value never embedded)', () => {
+    const out = renderPageObject(dynPage)
+    expect(out).toContain(
+      `await expect(this.welcomeHeading).toHaveText(new RegExp(${JSON.stringify(pattern)}));`,
+    )
+  })
+})
+
 describe('assertion codegen — renderScenario', () => {
   it('matches snapshot', () => {
     const scenario: IRScenario = { name: 'Assertion flow', pages: [pageWithAssertions] }

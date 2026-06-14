@@ -197,3 +197,32 @@ describe('selenium-py — toConstName', () => {
     expect(toConstName('item1Button')).toBe('ITEM1_BUTTON')
   })
 })
+
+describe('assertion codegen — dynamic value modes', () => {
+  const pattern = '\\d+ TRY'
+  const dynPage: IRPage = {
+    name: 'Hotels',
+    className: 'HotelsPage',
+    normalizedUrl: '/',
+    elements: [emailEl],
+    steps: [
+      { id: 'd1', action: 'assert', element: emailEl, assertionDetail: { type: 'not-empty' } },
+      {
+        id: 'd2',
+        action: 'assert',
+        element: emailEl,
+        assertionDetail: { type: 'matches', expected: pattern },
+      },
+    ],
+  }
+
+  it('renders a non-empty text assertion', () => {
+    expect(renderPageObject(dynPage)).toContain('.text.strip() != ""')
+  })
+
+  it('renders re.search for matches and imports re', () => {
+    const out = renderPageObject(dynPage)
+    expect(out).toContain('import re')
+    expect(out).toContain('assert re.search(')
+  })
+})

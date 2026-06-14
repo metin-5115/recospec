@@ -1,5 +1,31 @@
 import type { AssertionSuggestion, ElementSnapshot } from './types/action'
 import { isDynamicValue } from './dynamic-value'
+import { suggestedPattern, stableSubstring } from './assertion-pattern'
+
+/**
+ * Value assertions for an element's text. Stable text → exact + contains.
+ * Dynamic value (price/date/number) → not-empty + a stable-substring contains +
+ * a shape-matching regex, so the assertion survives the value changing.
+ */
+export function valueAssertionSuggestions(text: string): AssertionSuggestion[] {
+  if (!isDynamicValue(text)) {
+    return [
+      { type: 'text', label: `Expect text: "${text.slice(0, 50)}"`, expected: text },
+      {
+        type: 'text-contains',
+        label: `Expect text contains: "${text.slice(0, 30)}"`,
+        expected: text,
+      },
+    ]
+  }
+  const out: AssertionSuggestion[] = [{ type: 'not-empty', label: 'Expect not empty' }]
+  const sub = stableSubstring(text)
+  if (sub)
+    out.push({ type: 'text-contains', label: `Expect text contains: "${sub}"`, expected: sub })
+  const pattern = suggestedPattern(text)
+  out.push({ type: 'matches', label: `Expect text matches: /${pattern}/`, expected: pattern })
+  return out
+}
 
 function slugifyTitle(title: string): string {
   const slug = title
@@ -24,22 +50,10 @@ export function suggestionsForSnapshot(
 ): AssertionSuggestion[] {
   const suggestions: AssertionSuggestion[] = [{ type: 'visible', label: 'Expect visible' }]
 
-  // Skip exact-text assertions when the content is a dynamic value (price,
-  // date, number): asserting `toHaveText("294.840")` breaks the moment the
-  // value changes. "Expect visible" remains the safe default.
+  // For dynamic values (price/date/number) we offer not-empty / contains /
+  // matches instead of exact text — see valueAssertionSuggestions.
   const text = snapshot.textContent
-  if (text && !isDynamicValue(text)) {
-    suggestions.push({
-      type: 'text',
-      label: `Expect text: "${text.slice(0, 50)}"`,
-      expected: text,
-    })
-    suggestions.push({
-      type: 'text-contains',
-      label: `Expect text contains: "${text.slice(0, 30)}"`,
-      expected: text,
-    })
-  }
+  if (text) suggestions.push(...valueAssertionSuggestions(text))
 
   const tag = snapshot.tagName.toLowerCase()
   if (tag === 'input' || tag === 'textarea' || tag === 'select') {

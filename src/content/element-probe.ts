@@ -1,7 +1,7 @@
 import type { ElementSnapshot, AssertionSuggestion } from '@shared/types/action'
 import type { LocatorBundle } from '@shared/types/locator'
 import { LocatorEngine } from '@locator/index'
-import { isDynamicValue } from '@shared/dynamic-value'
+import { valueAssertionSuggestions } from '@shared/assertion-suggestions'
 import { detectShadowContext, detectFrameContext } from './shadow-pierce'
 import { sendToBackground } from '@shared/messaging/send'
 import { logger } from '@shared/logger'
@@ -36,21 +36,9 @@ function slugifyTitle(title: string): string {
 function buildSuggestions(el: Element, snapshot: ElementSnapshot): AssertionSuggestion[] {
   const suggestions: AssertionSuggestion[] = [{ type: 'visible', label: 'Expect visible' }]
 
-  // Skip exact-text assertions for dynamic values (price/date/number) — they
-  // break as soon as the value changes. "Expect visible" stays the default.
+  // Stable text → exact/contains; dynamic value → not-empty/contains/matches.
   const text = snapshot.textContent
-  if (text && !isDynamicValue(text)) {
-    suggestions.push({
-      type: 'text',
-      label: `Expect text: "${text.slice(0, 50)}"`,
-      expected: text,
-    })
-    suggestions.push({
-      type: 'text-contains',
-      label: `Expect text contains: "${text.slice(0, 30)}"`,
-      expected: text,
-    })
-  }
+  if (text) suggestions.push(...valueAssertionSuggestions(text))
 
   const tag = snapshot.tagName
   if (tag === 'input' || tag === 'textarea' || tag === 'select') {

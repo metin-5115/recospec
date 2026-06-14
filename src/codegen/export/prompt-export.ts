@@ -343,6 +343,10 @@ function describeAssertion(step: IRStep): string {
       return `Verify \`${name}\` has text ${JSON.stringify(String(detail.expected ?? ''))}.`
     case 'text-contains':
       return `Verify \`${name}\` text contains ${JSON.stringify(String(detail.expected ?? ''))}.`
+    case 'not-empty':
+      return `Verify \`${name}\` is not empty.`
+    case 'matches':
+      return `Verify \`${name}\` text matches /${String(detail.expected ?? '')}/.`
     case 'value':
       return `Verify \`${name}\` has value ${JSON.stringify(String(detail.expected ?? ''))}.`
     case 'attribute':

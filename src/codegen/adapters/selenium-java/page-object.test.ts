@@ -205,3 +205,30 @@ describe('selenium-java — toJavaFieldName', () => {
     expect(toJavaFieldName('1stItem')).toBe('_1stItem')
   })
 })
+
+describe('assertion codegen — dynamic value modes', () => {
+  const pattern = '\\d+ TRY'
+  const dynPage: IRPage = {
+    name: 'Hotels',
+    className: 'HotelsPage',
+    normalizedUrl: '/',
+    elements: [emailEl],
+    steps: [
+      { id: 'd1', action: 'assert', element: emailEl, assertionDetail: { type: 'not-empty' } },
+      {
+        id: 'd2',
+        action: 'assert',
+        element: emailEl,
+        assertionDetail: { type: 'matches', expected: pattern },
+      },
+    ],
+  }
+
+  it('renders a non-empty text assertion', () => {
+    expect(renderPageObject(dynPage)).toContain('.getText().trim().isEmpty()')
+  })
+
+  it('renders a regex matcher for matches', () => {
+    expect(renderPageObject(dynPage)).toContain('java.util.regex.Pattern.compile(')
+  })
+})

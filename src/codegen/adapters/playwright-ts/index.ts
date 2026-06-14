@@ -344,6 +344,10 @@ function renderAssertionMatcher(d: AssertionDetail, locator: string, indent: str
       return `${indent}await expect(${locator}).toHaveText(${JSON.stringify(d.expected ?? '')});`
     case 'text-contains':
       return `${indent}await expect(${locator}).toContainText(${JSON.stringify(d.expected ?? '')});`
+    case 'not-empty':
+      return `${indent}await expect(${locator}).not.toBeEmpty();`
+    case 'matches':
+      return `${indent}await expect(${locator}).toHaveText(new RegExp(${JSON.stringify(String(d.expected ?? ''))}));`
     case 'value':
       return `${indent}await expect(${locator}).toHaveValue(${JSON.stringify(d.expected ?? '')});`
     case 'attribute':

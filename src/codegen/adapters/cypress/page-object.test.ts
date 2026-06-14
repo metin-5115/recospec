@@ -190,3 +190,32 @@ describe('cypress renderPageObject — screenshot', () => {
     )
   })
 })
+
+describe('assertion codegen — dynamic value modes', () => {
+  const pattern = '\\d+ TRY'
+  const dynPage: IRPage = {
+    name: 'Hotels',
+    className: 'HotelsPage',
+    normalizedUrl: '/',
+    elements: [emailEl],
+    steps: [
+      { id: 'd1', action: 'assert', element: emailEl, assertionDetail: { type: 'not-empty' } },
+      {
+        id: 'd2',
+        action: 'assert',
+        element: emailEl,
+        assertionDetail: { type: 'matches', expected: pattern },
+      },
+    ],
+  }
+
+  it('renders not.be.empty for not-empty', () => {
+    expect(renderPageObject(dynPage)).toContain(".invoke('text').should('not.be.empty');")
+  })
+
+  it('renders should(match, RegExp) for matches', () => {
+    expect(renderPageObject(dynPage)).toContain(
+      `.invoke('text').should('match', new RegExp(${JSON.stringify(pattern)}));`,
+    )
+  })
+})
