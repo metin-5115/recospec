@@ -4,6 +4,7 @@ import { isDynamicClass } from '../scoring/dynamic-detector'
 import { computeAccessibleName } from './accessible-name'
 import { selectorForRole } from './role-table'
 import { isA11yVisible } from '../pipeline/resolve'
+import { cssAttrValue, xpathLiteral } from '@shared/selector-escape'
 
 /**
  * Composed (anchor + target) locator production — invoked by the engine when
@@ -64,10 +65,6 @@ interface AnchorInfo {
   nthIndex?: number
 }
 
-function cssEscape(value: string): string {
-  return value.replace(/["\\]/g, '\\$&')
-}
-
 function uniqueInDoc(css: string, doc: Document): boolean {
   try {
     return doc.querySelectorAll(css).length === 1
@@ -80,7 +77,7 @@ function anchorFor(el: Element, doc: Document): AnchorInfo | null {
   for (const attr of TESTID_ATTRS) {
     const value = el.getAttribute(attr)
     if (value) {
-      const css = `[${attr}="${cssEscape(value)}"]`
+      const css = `[${attr}="${cssAttrValue(value)}"]`
       if (uniqueInDoc(css, doc)) {
         return { el, kind: 'testid', value, css, xpath: `//*[@${attr}=${xpathLiteral(value)}]` }
       }
@@ -133,7 +130,7 @@ function interactiveAnchorFor(
     if (path) {
       // Prefix-match when a query/hash was stripped (the DOM attr still has it).
       const hadQuery = raw !== path
-      const css = hadQuery ? `a[href^="${cssEscape(path)}"]` : `a[href="${cssEscape(path)}"]`
+      const css = hadQuery ? `a[href^="${cssAttrValue(path)}"]` : `a[href="${cssAttrValue(path)}"]`
       const xpath = hadQuery
         ? `//a[starts-with(@href, ${xpathLiteral(path)})]`
         : `//a[@href=${xpathLiteral(path)}]`
@@ -176,13 +173,6 @@ function findAnchor(
     current = current.parentElement
   }
   return null
-}
-
-function xpathLiteral(value: string): string {
-  if (!value.includes("'")) return `'${value}'`
-  if (!value.includes('"')) return `"${value}"`
-  const parts = value.split("'").map((p) => `'${p}'`)
-  return `concat(${parts.join(`, "'", `)})`
 }
 
 // ---------------------------------------------------------------------------

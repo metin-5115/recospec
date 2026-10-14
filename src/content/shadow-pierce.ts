@@ -1,4 +1,5 @@
 import type { ShadowContext, FrameContext } from '@shared/types/locator'
+import { cssAttrValue } from '@shared/selector-escape'
 
 /**
  * Build a stable CSS selector for a shadow host element.
@@ -95,11 +96,11 @@ export function detectFrameContext(): FrameContext | null {
       const title = frameEl.getAttribute('title')
       const id = frameEl.getAttribute('id')
       if (name) {
-        frameChain.unshift(`iframe[name="${name}"]`)
+        frameChain.unshift(`iframe[name="${cssAttrValue(name)}"]`)
       } else if (id) {
         frameChain.unshift(`iframe#${CSS.escape(id)}`)
       } else if (title) {
-        frameChain.unshift(`iframe[title="${title}"]`)
+        frameChain.unshift(`iframe[title="${cssAttrValue(title)}"]`)
       } else {
         frameChain.unshift('iframe')
       }

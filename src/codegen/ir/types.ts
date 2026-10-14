@@ -9,7 +9,12 @@ import type {
 export type IRActionType =
   | 'navigate'
   | 'click'
+  | 'dblclick'
+  | 'hover'
   | 'fill'
+  | 'select'
+  | 'check'
+  | 'uncheck'
   | 'assert'
   | 'keypress'
   | 'network'

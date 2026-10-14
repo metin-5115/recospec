@@ -90,6 +90,34 @@ function renderStepBody(step: GherkinStep, argNames: string[]): string {
       `        el.sendKeys(${valueRef});`,
     ].join('\n')
   }
+  if (sourceAction === 'select') {
+    const valueRef = argNames[0] ?? '""'
+    const labelRef = argNames[1] ?? '""'
+    return [
+      `        String xpath = "//*[@aria-label='" + ${labelRef} + "' or @name='" + ${labelRef} + "']";`,
+      `        new Select(driver.findElement(By.xpath(xpath))).selectByValue(${valueRef});`,
+    ].join('\n')
+  }
+  if (sourceAction === 'check' || sourceAction === 'uncheck') {
+    const labelRef = argNames[0] ?? '""'
+    const condition = sourceAction === 'check' ? '!el.isSelected()' : 'el.isSelected()'
+    return [
+      `        String xpath = "//*[@aria-label='" + ${labelRef} + "' or @name='" + ${labelRef} + "']";`,
+      `        WebElement el = driver.findElement(By.xpath(xpath));`,
+      `        if (${condition}) {`,
+      `            el.click();`,
+      `        }`,
+    ].join('\n')
+  }
+  if (sourceAction === 'hover' || sourceAction === 'dblclick') {
+    const textRef = argNames[0] ?? '""'
+    const call = sourceAction === 'hover' ? 'moveToElement(el)' : 'doubleClick(el)'
+    return [
+      `        String xpath = "//*[normalize-space()='" + ${textRef} + "']";`,
+      `        WebElement el = driver.findElement(By.xpath(xpath));`,
+      `        new Actions(driver).${call}.perform();`,
+    ].join('\n')
+  }
   if (sourceAction === 'keypress') {
     const keyRef = argNames[0] ?? '""'
     return `        driver.switchTo().activeElement().sendKeys(Keys.valueOf(${keyRef}.toUpperCase()));`
@@ -163,6 +191,16 @@ export function renderStepsFile(scenario: IRScenario): string {
     .join('\n')
   const pomImportBlock = pomImportLines ? `${pomImportLines}\n` : ''
 
+  // Interaction-only imports are added when a generated body actually uses them.
+  const stepsText = stepMethods.join('\n')
+  const interactionImports = [
+    /\bnew Actions\(/.test(stepsText) ? 'import org.openqa.selenium.interactions.Actions;' : '',
+    /\bnew Select\(/.test(stepsText) ? 'import org.openqa.selenium.support.ui.Select;' : '',
+  ]
+    .filter(Boolean)
+    .map((line) => `${line}\n`)
+    .join('')
+
   return `package steps;
 
 import java.time.Duration;
@@ -176,7 +214,7 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-${pomImportBlock}
+${interactionImports}${pomImportBlock}
 public class StepDefinitions {
     private WebDriver driver;
     private WebDriverWait wait;

@@ -1,5 +1,8 @@
 import type { IRScenario, IRStep, AssertionDetail, IRElement, TestDataConfig } from '../../ir/types'
 import { renderLocatorTuple, pyStr } from './locator'
+import { renderPyInteraction, pyInteractionImports } from './interaction'
+import { newContextState, wrapStepContext, renderTestContextHelpers } from './context'
+import { renderNetworkNote } from './network-note'
 import { resolveTestData } from '../../planner/test-data-resolver'
 
 let TEST_DATA: TestDataConfig | undefined
@@ -115,6 +118,12 @@ function renderStepInTest(step: IRStep, indent: string): string {
       `${indent}_el.send_keys(${expr})`,
     ].join('\n')
   }
+  if (step.element) {
+    const tuple = renderLocatorTuple(step.element)
+    const elementExpr = `WebDriverWait(driver, 10).until(EC.visibility_of_element_located(${tuple}))`
+    const interaction = renderPyInteraction(step, elementExpr, 'driver', indent)
+    if (interaction) return interaction
+  }
   if (step.action === 'keypress' && step.key) {
     return `${indent}driver.switch_to.active_element.send_keys(Keys.${step.key.toUpperCase()})`
   }
@@ -149,11 +158,24 @@ export function renderScenario(scenario: IRScenario): string {
     .map((p) => `from pages.${toSnakeCase(p.className)} import ${p.className}`)
     .join('\n')
 
+  const contextState = newContextState()
   const body = scenario.pages
-    .flatMap((page) => page.steps.map((step) => renderStepInTest(step, '    ')).filter(Boolean))
+    .flatMap((page) =>
+      page.steps
+        .map((step) =>
+          wrapStepContext(step, renderStepInTest(step, '    '), '    ', contextState, 'test'),
+        )
+        .filter(Boolean),
+    )
     .join('\n')
+  const helpers = renderTestContextHelpers(scenario.pages.flatMap((p) => p.steps))
+  const helpersBlock = helpers ? `${helpers}\n\n\n` : ''
 
-  const safeBody = body || '    pass'
+  const networkNote = renderNetworkNote(
+    scenario.pages.flatMap((p) => p.steps),
+    '    ',
+  )
+  const safeBody = (networkNote + body).trimEnd() || '    pass'
   const slug = testNameSlug(scenario.name)
   const docstring = `    """${docstringSafe(scenario.name || 'Recorded scenario')}."""`
 
@@ -163,6 +185,7 @@ export function renderScenario(scenario: IRScenario): string {
   const pomReferences = scenario.pages.map((p) => `    _ = ${p.className}  # noqa: F841`).join('\n')
   const pomBlock = pomReferences ? `${pomReferences}\n` : ''
 
+  const interactionImports = pyInteractionImports(scenario.pages.flatMap((p) => p.steps))
   const needsOsImport = (TEST_DATA?.params ?? []).some((p) => p.useEnvVar)
   const needsReImport = scenario.pages.some((p) =>
     p.steps.some((s) => s.assertionDetail?.type === 'matches'),
@@ -176,10 +199,10 @@ export function renderScenario(scenario: IRScenario): string {
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-${pageImports}
+${interactionImports}${pageImports}
 
 
-def test_${slug}(driver):
+${helpersBlock}def test_${slug}(driver):
 ${docstring}
 ${pomBlock}${safeBody}
 `

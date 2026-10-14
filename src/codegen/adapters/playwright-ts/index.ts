@@ -366,6 +366,15 @@ function renderAssertionMatcher(d: AssertionDetail, locator: string, indent: str
 // Step rendering
 // ---------------------------------------------------------------------------
 
+/** IR action → Playwright locator method for the element-targeted interactions. */
+const INTERACTION_CALLS: Partial<Record<IRStep['action'], string>> = {
+  select: 'selectOption',
+  check: 'check',
+  uncheck: 'uncheck',
+  hover: 'hover',
+  dblclick: 'dblclick',
+}
+
 function renderStepInMethod(step: IRStep, indent: string): string {
   if (step.action === 'navigate' && step.url) {
     return `${indent}await this.page.goto(${JSON.stringify(step.url)});`
@@ -376,6 +385,10 @@ function renderStepInMethod(step: IRStep, indent: string): string {
   if (step.action === 'fill' && step.element) {
     const expr = renderFillValueExpr(step.element, step.value ?? '')
     return `${indent}await this.${step.element.name}.fill(${expr});`
+  }
+  if (step.element && INTERACTION_CALLS[step.action]) {
+    const args = step.action === 'select' ? JSON.stringify(step.value ?? '') : ''
+    return `${indent}await ${memberExpr(step.element)}.${INTERACTION_CALLS[step.action]}(${args});`
   }
   if (step.action === 'keypress' && step.key) {
     return `${indent}await this.page.keyboard.press(${JSON.stringify(step.key)});`
@@ -446,6 +459,10 @@ function renderStepInSpec(step: IRStep, indent: string): string {
     const expr = renderFillValueExpr(step.element, step.value ?? '')
     return `${indent}await ${renderLocator(step.element)}.fill(${expr});`
   }
+  if (step.element && INTERACTION_CALLS[step.action]) {
+    const args = step.action === 'select' ? JSON.stringify(step.value ?? '') : ''
+    return `${indent}await ${renderLocator(step.element)}.${INTERACTION_CALLS[step.action]}(${args});`
+  }
   if (step.action === 'keypress' && step.key) {
     return `${indent}await page.keyboard.press(${JSON.stringify(step.key)});`
   }
@@ -512,6 +529,22 @@ function renderInferredMethod(method: InferredMethod): string {
               ? method.params[paramIdx]
               : `String(${method.params[paramIdx]})`
           return `    await this.${s.element.name}.fill(${ref});`
+        }
+      }
+      // A select receives its option value as a parameter when the slug matches.
+      if (s.action === 'select' && s.element) {
+        const paramIdx = method.params.findIndex((p) => p === paramSlugFromElement(s.element!.name))
+        if (paramIdx !== -1) {
+          return `    await this.${s.element.name}.selectOption(${method.params[paramIdx]});`
+        }
+      }
+      // check/uncheck driven by a boolean parameter collapses to setChecked(param).
+      if ((s.action === 'check' || s.action === 'uncheck') && s.element) {
+        const paramIdx = method.params.findIndex(
+          (p, i) => types[i] === 'boolean' && p === paramSlugFromElement(s.element!.name),
+        )
+        if (paramIdx !== -1) {
+          return `    await this.${s.element.name}.setChecked(${method.params[paramIdx]});`
         }
       }
       return renderStepInMethod(s, '    ')

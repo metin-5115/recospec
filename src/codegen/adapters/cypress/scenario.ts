@@ -1,5 +1,7 @@
 import type { IRScenario, IRStep, AssertionDetail, IRElement, TestDataConfig } from '../../ir/types'
 import { renderLocator } from './locator'
+import { renderInteraction } from './interaction'
+import { renderCypressMocks } from './mock'
 import { resolveTestData } from '../../planner/test-data-resolver'
 
 let TEST_DATA: TestDataConfig | undefined
@@ -74,6 +76,10 @@ function renderStepInSpec(step: IRStep, indent: string): string {
     const expr = renderFillValueExpr(step.element, step.value ?? '')
     return `${indent}${renderLocator(step.element)}.clear().type(${expr});`
   }
+  if (step.element) {
+    const interaction = renderInteraction(step, renderLocator(step.element), indent)
+    if (interaction) return interaction
+  }
   if (step.action === 'keypress' && step.key) {
     return `${indent}cy.focused().type(${JSON.stringify(`{${step.key.toLowerCase()}}`)});`
   }
@@ -98,9 +104,15 @@ export function renderScenario(scenario: IRScenario): string {
     .map((p) => `import { ${p.className} } from '../pages/${p.className}';`)
     .join('\n')
 
-  const testBody = scenario.pages
+  // Mocks first: an intercept registered after the click would miss the request.
+  const mocks = renderCypressMocks(
+    scenario.pages.flatMap((page) => page.steps),
+    '    ',
+  )
+  const stepLines = scenario.pages
     .flatMap((page) => page.steps.map((step) => renderStepInSpec(step, '    ')).filter(Boolean))
     .join('\n')
+  const testBody = [mocks, stepLines].filter(Boolean).join('\n')
 
   return `${imports}
 

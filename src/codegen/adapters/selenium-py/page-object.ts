@@ -8,6 +8,8 @@ import type {
   TestDataConfig,
 } from '../../ir/types'
 import { renderLocatorTuple, renderFallbackTuple, pyStr } from './locator'
+import { renderPyInteraction, pyInteractionImports } from './interaction'
+import { newContextState, wrapStepContext, renderPageContextHelpers } from './context'
 import { resolveTestData } from '../../planner/test-data-resolver'
 
 let TEST_DATA: TestDataConfig | undefined
@@ -183,6 +185,15 @@ function renderStepInMethod(step: IRStep, indent: string): string {
     const expr = renderFillValueExpr(step.element, step.value ?? '')
     return `${indent}_el = ${elField}\n${indent}_el.clear()\n${indent}_el.send_keys(${expr})`
   }
+  if (step.element) {
+    const interaction = renderPyInteraction(
+      step,
+      visibleElementExpr(step.element),
+      'self.driver',
+      indent,
+    )
+    if (interaction) return interaction
+  }
   if (step.action === 'keypress' && step.key) {
     const keyConst = step.key.toUpperCase()
     return `${indent}self.driver.switch_to.active_element.send_keys(Keys.${keyConst})`
@@ -197,6 +208,11 @@ function renderStepInMethod(step: IRStep, indent: string): string {
   return ''
 }
 
+/** Explicit-wait expression yielding the page-object element once it is visible. */
+function visibleElementExpr(el: IRElement): string {
+  return `self.wait.until(EC.visibility_of_element_located(self.${toConstName(el.name)}))`
+}
+
 // ---------------------------------------------------------------------------
 // Inferred methods
 // ---------------------------------------------------------------------------
@@ -206,32 +222,54 @@ function renderInferredMethod(method: InferredMethod): string {
   const params = method.params.map((p, i) => `${p}: ${pyType(types[i])}`).join(', ')
   const signature = params ? `, ${params}` : ''
 
+  const contextState = newContextState()
+  const renderOne = (s: IRStep): string | null => {
+    // A click on a template element receives the formatted label as a parameter.
+    if (s.action === 'click' && s.element?.template) {
+      const param = s.element.template.kind === 'date' ? 'date' : 'value'
+      const idx = method.params.indexOf(param)
+      if (idx !== -1) {
+        return `        self.${toSnakeName(s.element.name)}(${method.params[idx]}).click()`
+      }
+    }
+    if (s.action === 'fill' && s.element) {
+      const slug = paramSlugFromElement(s.element.name)
+      const idx = method.params.findIndex((p) => p === slug)
+      if (idx !== -1) {
+        const ref = `self.${toConstName(s.element.name)}`
+        const paramName = method.params[idx]
+        const valueExpr = types[idx] === 'string' ? paramName : `str(${paramName})`
+        return [
+          `        _el = self.wait.until(EC.visibility_of_element_located(${ref}))`,
+          `        _el.clear()`,
+          `        _el.send_keys(${valueExpr})`,
+        ].join('\n')
+      }
+    }
+    if (s.action === 'select' && s.element) {
+      const idx = method.params.findIndex((p) => p === paramSlugFromElement(s.element!.name))
+      if (idx !== -1) {
+        const paramName = method.params[idx]!
+        const selectArg = types[idx] === 'string' ? paramName : `str(${paramName})`
+        return renderPyInteraction(s, visibleElementExpr(s.element), 'self.driver', '        ', {
+          selectArg,
+        })
+      }
+    }
+    if ((s.action === 'check' || s.action === 'uncheck') && s.element) {
+      const idx = method.params.findIndex(
+        (p, i) => types[i] === 'boolean' && p === paramSlugFromElement(s.element!.name),
+      )
+      if (idx !== -1) {
+        return renderPyInteraction(s, visibleElementExpr(s.element), 'self.driver', '        ', {
+          toggleParam: method.params[idx],
+        })
+      }
+    }
+    return renderStepInMethod(s, '        ')
+  }
   const body = method.steps
-    .map((s) => {
-      // A click on a template element receives the formatted label as a parameter.
-      if (s.action === 'click' && s.element?.template) {
-        const param = s.element.template.kind === 'date' ? 'date' : 'value'
-        const idx = method.params.indexOf(param)
-        if (idx !== -1) {
-          return `        self.${toSnakeName(s.element.name)}(${method.params[idx]}).click()`
-        }
-      }
-      if (s.action === 'fill' && s.element) {
-        const slug = paramSlugFromElement(s.element.name)
-        const idx = method.params.findIndex((p) => p === slug)
-        if (idx !== -1) {
-          const ref = `self.${toConstName(s.element.name)}`
-          const paramName = method.params[idx]
-          const valueExpr = types[idx] === 'string' ? paramName : `str(${paramName})`
-          return [
-            `        _el = self.wait.until(EC.visibility_of_element_located(${ref}))`,
-            `        _el.clear()`,
-            `        _el.send_keys(${valueExpr})`,
-          ].join('\n')
-        }
-      }
-      return renderStepInMethod(s, '        ')
-    })
+    .map((s) => wrapStepContext(s, renderOne(s), '        ', contextState, 'page'))
     .filter(Boolean)
     .join('\n')
 
@@ -262,9 +300,12 @@ export function renderPageObject(page: IRPage): string {
   if (page.inferredMethods?.length) {
     methodsBlock = '\n\n' + page.inferredMethods.map(renderInferredMethod).join('\n\n')
   } else {
+    const contextState = newContextState()
     const stepLines = page.steps
       .filter((s) => s.action !== 'navigate')
-      .map((s) => renderStepInMethod(s, '        '))
+      .map((s) =>
+        wrapStepContext(s, renderStepInMethod(s, '        '), '        ', contextState, 'page'),
+      )
       .filter(Boolean)
       .join('\n')
     if (stepLines) {
@@ -277,6 +318,10 @@ export function renderPageObject(page: IRPage): string {
     : ''
 
   const constantsBlock = constants ? `${constants}\n\n` : ''
+  const contextHelpers = renderPageContextHelpers([
+    ...page.steps,
+    ...(page.inferredMethods ?? []).flatMap((m) => m.steps),
+  ])
 
   const needsOsImport = (TEST_DATA?.params ?? []).some((p) => p.useEnvVar)
   const allSteps = [...page.steps, ...(page.inferredMethods ?? []).flatMap((m) => m.steps)]
@@ -290,7 +335,7 @@ export function renderPageObject(page: IRPage): string {
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-
+${pyInteractionImports(allSteps)}
 
 class ${page.className}:
 ${collisionComment}${constantsBlock}    def __init__(self, driver):
@@ -298,6 +343,6 @@ ${collisionComment}${constantsBlock}    def __init__(self, driver):
         self.wait = WebDriverWait(driver, 10)
 
     def goto(self):
-        self.driver.get(${pyStr(gotoUrl)})${accessorsBlock}${methodsBlock}
+        self.driver.get(${pyStr(gotoUrl)})${contextHelpers}${accessorsBlock}${methodsBlock}
 `
 }

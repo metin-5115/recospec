@@ -1,5 +1,13 @@
 import type { IRScenario, IRStep, AssertionDetail, IRElement, TestDataConfig } from '../../ir/types'
 import { renderByExpression, javaStr } from './locator'
+import { renderJavaInteraction, javaInteractionImports } from './interaction'
+import { renderNetworkNote } from './network-note'
+import {
+  frameStatements,
+  javaContextImports,
+  newContextState,
+  renderContextHelpers,
+} from './context'
 import { resolveTestData } from '../../planner/test-data-resolver'
 
 let TEST_DATA: TestDataConfig | undefined
@@ -111,6 +119,21 @@ function renderStepInTest(step: IRStep, indent: string): string {
       `${indent}_el.sendKeys(${expr});`,
     ].join('\n')
   }
+  if (step.element) {
+    const byExpr = renderByExpression(step.element)
+    const interaction = renderJavaInteraction(
+      step,
+      {
+        prelude: [
+          `WebElement _el = wait.until(ExpectedConditions.visibilityOfElementLocated(${byExpr}));`,
+        ],
+        ref: '_el',
+        scoped: true,
+      },
+      indent,
+    )
+    if (interaction) return interaction
+  }
   if (step.action === 'keypress' && step.key) {
     return `${indent}driver.switchTo().activeElement().sendKeys(Keys.${step.key.toUpperCase()});`
   }
@@ -133,15 +156,32 @@ export function renderScenario(scenario: IRScenario): string {
     .map((p) => `        ${p.className} ${toVarName(p.className)} = new ${p.className}(driver);`)
     .join('\n')
 
+  const contextState = newContextState()
   const stepLines = scenario.pages
-    .flatMap((page) => page.steps.map((step) => renderStepInTest(step, '        ')).filter(Boolean))
+    .flatMap((page) =>
+      page.steps
+        .map((step) => {
+          const rendered = renderStepInTest(step, '        ')
+          if (!rendered) return ''
+          return [...frameStatements(step, '        ', contextState), rendered].join('\n')
+        })
+        .filter(Boolean),
+    )
     .join('\n')
+  const allSteps = scenario.pages.flatMap((p) => p.steps)
+  const contextHelpers = renderContextHelpers(allSteps)
+  const contextImports = javaContextImports(allSteps)
 
-  const safeBody = stepLines || '        // no steps recorded'
+  const networkNote = renderNetworkNote(
+    scenario.pages.flatMap((p) => p.steps),
+    '        ',
+  )
+  const safeBody = (networkNote + stepLines).trimEnd() || '        // no steps recorded'
   const methodSuffix = toJavaMethodName(scenario.name)
   const className = `Test${methodSuffix.charAt(0).toUpperCase() + methodSuffix.slice(1)}`
 
   const pageVarsBlock = pageVars ? `${pageVars}\n` : ''
+  const interactionImports = javaInteractionImports(scenario.pages.flatMap((p) => p.steps))
 
   return `package tests;
 
@@ -157,7 +197,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-${pageImports}
+${interactionImports}${contextImports}${pageImports}
 
 public class ${className} {
     private WebDriver driver;
@@ -185,7 +225,7 @@ ${pageVarsBlock}${safeBody}
         if (driver != null) {
             driver.quit();
         }
-    }
+    }${contextHelpers}
 }
 `
 }

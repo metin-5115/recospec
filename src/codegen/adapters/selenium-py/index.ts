@@ -5,6 +5,7 @@ import { renderPageObject, setSeleniumPyPageObjectTestData } from './page-object
 import { renderScenario, toSnakeCase, setSeleniumPyTestData } from './scenario'
 import { renderScaffold, setSeleniumPyScaffoldTestData } from './scaffold'
 import { renderFeatureFile, renderStepsFile, renderBddScaffoldFiles } from './bdd'
+import { setSeleniumPyIncludeMocks } from './network-note'
 
 export { renderPageObject, renderScenario, renderScaffold, toSnakeCase }
 
@@ -21,6 +22,7 @@ export const seleniumPyAdapter: FrameworkAdapter = {
     setSeleniumPyTestData(options.testData)
     setSeleniumPyPageObjectTestData(options.testData)
     setSeleniumPyScaffoldTestData(options.testData)
+    setSeleniumPyIncludeMocks(options.includeMocks === true)
   },
   renderPageObject(page: IRPage): GeneratedFile {
     return {

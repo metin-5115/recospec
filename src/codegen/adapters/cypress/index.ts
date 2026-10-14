@@ -5,6 +5,7 @@ import { renderPageObject } from './page-object'
 import { renderScenario, setCypressTestData } from './scenario'
 import { setCypressPageObjectTestData } from './page-object'
 import { renderLocator } from './locator'
+import { setCypressRenderMocks } from './mock'
 import { CYPRESS_SELF_HEALING_JS } from '../../scaffold/self-healing'
 import { renderFeatureFile, renderStepsFile, renderBddScaffoldFiles } from './bdd'
 
@@ -94,6 +95,7 @@ export const cypressAdapter: FrameworkAdapter = {
     TEST_DATA = options.testData
     setCypressTestData(options.testData)
     setCypressPageObjectTestData(options.testData)
+    setCypressRenderMocks(options.includeMocks === true)
   },
   renderPageObject(page: IRPage): GeneratedFile {
     return { filename: `${page.className}.js`, content: renderPageObject(page) }

@@ -125,16 +125,27 @@ export function renderRelativeLocator(el: IRElement): string {
 /** Render a `By.X("...")` expression — used for ad-hoc lookups in test bodies. */
 export function renderByExpression(el: IRElement): string {
   const { type, value } = renderFindByLocator(el)
+  let by: string
   switch (type) {
     case 'css':
-      return `By.cssSelector(${javaStr(value)})`
+      by = `By.cssSelector(${javaStr(value)})`
+      break
     case 'xpath':
-      return `By.xpath(${javaStr(value)})`
+      by = `By.xpath(${javaStr(value)})`
+      break
     case 'id':
-      return `By.id(${javaStr(value)})`
+      by = `By.id(${javaStr(value)})`
+      break
     case 'name':
-      return `By.name(${javaStr(value)})`
+      by = `By.name(${javaStr(value)})`
+      break
     case 'className':
-      return `By.className(${javaStr(value)})`
+      by = `By.className(${javaStr(value)})`
+      break
   }
+  // An element in an open shadow root cannot be found from the document; the
+  // generated nested `ShadowBy` walks the host chain's shadow roots first.
+  const hosts = el.shadowContext?.hostChain ?? []
+  if (hosts.length === 0) return by
+  return `new ShadowBy(new String[] {${hosts.map(javaStr).join(', ')}}, ${by})`
 }

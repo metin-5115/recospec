@@ -160,3 +160,35 @@ describe('isDynamicId', () => {
     })
   })
 })
+
+describe('isDynamicClass — build-generated class families', () => {
+  it.each([
+    ['CSS Modules', 'Button_primary__3xZ2a'],
+    ['CSS Modules (mixed case hash)', 'Header_nav__aB1cD'],
+    ['Emotion styled', 'e1ie3l1u0'],
+    ['Angular view encapsulation', 'ng-tns-c12-3'],
+    ['Angular _ngcontent', '_ngcontent-abc-c12'],
+    ['Angular _nghost', '_nghost-abc-c12'],
+    ['Angular form state', 'ng-dirty'],
+    ['Angular form state (touched)', 'ng-touched'],
+    ['Svelte scoped', 'svelte-1x7k2ab'],
+    ['styled-jsx', 'jsx-1234567890'],
+  ])('flags %s (%s) as dynamic', (_family, cls) => {
+    expect(isDynamicClass(cls)).toBe(true)
+  })
+
+  it.each([
+    'card__title',
+    'card__title--active',
+    'btn_primary',
+    'my_class__title',
+    'nav-item',
+    'error-message',
+    'e2e-test',
+    'ng-container',
+    'svelte-icon',
+    'jsx-icon',
+  ])('keeps the hand-written class %s', (cls) => {
+    expect(isDynamicClass(cls)).toBe(false)
+  })
+})

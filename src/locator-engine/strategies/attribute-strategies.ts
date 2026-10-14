@@ -1,5 +1,6 @@
 import type { Locator } from '@shared/types/locator'
 import type { LocatorStrategy } from './base'
+import { cssAttrValue } from '@shared/selector-escape'
 
 /**
  * Faz 5 strategy expansions. Each produces a CANDIDATE for the constraint /
@@ -10,10 +11,6 @@ import type { LocatorStrategy } from './base'
  * test-ids / ARIA / labels.
  */
 
-function cssEscapeAttr(value: string): string {
-  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
-}
-
 /** `placeholder` — Playwright `getByPlaceholder`. */
 export class PlaceholderStrategy implements LocatorStrategy {
   readonly name = 'placeholder'
@@ -22,7 +19,7 @@ export class PlaceholderStrategy implements LocatorStrategy {
   evaluate(el: Element): Locator | null {
     const value = el.getAttribute('placeholder')?.trim()
     if (!value) return null
-    const selector = `[placeholder="${cssEscapeAttr(value)}"]`
+    const selector = `[placeholder="${cssAttrValue(value)}"]`
     return {
       strategy: 'placeholder',
       selector,
@@ -43,7 +40,7 @@ export class AltStrategy implements LocatorStrategy {
   evaluate(el: Element): Locator | null {
     const value = el.getAttribute('alt')?.trim()
     if (!value) return null
-    const selector = `[alt="${cssEscapeAttr(value)}"]`
+    const selector = `[alt="${cssAttrValue(value)}"]`
     return {
       strategy: 'alt',
       selector,
@@ -64,7 +61,7 @@ export class TitleStrategy implements LocatorStrategy {
   evaluate(el: Element): Locator | null {
     const value = el.getAttribute('title')?.trim()
     if (!value) return null
-    const selector = `[title="${cssEscapeAttr(value)}"]`
+    const selector = `[title="${cssAttrValue(value)}"]`
     return {
       strategy: 'title',
       selector,
@@ -88,7 +85,7 @@ export class NameAttributeStrategy implements LocatorStrategy {
     if (!['input', 'select', 'textarea', 'button'].includes(tag)) return null
     const value = el.getAttribute('name')?.trim()
     if (!value) return null
-    const selector = `${tag}[name="${cssEscapeAttr(value)}"]`
+    const selector = `${tag}[name="${cssAttrValue(value)}"]`
     return {
       strategy: 'name',
       selector,
@@ -115,8 +112,8 @@ export class HrefStrategy implements LocatorStrategy {
     if (!path) return null
     // Exact match when there was no query; prefix match when we stripped one.
     const selector = hadQuery
-      ? `a[href^="${cssEscapeAttr(path)}"]`
-      : `a[href="${cssEscapeAttr(path)}"]`
+      ? `a[href^="${cssAttrValue(path)}"]`
+      : `a[href="${cssAttrValue(path)}"]`
     return {
       strategy: 'href',
       selector,

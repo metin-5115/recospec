@@ -131,6 +131,36 @@ function buildElement(
   return { name, ...shared }
 }
 
+type ElementActionType = 'click' | 'dblclick' | 'hover' | 'fill' | 'select' | 'check' | 'uncheck'
+
+const ELEMENT_ACTION_TYPES: ReadonlySet<string> = new Set<ElementActionType>([
+  'click',
+  'dblclick',
+  'hover',
+  'fill',
+  'select',
+  'check',
+  'uncheck',
+])
+
+/** Actions whose recorded `payload.value` becomes the IR step value. */
+const VALUE_ACTIONS: ReadonlySet<string> = new Set<ElementActionType>(['fill', 'select'])
+
+/** A dblclick fires after two click events; replaying all three would triple-click. */
+const DBLCLICK_PRECEDING_CLICKS = 2
+
+function isElementAction(type: RecordedAction['type']): type is ElementActionType {
+  return ELEMENT_ACTION_TYPES.has(type)
+}
+
+function collapseClicksBeforeDblclick(steps: IRStep[], element: IRElement): void {
+  for (let n = 0; n < DBLCLICK_PRECEDING_CLICKS; n++) {
+    const prev = steps[steps.length - 1]
+    if (prev?.action !== 'click' || prev.element?.locatorValue !== element.locatorValue) return
+    steps.pop()
+  }
+}
+
 function isSameFillMerge(prev: IRStep, curr: RecordedAction): boolean {
   return (
     curr.type === 'fill' &&
@@ -167,7 +197,7 @@ export function normalizeActions(actions: RecordedAction[]): NormalizedActions {
       continue
     }
 
-    if (type === 'click' || type === 'fill') {
+    if (isElementAction(type)) {
       if (!action.target) continue
       const element = buildElement(
         action.target.elementSnapshot,
@@ -181,9 +211,11 @@ export function normalizeActions(actions: RecordedAction[]): NormalizedActions {
         action.timestamp,
       )
       const step: IRStep = { id, action: type, element, annotation }
-      if (type === 'fill' && payload?.value !== undefined) {
+      if (VALUE_ACTIONS.has(type) && payload?.value !== undefined) {
         step.value = String(payload.value)
       }
+
+      if (type === 'dblclick') collapseClicksBeforeDblclick(steps, element)
 
       const last = steps[steps.length - 1]
       if (last && isSameFillMerge(last, action) && payload?.value !== undefined) {

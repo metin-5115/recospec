@@ -1,6 +1,7 @@
 import type { Locator } from '@shared/types/locator'
 import type { LocatorStrategy } from './base'
 import { isDynamicId, isDynamicClass } from '../scoring/dynamic-detector'
+import { xpathLiteral } from '@shared/selector-escape'
 
 const SEMANTIC_TAGS = new Set([
   'form',
@@ -32,14 +33,17 @@ function uniqueInDoc(doc: Document, css: string): boolean {
  */
 function stableAncestorXPath(el: Element, doc: Document): string | null {
   const id = el.getAttribute('id')
-  if (id && !isDynamicId(id)) return `//*[@id="${id}"]`
+  if (id && !isDynamicId(id)) return `//*[@id=${xpathLiteral(id, '"')}]`
   const tag = el.tagName.toLowerCase()
   const classes = Array.from(el.classList).filter((c) => !isDynamicClass(c))
   if (classes.length) {
     const cssSel = `${tag}.${classes.map((c) => CSS.escape(c)).join('.')}`
     if (uniqueInDoc(doc, cssSel)) {
       const preds = classes
-        .map((c) => `contains(concat(' ', normalize-space(@class), ' '), ' ${c} ')`)
+        .map(
+          (c) =>
+            `contains(concat(' ', normalize-space(@class), ' '), ${xpathLiteral(` ${c} `, '"')})`,
+        )
         .join(' and ')
       return `//${tag}[${preds}]`
     }
@@ -53,9 +57,9 @@ function buildXPath(el: Element, doc: Document): { xpath: string; isAbsolute: bo
 
   const name = el.getAttribute('name')?.trim()
   const placeholder = el.getAttribute('placeholder')?.trim()
-  if (name) return { xpath: `//${tag}[@name=${JSON.stringify(name)}]`, isAbsolute: false }
+  if (name) return { xpath: `//${tag}[@name=${xpathLiteral(name, '"')}]`, isAbsolute: false }
   if (placeholder)
-    return { xpath: `//${tag}[@placeholder=${JSON.stringify(placeholder)}]`, isAbsolute: false }
+    return { xpath: `//${tag}[@placeholder=${xpathLiteral(placeholder, '"')}]`, isAbsolute: false }
 
   const segments: string[] = []
   let current: Element | null = el
@@ -74,7 +78,7 @@ function buildXPath(el: Element, doc: Document): { xpath: string; isAbsolute: bo
     const parentId = parentEl.getAttribute('id')
     if (parentId && !isDynamicId(parentId)) {
       return {
-        xpath: `//*[@id="${parentId}"]/${segments.join('/')}`,
+        xpath: `//*[@id=${xpathLiteral(parentId, '"')}]/${segments.join('/')}`,
         isAbsolute: false,
       }
     }

@@ -224,3 +224,78 @@ describe('normalizeActions', () => {
     expect(element?.fallbackLocators).toBeUndefined()
   })
 })
+
+function makeTargetAction(
+  id: string,
+  type: RecordedAction['type'],
+  locatorValue: string,
+  tagName: string,
+  payload?: Record<string, unknown>,
+  attributes: Record<string, string> = {},
+): RecordedAction {
+  return makeAction({
+    actionId: id,
+    type,
+    payload,
+    target: {
+      primaryLocator: {
+        strategy: 'testid',
+        selector: `[data-testid="${locatorValue}"]`,
+        framework: { playwright: locatorValue },
+        score: 100,
+        matchCount: 1,
+      },
+      fallbackLocators: [],
+      elementSnapshot: {
+        tagName,
+        attributes: { 'data-testid': locatorValue, ...attributes },
+        textContent: '',
+      },
+    },
+  })
+}
+
+describe('normalizeActions — richer interactions', () => {
+  it('keeps select actions with their chosen value', () => {
+    const { flatSteps } = normalizeActions([
+      makeTargetAction('s1', 'select', 'country', 'select', { value: 'tr' }),
+    ])
+    expect(flatSteps).toHaveLength(1)
+    expect(flatSteps[0].action).toBe('select')
+    expect(flatSteps[0].value).toBe('tr')
+    expect(flatSteps[0].element?.tagName).toBe('select')
+  })
+
+  it.each(['check', 'uncheck', 'hover', 'dblclick'] as const)('keeps %s actions', (type) => {
+    const { flatSteps } = normalizeActions([makeTargetAction('a1', type, 'target', 'input')])
+    expect(flatSteps).toHaveLength(1)
+    expect(flatSteps[0].action).toBe(type)
+    expect(flatSteps[0].element).toBeDefined()
+  })
+
+  it('collapses the two click events that precede a dblclick on the same element', () => {
+    const { flatSteps } = normalizeActions([
+      makeTargetAction('c0', 'click', 'other', 'button'),
+      makeTargetAction('c1', 'click', 'row', 'tr'),
+      makeTargetAction('c2', 'click', 'row', 'tr'),
+      makeTargetAction('d1', 'dblclick', 'row', 'tr'),
+    ])
+    expect(flatSteps.map((s) => s.action)).toEqual(['click', 'dblclick'])
+    expect(flatSteps[0].element?.locatorValue).toContain('other')
+  })
+
+  it('does not collapse clicks on a different element than the dblclick', () => {
+    const { flatSteps } = normalizeActions([
+      makeTargetAction('c1', 'click', 'a', 'button'),
+      makeTargetAction('d1', 'dblclick', 'b', 'button'),
+    ])
+    expect(flatSteps.map((s) => s.action)).toEqual(['click', 'dblclick'])
+  })
+
+  it('drops an action without a target instead of emitting an empty step', () => {
+    const { flatSteps } = normalizeActions([
+      makeAction({ type: 'select', payload: { value: 'x' } }),
+    ])
+    expect(flatSteps).toHaveLength(0)
+  })
+})

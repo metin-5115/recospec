@@ -1,4 +1,5 @@
 import type { Locator } from '@shared/types/locator'
+import { cssAttrValue } from '@shared/selector-escape'
 import { computeAccessibleName } from '../strategies/accessible-name'
 import { selectorForRole } from '../strategies/role-table'
 
@@ -169,7 +170,7 @@ function resolveByXPath(xpath: string, doc: Document): Element[] {
   const attr = xpath.match(XPATH_ATTR_FORM)
   if (attr) {
     const [, tag, name, dq, sq] = attr
-    return queryAll(doc, `${tag}[${name}="${dq ?? sq ?? ''}"]`)
+    return queryAll(doc, `${tag}[${name}="${cssAttrValue(dq ?? sq ?? '')}"]`)
   }
 
   const idAnchored = xpath.match(/^\/\/\*\[@id="([^"]*)"\]\/(.+)$/)
@@ -271,9 +272,9 @@ export function resolveLocator(loc: Locator, doc: Document): Element[] {
       if (!sel) return []
       // Mirrors TestIdStrategy's attribute family (data-testid / data-test-id / data-cy).
       return [
-        ...queryAll(doc, `[data-testid="${sel}"]`),
-        ...queryAll(doc, `[data-test-id="${sel}"]`),
-        ...queryAll(doc, `[data-cy="${sel}"]`),
+        ...queryAll(doc, `[data-testid="${cssAttrValue(sel)}"]`),
+        ...queryAll(doc, `[data-test-id="${cssAttrValue(sel)}"]`),
+        ...queryAll(doc, `[data-cy="${cssAttrValue(sel)}"]`),
       ]
     }
     // `css` + the attribute strategies all emit a plain CSS selector.
@@ -323,7 +324,7 @@ function resolveTemplate(loc: Locator, doc: Document): Element[] {
     return resolveByRoleName(spec.role, spec.capturedValue, scope)
   }
   if (spec.strategy === 'aria-label') {
-    return queryAll(scope, `[aria-label="${spec.capturedValue.replace(/"/g, '\\"')}"]`)
+    return queryAll(scope, `[aria-label="${cssAttrValue(spec.capturedValue)}"]`)
   }
   return resolveByText(spec.capturedValue, scope)
 }
