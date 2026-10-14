@@ -1,5 +1,6 @@
 import type { Locator } from '@shared/types/locator'
 import type { LocatorStrategy } from './base'
+import { cssAttrValue, jsSingleQuoted } from '@shared/selector-escape'
 
 const TESTID_ATTRIBUTES = ['data-testid', 'data-test-id', 'data-cy'] as const
 
@@ -12,18 +13,19 @@ export class TestIdStrategy implements LocatorStrategy {
       const value = el.getAttribute(attr)?.trim()
       if (!value) continue
 
+      const css = jsSingleQuoted(`[${attr}="${cssAttrValue(value)}"]`)
       const playwright =
         attr === 'data-testid'
-          ? `page.getByTestId('${value}')`
-          : `page.locator('[${attr}="${value}"]')`
+          ? `page.getByTestId(${jsSingleQuoted(value)})`
+          : `page.locator(${css})`
 
       return {
         strategy: 'testid',
         selector: value,
         framework: {
           playwright,
-          cypress: `cy.get('[${attr}="${value}"]')`,
-          seleniumPy: `driver.find_element(By.CSS_SELECTOR, '[${attr}="${value}"]')`,
+          cypress: `cy.get(${css})`,
+          seleniumPy: `driver.find_element(By.CSS_SELECTOR, ${css})`,
         },
       }
     }

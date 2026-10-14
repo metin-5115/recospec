@@ -1,6 +1,7 @@
 import type { Locator } from '@shared/types/locator'
 import type { LocatorStrategy } from './base'
 import { isDynamicClass } from '../scoring/dynamic-detector'
+import { cssAttrValue } from '@shared/selector-escape'
 
 function staticClasses(el: Element): string[] {
   return Array.from(el.classList).filter((cls) => !isDynamicClass(cls))
@@ -13,11 +14,15 @@ function buildSelector(el: Element, doc: Document): string {
   const placeholder = el.getAttribute('placeholder')
   const href = el instanceof HTMLAnchorElement ? el.getAttribute('href') : null
 
-  if (name) return `${tag}[name="${name}"]`
-  if (type && placeholder) return `${tag}[type="${type}"][placeholder="${placeholder}"]`
-  if (placeholder) return `${tag}[placeholder="${placeholder}"]`
-  if (type) return `${tag}[type="${type}"]`
-  if (href && href !== '#' && !href.startsWith('javascript')) return `a[href="${href}"]`
+  if (name) return `${tag}[name="${cssAttrValue(name)}"]`
+  if (type && placeholder) {
+    return `${tag}[type="${cssAttrValue(type)}"][placeholder="${cssAttrValue(placeholder)}"]`
+  }
+  if (placeholder) return `${tag}[placeholder="${cssAttrValue(placeholder)}"]`
+  if (type) return `${tag}[type="${cssAttrValue(type)}"]`
+  if (href && href !== '#' && !href.startsWith('javascript')) {
+    return `a[href="${cssAttrValue(href)}"]`
+  }
 
   const classes = staticClasses(el)
   if (classes.length > 0) {

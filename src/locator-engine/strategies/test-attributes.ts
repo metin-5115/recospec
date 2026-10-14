@@ -1,5 +1,6 @@
 import type { Locator } from '@shared/types/locator'
 import type { LocatorStrategy } from './base'
+import { cssAttrValue } from '@shared/selector-escape'
 
 const TEST_ATTRIBUTES = ['data-test', 'data-qa', 'data-automation'] as const
 
@@ -11,7 +12,7 @@ export class TestAttributesStrategy implements LocatorStrategy {
     for (const attr of TEST_ATTRIBUTES) {
       const value = el.getAttribute(attr)?.trim()
       if (value) {
-        const selector = `[${attr}="${value}"]`
+        const selector = `[${attr}="${cssAttrValue(value)}"]`
         return {
           strategy: 'test-attr',
           selector,

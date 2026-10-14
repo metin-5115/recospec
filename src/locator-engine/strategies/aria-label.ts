@@ -1,6 +1,7 @@
 import type { Locator } from '@shared/types/locator'
 import { isDynamicValue } from '@shared/dynamic-value'
 import type { LocatorStrategy } from './base'
+import { cssAttrValue } from '@shared/selector-escape'
 
 export class AriaLabelStrategy implements LocatorStrategy {
   readonly name = 'aria-label'
@@ -15,7 +16,7 @@ export class AriaLabelStrategy implements LocatorStrategy {
         .filter((t): t is string => Boolean(t))
       if (texts.length > 0) {
         const label = texts.join(' ')
-        const selector = `[aria-labelledby="${labelledBy}"]`
+        const selector = `[aria-labelledby="${cssAttrValue(labelledBy)}"]`
         return {
           strategy: 'aria-labelledby',
           selector,
@@ -32,7 +33,7 @@ export class AriaLabelStrategy implements LocatorStrategy {
     const label = el.getAttribute('aria-label')?.trim()
     if (!label) return null
 
-    const selector = `[aria-label="${label}"]`
+    const selector = `[aria-label="${cssAttrValue(label)}"]`
     return {
       strategy: 'aria-label',
       selector,

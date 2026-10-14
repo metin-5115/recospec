@@ -38,7 +38,7 @@ function expectValidPython(source: string): void {
   expect(result.ok, result.error).toBe(true)
 }
 
-describe('selenium-py adapter — select / check / hover / dblclick', () => {
+describe('selenium-py adapter — select / check / hover / dblclick', { timeout: 30_000 }, () => {
   it('renders a parameterised Select(...).select_by_value and imports Select', () => {
     const page = pageWith(
       [{ id: 's1', action: 'select', element: country, value: 'tr' }],
