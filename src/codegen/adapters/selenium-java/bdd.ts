@@ -2,6 +2,7 @@ import type { GeneratedFile } from '@shared/types/generated'
 import type { IRScenario, IRPage } from '../../ir/types'
 import {
   mapScenarioToGherkin,
+  literalArgsFor,
   type GherkinStep,
   type GherkinFeature,
 } from '../../bdd/gherkin-mapper'
@@ -51,6 +52,9 @@ function placeholderTypes(pattern: string): string[] {
   return (pattern.match(/\{(string|int|float)\}/g) ?? []).map(javaTypeForPlaceholder)
 }
 
+/** Recorded steps that need no step-definition code of their own. */
+const NO_OP_ACTIONS = new Set(['wait', 'network'])
+
 function renderStepBody(step: GherkinStep, argNames: string[]): string {
   const page = step.page
   const method = step.method
@@ -58,7 +62,7 @@ function renderStepBody(step: GherkinStep, argNames: string[]): string {
 
   if (page && method) {
     const pomName = pomVarName(page)
-    const args = argNames.join(', ')
+    const args = [...argNames, ...literalArgsFor(step, argNames.length, 'java')].join(', ')
     return [
       `        ${page.className} ${pomName} = new ${page.className}(driver);`,
       `        ${pomName}.${method.name}(${args});`,
@@ -129,7 +133,10 @@ function renderStepBody(step: GherkinStep, argNames: string[]): string {
       `        assert driver.findElement(By.xpath(xpath)).isDisplayed();`,
     ].join('\n')
   }
-  return `        // TODO: implement step`
+  if (sourceAction && NO_OP_ACTIONS.has(sourceAction)) {
+    return `        // No-op: ${sourceAction} steps are covered by the explicit waits.`
+  }
+  return `        throw new UnsupportedOperationException(${JSON.stringify(`Unsupported recorded step: ${sourceAction ?? 'unknown'}`)});`
 }
 
 // ---------------------------------------------------------------------------

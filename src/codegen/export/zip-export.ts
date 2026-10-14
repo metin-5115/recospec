@@ -36,9 +36,9 @@ const README_TEMPLATE = (session: Session, framework: string) => {
 npx cypress run --env updateSnapshots=true
 \`\`\``
     : isSeleniumPy
-      ? `Selenium has no built-in pixel-diff. Screenshot assertions emit \`driver.save_screenshot(...)\` stubs into \`screenshots/\` — wire up [\`needle\`](https://needle.readthedocs.io/) or \`pytest-image-diff\` if you want diffing.`
+      ? `Selenium has no built-in visual matcher, so screenshot assertions call a small \`_assert_screenshot()\` helper (Pillow, listed in \`requirements.txt\`). The first run records a baseline under \`screenshots/\` — commit it. Later runs fail when more than the allowed ratio of pixels differ (default \`0.02\`). Delete a baseline to re-record it.`
       : isSeleniumJava
-        ? `Selenium has no built-in pixel-diff. Screenshot assertions emit \`// TODO\` stubs — wire up [\`ashot\`](https://github.com/pazone/ashot) or [\`applitools-eyes-selenium-java\`](https://applitools.com/) and replace the stub with a baseline comparison.`
+        ? `Selenium has no built-in visual matcher, so screenshot assertions call a small \`assertScreenshot()\` helper (JDK \`ImageIO\` only — no extra dependency). The first run records a baseline under \`screenshots/\` — commit it. Later runs fail when more than the allowed ratio of pixels differ (default \`0.02\`). Delete a baseline to re-record it.`
         : `Generated tests use Playwright's built-in \`toHaveScreenshot()\` matcher. The first run produces baselines under \`tests/scenario.spec.ts-snapshots/\` — commit them. Later runs compare pixel-by-pixel; the default \`threshold\` is \`0.2\` (20% per-pixel allowance). Update baselines with:
 
 \`\`\`bash

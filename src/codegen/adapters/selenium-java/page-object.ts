@@ -19,6 +19,8 @@ import {
   type JavaInteractionTarget,
 } from './interaction'
 import {
+  DEFAULT_SCREENSHOT_THRESHOLD,
+  screenshotName,
   frameStatements,
   javaContextImports,
   newContextState,
@@ -169,7 +171,7 @@ function renderElementField(el: IRElement): string {
       )
     } else if (mode === 'relative') {
       lines.push(
-        `    // TODO: relative date mode is not supported in the Selenium Java adapter — frozen at the recorded value`,
+        `    // NOTE: relative date mode is not available in the Selenium Java adapter — the date stays frozen at the recorded value`,
       )
     }
   }
@@ -239,8 +241,8 @@ function renderAssertion(d: AssertionDetail, el: IRElement | undefined, indent: 
       return `${indent}assert driver.findElements(${renderByExpression(el)}).size() == ${expected};`
     }
     case 'screenshot': {
-      const name = (d.name ?? 'snapshot').replace(/[^A-Za-z0-9_-]/g, '_')
-      return `${indent}// TODO: integrate pixel-diff (e.g. ashot) — stub saves a screenshot to screenshots/${name}.png`
+      const name = javaStr(screenshotName(d.name))
+      return `${indent}assertScreenshot(driver, ${name}, ${d.threshold ?? DEFAULT_SCREENSHOT_THRESHOLD});`
     }
   }
 }

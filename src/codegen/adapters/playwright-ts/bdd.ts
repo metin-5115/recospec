@@ -2,6 +2,7 @@ import type { GeneratedFile } from '@shared/types/generated'
 import type { IRScenario, IRPage } from '../../ir/types'
 import {
   mapScenarioToGherkin,
+  literalArgsFor,
   type GherkinStep,
   type GherkinFeature,
 } from '../../bdd/gherkin-mapper'
@@ -44,6 +45,9 @@ function pomVarName(page: IRPage): string {
   return page.className.charAt(0).toLowerCase() + page.className.slice(1)
 }
 
+/** Recorded steps that need no step-definition code of their own. */
+const NO_OP_ACTIONS = new Set(['wait', 'network'])
+
 /** Render the body of a step definition for the given Gherkin step. */
 function renderStepBody(step: GherkinStep, paramNames: string[]): string {
   const page = step.page
@@ -52,7 +56,7 @@ function renderStepBody(step: GherkinStep, paramNames: string[]): string {
 
   if (page && method) {
     const pomName = pomVarName(page)
-    const args = paramNames.join(', ')
+    const args = [...paramNames, ...literalArgsFor(step, paramNames.length, 'js')].join(', ')
     return [
       `  const ${pomName} = new ${page.className}(page);`,
       `  await ${pomName}.${method.name}(${args});`,
@@ -87,7 +91,10 @@ function renderStepBody(step: GherkinStep, paramNames: string[]): string {
   if (sourceAction === 'assert') {
     return `  await expect(page.getByText(${paramNames[0] ?? '""'})).toBeVisible();`
   }
-  return `  // TODO: implement step`
+  if (sourceAction && NO_OP_ACTIONS.has(sourceAction)) {
+    return `  // No-op: ${sourceAction} steps are covered by Playwright's auto-waiting.`
+  }
+  return `  throw new Error(${JSON.stringify(`Unsupported recorded step: ${sourceAction ?? 'unknown'}`)});`
 }
 
 /**

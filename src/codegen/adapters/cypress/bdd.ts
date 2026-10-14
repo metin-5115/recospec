@@ -2,6 +2,7 @@ import type { GeneratedFile } from '@shared/types/generated'
 import type { IRScenario, IRPage } from '../../ir/types'
 import {
   mapScenarioToGherkin,
+  literalArgsFor,
   type GherkinStep,
   type GherkinFeature,
 } from '../../bdd/gherkin-mapper'
@@ -44,6 +45,9 @@ function pomVarName(page: IRPage): string {
  * synchronous from the user's perspective. POM methods use `cy.*` internally
  * and Cypress queues them automatically.
  */
+/** Recorded steps that need no step-definition code of their own. */
+const NO_OP_ACTIONS = new Set(['wait', 'network'])
+
 function renderStepBody(step: GherkinStep, paramNames: string[]): string {
   const page = step.page
   const method = step.method
@@ -51,7 +55,7 @@ function renderStepBody(step: GherkinStep, paramNames: string[]): string {
 
   if (page && method) {
     const pomName = pomVarName(page)
-    const args = paramNames.join(', ')
+    const args = [...paramNames, ...literalArgsFor(step, paramNames.length, 'js')].join(', ')
     return [
       `  const ${pomName} = new ${page.className}();`,
       `  ${pomName}.${method.name}(${args});`,
@@ -87,7 +91,10 @@ function renderStepBody(step: GherkinStep, paramNames: string[]): string {
   if (sourceAction === 'assert') {
     return `  cy.contains(${paramNames[0] ?? '""'}).should('be.visible');`
   }
-  return `  // TODO: implement step`
+  if (sourceAction && NO_OP_ACTIONS.has(sourceAction)) {
+    return `  // No-op: ${sourceAction} steps are covered by Cypress retry-ability.`
+  }
+  return `  throw new Error(${JSON.stringify(`Unsupported recorded step: ${sourceAction ?? 'unknown'}`)});`
 }
 
 /**

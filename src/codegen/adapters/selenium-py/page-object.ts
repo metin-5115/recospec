@@ -10,6 +10,13 @@ import type {
 import { renderLocatorTuple, renderFallbackTuple, pyStr } from './locator'
 import { renderPyInteraction, pyInteractionImports } from './interaction'
 import { newContextState, wrapStepContext, renderPageContextHelpers } from './context'
+import {
+  DEFAULT_SCREENSHOT_THRESHOLD,
+  renderScreenshotHelper,
+  screenshotName,
+  screenshotStdlibImports,
+  screenshotThirdPartyImports,
+} from './screenshot'
 import { resolveTestData } from '../../planner/test-data-resolver'
 
 let TEST_DATA: TestDataConfig | undefined
@@ -95,7 +102,7 @@ function renderLocatorConstant(el: IRElement): string {
       )
     } else if (mode === 'relative') {
       lines.push(
-        `    # TODO: relative date mode is not supported in the Selenium Python adapter — frozen at the recorded value`,
+        `    # NOTE: relative date mode is not available in the Selenium Python adapter — the date stays frozen at the recorded value`,
       )
     }
   }
@@ -164,9 +171,8 @@ function renderAssertion(d: AssertionDetail, el: IRElement | undefined, indent: 
       return `${indent}assert len(self.driver.find_elements(*${constRef})) == ${expected}`
     }
     case 'screenshot': {
-      // Selenium has no built-in pixel-diff. Emit a save-screenshot stub for the user.
-      const name = (d.name ?? 'snapshot').replace(/[^A-Za-z0-9_-]/g, '_')
-      return `${indent}self.driver.save_screenshot(${pyStr(`screenshots/${name}.png`)})  # TODO: integrate pixel-diff (e.g. needle / pytest-playwright-snapshot)`
+      const name = pyStr(screenshotName(d.name))
+      return `${indent}_assert_screenshot(self.driver, ${name}, ${d.threshold ?? DEFAULT_SCREENSHOT_THRESHOLD})`
     }
   }
 }
@@ -326,16 +332,20 @@ export function renderPageObject(page: IRPage): string {
   const needsOsImport = (TEST_DATA?.params ?? []).some((p) => p.useEnvVar)
   const allSteps = [...page.steps, ...(page.inferredMethods ?? []).flatMap((m) => m.steps)]
   const needsReImport = allSteps.some((s) => s.assertionDetail?.type === 'matches')
-  const stdlibImports = [needsReImport ? 'import re' : '', needsOsImport ? 'import os' : ''].filter(
-    Boolean,
-  )
+  const stdlibImports = [
+    needsReImport ? 'import re' : '',
+    needsOsImport ? 'import os' : '',
+    ...screenshotStdlibImports(allSteps),
+  ].filter(Boolean)
+  const screenshotHelper = renderScreenshotHelper(allSteps)
+  const screenshotBlock = screenshotHelper ? `\n\n${screenshotHelper}\n` : ''
   const osImportLine = stdlibImports.length ? stdlibImports.join('\n') + '\n' : ''
 
   return `${osImportLine}from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-${pyInteractionImports(allSteps)}
+${pyInteractionImports(allSteps)}${screenshotThirdPartyImports(allSteps)}${screenshotBlock}
 
 class ${page.className}:
 ${collisionComment}${constantsBlock}    def __init__(self, driver):
