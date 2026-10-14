@@ -29,6 +29,7 @@ Useful scripts:
 | `pnpm test`         | Vitest unit suite (target: <10s) |
 | `pnpm test --watch` | Watch mode while developing      |
 | `pnpm build`        | Chrome extension build           |
+| `pnpm build:e2e`    | Extension build for E2E tests    |
 | `pnpm build:cli`    | CLI bundle (`dist/cli/index.js`) |
 | `pnpm build:vscode` | VS Code extension bundle         |
 | `pnpm lint`         | ESLint + Prettier check          |
