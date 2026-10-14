@@ -3,10 +3,12 @@ import { renderByExpression, javaStr } from './locator'
 import { renderJavaInteraction, javaInteractionImports } from './interaction'
 import { renderNetworkNote } from './network-note'
 import {
+  DEFAULT_SCREENSHOT_THRESHOLD,
   frameStatements,
   javaContextImports,
   newContextState,
   renderContextHelpers,
+  screenshotName,
 } from './context'
 import { resolveTestData } from '../../planner/test-data-resolver'
 
@@ -41,6 +43,11 @@ function toVarName(className: string): string {
 }
 
 function renderAssertion(d: AssertionDetail, el: IRElement | undefined, indent: string): string {
+  // A screenshot assertion is page-level and legitimately has no element.
+  if (d.type === 'screenshot') {
+    const name = javaStr(screenshotName(d.name))
+    return `${indent}assertScreenshot(driver, ${name}, ${d.threshold ?? DEFAULT_SCREENSHOT_THRESHOLD});`
+  }
   if (!el) return `${indent}// assert ${d.type} (no element)`
   const byExpr = renderByExpression(el)
   switch (d.type) {
@@ -74,10 +81,6 @@ function renderAssertion(d: AssertionDetail, el: IRElement | undefined, indent: 
     case 'count': {
       const expected = Number(d.expected ?? 0)
       return `${indent}assert driver.findElements(${byExpr}).size() == ${expected};`
-    }
-    case 'screenshot': {
-      const name = (d.name ?? 'snapshot').replace(/[^A-Za-z0-9_-]/g, '_')
-      return `${indent}// TODO: integrate pixel-diff — stub saves a screenshot to screenshots/${name}.png`
     }
   }
 }

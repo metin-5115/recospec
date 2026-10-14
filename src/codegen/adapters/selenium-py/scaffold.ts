@@ -11,6 +11,7 @@ pytest>=7.4.0
 pytest-html>=4.1.0
 webdriver-manager>=4.0.0
 python-dotenv>=1.0.0
+Pillow>=10.0.0
 `
 
 const CONFTEST_PY = `import pytest

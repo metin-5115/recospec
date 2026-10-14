@@ -3,6 +3,13 @@ import { renderLocatorTuple, pyStr } from './locator'
 import { renderPyInteraction, pyInteractionImports } from './interaction'
 import { newContextState, wrapStepContext, renderTestContextHelpers } from './context'
 import { renderNetworkNote } from './network-note'
+import {
+  DEFAULT_SCREENSHOT_THRESHOLD,
+  renderScreenshotHelper,
+  screenshotName,
+  screenshotStdlibImports,
+  screenshotThirdPartyImports,
+} from './screenshot'
 import { resolveTestData } from '../../planner/test-data-resolver'
 
 let TEST_DATA: TestDataConfig | undefined
@@ -70,8 +77,8 @@ function renderAssertion(d: AssertionDetail, el: IRElement | undefined, indent: 
       return `${indent}assert len(driver.find_elements(*${tuple})) == ${expected}`
     }
     case 'screenshot': {
-      const name = (d.name ?? 'snapshot').replace(/[^A-Za-z0-9_-]/g, '_')
-      return `${indent}driver.save_screenshot(${pyStr(`screenshots/${name}.png`)})  # TODO: integrate pixel-diff`
+      const name = pyStr(screenshotName(d.name))
+      return `${indent}_assert_screenshot(driver, ${name}, ${d.threshold ?? DEFAULT_SCREENSHOT_THRESHOLD})`
     }
   }
 }
@@ -168,7 +175,10 @@ export function renderScenario(scenario: IRScenario): string {
         .filter(Boolean),
     )
     .join('\n')
-  const helpers = renderTestContextHelpers(scenario.pages.flatMap((p) => p.steps))
+  const allSteps = scenario.pages.flatMap((p) => p.steps)
+  const helpers = [renderTestContextHelpers(allSteps), renderScreenshotHelper(allSteps)]
+    .filter(Boolean)
+    .join('\n\n\n')
   const helpersBlock = helpers ? `${helpers}\n\n\n` : ''
 
   const networkNote = renderNetworkNote(
@@ -190,16 +200,18 @@ export function renderScenario(scenario: IRScenario): string {
   const needsReImport = scenario.pages.some((p) =>
     p.steps.some((s) => s.assertionDetail?.type === 'matches'),
   )
-  const stdlibImports = [needsReImport ? 'import re' : '', needsOsImport ? 'import os' : ''].filter(
-    Boolean,
-  )
+  const stdlibImports = [
+    needsReImport ? 'import re' : '',
+    needsOsImport ? 'import os' : '',
+    ...screenshotStdlibImports(scenario.pages.flatMap((p) => p.steps)),
+  ].filter(Boolean)
   const osImportLine = stdlibImports.length ? stdlibImports.join('\n') + '\n' : ''
 
   return `${osImportLine}from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-${interactionImports}${pageImports}
+${interactionImports}${screenshotThirdPartyImports(scenario.pages.flatMap((p) => p.steps))}${pageImports}
 
 
 ${helpersBlock}def test_${slug}(driver):

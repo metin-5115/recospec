@@ -29,6 +29,18 @@ function usesFrames(steps: readonly IRStep[]): boolean {
   return steps.some((s) => framesOf(s).length > 0)
 }
 
+function usesScreenshot(steps: readonly IRStep[]): boolean {
+  return steps.some((s) => s.assertionDetail?.type === 'screenshot')
+}
+
+/** Allowed ratio of differing pixels when the recording carried no threshold. */
+export const DEFAULT_SCREENSHOT_THRESHOLD = 0.02
+
+/** File-name-safe form of the recorded snapshot name. */
+export function screenshotName(name: string | undefined): string {
+  return (name ?? 'snapshot').replace(/[^A-Za-z0-9_-]/g, '_')
+}
+
 function usesShadow(steps: readonly IRStep[]): boolean {
   return steps.some((s) => (s.element?.shadowContext?.hostChain.length ?? 0) > 0)
 }
@@ -49,10 +61,17 @@ export function frameStatements(step: IRStep, indent: string, state: JavaContext
 
 /** Import lines (each newline-terminated) the generated helpers need. */
 export function javaContextImports(steps: readonly IRStep[]): string {
-  if (!usesShadow(steps)) return ''
-  return ['import java.util.List;', 'import org.openqa.selenium.SearchContext;']
-    .map((line) => `${line}\n`)
-    .join('')
+  const lines: string[] = []
+  if (usesShadow(steps)) {
+    lines.push('import java.util.List;', 'import org.openqa.selenium.SearchContext;')
+  }
+  if (usesScreenshot(steps)) {
+    lines.push(
+      'import org.openqa.selenium.OutputType;',
+      'import org.openqa.selenium.TakesScreenshot;',
+    )
+  }
+  return lines.map((line) => `${line}\n`).join('')
 }
 
 const ENTER_FRAMES_METHOD = [
@@ -61,6 +80,44 @@ const ENTER_FRAMES_METHOD = [
   '        for (String selector : selectors) {',
   '            driver.switchTo().frame(',
   '                wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector(selector))));',
+  '        }',
+  '    }',
+].join('\n')
+
+const ASSERT_SCREENSHOT_METHOD = [
+  '    /** Compares the page with screenshots/<name>.png; the first run records the baseline. */',
+  '    private static void assertScreenshot(WebDriver driver, String name, double threshold) {',
+  '        try {',
+  '            byte[] png = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);',
+  '            java.awt.image.BufferedImage current =',
+  '                javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(png));',
+  '            java.nio.file.Path baseline = java.nio.file.Paths.get("screenshots", name + ".png");',
+  '            if (!java.nio.file.Files.exists(baseline)) {',
+  '                java.nio.file.Files.createDirectories(baseline.getParent());',
+  '                javax.imageio.ImageIO.write(current, "png", baseline.toFile());',
+  '                return;',
+  '            }',
+  '            java.awt.image.BufferedImage expected = javax.imageio.ImageIO.read(baseline.toFile());',
+  '            if (expected.getWidth() != current.getWidth()',
+  '                    || expected.getHeight() != current.getHeight()) {',
+  '                throw new AssertionError("screenshot " + name + ": size differs from the baseline");',
+  '            }',
+  '            long changed = 0;',
+  '            for (int y = 0; y < current.getHeight(); y++) {',
+  '                for (int x = 0; x < current.getWidth(); x++) {',
+  '                    if (expected.getRGB(x, y) != current.getRGB(x, y)) {',
+  '                        changed++;',
+  '                    }',
+  '                }',
+  '            }',
+  '            double ratio = (double) changed / ((long) current.getWidth() * current.getHeight());',
+  '            if (ratio > threshold) {',
+  '                throw new AssertionError(String.format(',
+  '                    "screenshot %s: %.2f%% of pixels differ (allowed %.2f%%)",',
+  '                    name, ratio * 100, threshold * 100));',
+  '            }',
+  '        } catch (java.io.IOException e) {',
+  '            throw new java.io.UncheckedIOException(e);',
   '        }',
   '    }',
 ].join('\n')
@@ -100,5 +157,6 @@ export function renderContextHelpers(steps: readonly IRStep[]): string {
   const blocks: string[] = []
   if (usesFrames(steps)) blocks.push(ENTER_FRAMES_METHOD)
   if (usesShadow(steps)) blocks.push(SHADOW_BY_CLASS)
+  if (usesScreenshot(steps)) blocks.push(ASSERT_SCREENSHOT_METHOD)
   return blocks.length ? '\n\n' + blocks.join('\n\n') : ''
 }
