@@ -5,6 +5,7 @@ import { renderPageObject, setSeleniumJavaPageObjectTestData } from './page-obje
 import { renderScenario, toJavaMethodName, setSeleniumJavaTestData } from './scenario'
 import { renderScaffold, setSeleniumJavaScaffoldTestData } from './scaffold'
 import { renderFeatureFile, renderStepsFile, renderBddScaffoldFiles } from './bdd'
+import { setSeleniumJavaIncludeMocks } from './network-note'
 
 export { renderPageObject, renderScenario, renderScaffold, toJavaMethodName }
 
@@ -24,6 +25,7 @@ export const seleniumJavaAdapter: FrameworkAdapter = {
     setSeleniumJavaTestData(options.testData)
     setSeleniumJavaPageObjectTestData(options.testData)
     setSeleniumJavaScaffoldTestData(options.testData)
+    setSeleniumJavaIncludeMocks(options.includeMocks === true)
   },
   postProcess(files) {
     if (!BDD_MODE) return files

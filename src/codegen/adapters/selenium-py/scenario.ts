@@ -2,6 +2,7 @@ import type { IRScenario, IRStep, AssertionDetail, IRElement, TestDataConfig } f
 import { renderLocatorTuple, pyStr } from './locator'
 import { renderPyInteraction, pyInteractionImports } from './interaction'
 import { newContextState, wrapStepContext, renderTestContextHelpers } from './context'
+import { renderNetworkNote } from './network-note'
 import { resolveTestData } from '../../planner/test-data-resolver'
 
 let TEST_DATA: TestDataConfig | undefined
@@ -170,7 +171,11 @@ export function renderScenario(scenario: IRScenario): string {
   const helpers = renderTestContextHelpers(scenario.pages.flatMap((p) => p.steps))
   const helpersBlock = helpers ? `${helpers}\n\n\n` : ''
 
-  const safeBody = body || '    pass'
+  const networkNote = renderNetworkNote(
+    scenario.pages.flatMap((p) => p.steps),
+    '    ',
+  )
+  const safeBody = (networkNote + body).trimEnd() || '    pass'
   const slug = testNameSlug(scenario.name)
   const docstring = `    """${docstringSafe(scenario.name || 'Recorded scenario')}."""`
 

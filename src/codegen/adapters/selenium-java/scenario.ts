@@ -1,6 +1,7 @@
 import type { IRScenario, IRStep, AssertionDetail, IRElement, TestDataConfig } from '../../ir/types'
 import { renderByExpression, javaStr } from './locator'
 import { renderJavaInteraction, javaInteractionImports } from './interaction'
+import { renderNetworkNote } from './network-note'
 import {
   frameStatements,
   javaContextImports,
@@ -171,7 +172,11 @@ export function renderScenario(scenario: IRScenario): string {
   const contextHelpers = renderContextHelpers(allSteps)
   const contextImports = javaContextImports(allSteps)
 
-  const safeBody = stepLines || '        // no steps recorded'
+  const networkNote = renderNetworkNote(
+    scenario.pages.flatMap((p) => p.steps),
+    '        ',
+  )
+  const safeBody = (networkNote + stepLines).trimEnd() || '        // no steps recorded'
   const methodSuffix = toJavaMethodName(scenario.name)
   const className = `Test${methodSuffix.charAt(0).toUpperCase() + methodSuffix.slice(1)}`
 
