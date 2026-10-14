@@ -28,6 +28,7 @@ import { classifyText } from '@shared/text-classifier'
 import { extractFeatures } from './pipeline/features'
 import { scoreFeatures } from './pipeline/weights'
 import { resolveLocator } from './pipeline/resolve'
+import { scopeDocumentTo } from './pipeline/scope'
 import { applyConstraints, validateBundleMember } from './pipeline/constraints'
 import type { ResolvedCandidate } from './pipeline/constraints'
 import { buildFingerprint } from './pipeline/fingerprint'
@@ -181,7 +182,10 @@ export class LocatorEngine {
    *   C) bundle production — primary + diverse fallbacks + fingerprint +
    *      reasoned diagnostics, post-validated against the snapshot.
    */
-  evaluate(element: Element, doc: Document, options?: EvaluateOptions): LocatorBundle | null {
+  evaluate(element: Element, rootDoc: Document, options?: EvaluateOptions): LocatorBundle | null {
+    // An element inside a shadow root must be judged against ITS root — the
+    // document's own queries cannot see it (see pipeline/scope.ts).
+    const doc = scopeDocumentTo(element, rootDoc)
     const edgeCases = detectEdgeCases(element, doc)
 
     if (isCanvasLikeElement(element)) {
