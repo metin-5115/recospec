@@ -219,7 +219,7 @@ function defaultMethodTemplate(method: InferredMethod): NamedTemplate {
       keyword: 'When',
       render: () => ({
         text: `I click the ${JSON.stringify(subject)} element`,
-        pattern: `I click the ${'{string}'} element`,
+        pattern: `I click the ${JSON.stringify(subject)} element`,
       }),
     }
   }
@@ -229,10 +229,12 @@ function defaultMethodTemplate(method: InferredMethod): NamedTemplate {
       keyword: 'When',
       render: (m) => {
         const value = m.params.length ? quoted(m, 0) : '""'
-        const placeholder = m.params.length ? ph(m, 0) : '{string}'
+        // The subject is part of the pattern so every field gets its own step
+        // definition; only the value is a placeholder (one placeholder = one param).
+        const placeholder = m.params.length ? ph(m, 0) : '""'
         return {
           text: `I fill the ${JSON.stringify(subject)} field with ${value}`,
-          pattern: `I fill the {string} field with ${placeholder}`,
+          pattern: `I fill the ${JSON.stringify(subject)} field with ${placeholder}`,
         }
       },
     }
@@ -267,7 +269,7 @@ function defaultMethodTemplate(method: InferredMethod): NamedTemplate {
       keyword: 'When',
       render: () => ({
         text: `I press ${JSON.stringify(key)}`,
-        pattern: `I press {string}`,
+        pattern: `I press ${JSON.stringify(key)}`,
       }),
     }
   }
@@ -277,7 +279,7 @@ function defaultMethodTemplate(method: InferredMethod): NamedTemplate {
       keyword: 'Then',
       render: () => ({
         text: `I verify the ${JSON.stringify(subject)}`,
-        pattern: `I verify the {string}`,
+        pattern: `I verify the ${JSON.stringify(subject)}`,
       }),
     }
   }
@@ -311,6 +313,35 @@ function canonicalFor(action: IRStep['action'], isFirst: boolean): CanonicalKeyw
 function emit(canonical: CanonicalKeyword, previous: CanonicalKeyword | null): GherkinKeyword {
   if (previous === null) return canonical
   return previous === canonical ? 'And' : canonical
+}
+
+export type LiteralLanguage = 'js' | 'python' | 'java'
+
+/**
+ * Literal call arguments for the method parameters a step's pattern has no
+ * placeholder for (e.g. the boolean of `acceptAndSubmit`) — the step
+ * definition still has to pass them, or the call has the wrong arity.
+ */
+export function literalArgsFor(
+  step: GherkinStep,
+  placeholderCount: number,
+  language: LiteralLanguage,
+): string[] {
+  const total = step.method?.params.length ?? 0
+  const out: string[] = []
+  for (let i = placeholderCount; i < total; i++) {
+    const raw = step.params[i]
+    const type = step.paramTypes[i] ?? 'string'
+    if (type === 'boolean') {
+      const on = raw === true || raw === 'true' || raw === 'on'
+      out.push(language === 'python' ? (on ? 'True' : 'False') : String(on))
+    } else if (type === 'number') {
+      out.push(String(Number(raw) || 0))
+    } else {
+      out.push(JSON.stringify(String(raw ?? '')))
+    }
+  }
+  return out
 }
 
 /** Map a single IR step to a Gherkin step (used for step-level scenarios). */

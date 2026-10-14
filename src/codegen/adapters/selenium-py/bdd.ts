@@ -2,6 +2,7 @@ import type { GeneratedFile } from '@shared/types/generated'
 import type { IRScenario, IRPage } from '../../ir/types'
 import {
   mapScenarioToGherkin,
+  literalArgsFor,
   type GherkinStep,
   type GherkinFeature,
 } from '../../bdd/gherkin-mapper'
@@ -84,6 +85,9 @@ function pomVarName(page: IRPage): string {
   return toSnakeCase(page.className)
 }
 
+/** Recorded steps that need no step-definition code of their own. */
+const NO_OP_ACTIONS = new Set(['wait', 'network'])
+
 function renderStepBody(step: GherkinStep, argNames: string[]): string {
   const page = step.page
   const method = step.method
@@ -91,7 +95,7 @@ function renderStepBody(step: GherkinStep, argNames: string[]): string {
 
   if (page && method) {
     const pomName = pomVarName(page)
-    const args = argNames.join(', ')
+    const args = [...argNames, ...literalArgsFor(step, argNames.length, 'python')].join(', ')
     return [
       `    ${pomName} = ${page.className}(driver)`,
       `    ${pomName}.${method.name}(${args})`,
@@ -158,7 +162,10 @@ function renderStepBody(step: GherkinStep, argNames: string[]): string {
       `    assert driver.find_element(By.XPATH, _xpath).is_displayed()`,
     ].join('\n')
   }
-  return `    pass  # TODO: implement step`
+  if (sourceAction && NO_OP_ACTIONS.has(sourceAction)) {
+    return `    pass  # No-op: ${sourceAction} steps are covered by the explicit waits.`
+  }
+  return `    raise NotImplementedError(${JSON.stringify(`Unsupported recorded step: ${sourceAction ?? 'unknown'}`)})`
 }
 
 // ---------------------------------------------------------------------------
@@ -257,6 +264,7 @@ pytest-bdd>=7.0.0
 pytest-html>=4.1.0
 webdriver-manager>=4.0.0
 python-dotenv>=1.0.0
+Pillow>=10.0.0
 `
 
 export function renderBddScaffoldFiles(): GeneratedFile[] {

@@ -287,7 +287,7 @@ describe('mapInferredMethodToGherkin', () => {
     }
     const out = mapInferredMethodToGherkin(method, page, null)
     expect(out.text).toBe('I click the "cancel" element')
-    expect(out.pattern).toBe('I click the {string} element')
+    expect(out.pattern).toBe('I click the "cancel" element')
   })
 })
 
