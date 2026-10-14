@@ -2,6 +2,7 @@ import { broadcastToUI, sendToTab } from '@shared/messaging/send'
 import { getActionsBySession } from '@storage/action-repo'
 import { getSession } from '@storage/session-repo'
 import { logger } from '@shared/logger'
+import { resolveActiveTab } from './active-tab'
 
 const KEEPALIVE_ALARM_NAME = 'recospec-replay-keepalive'
 const STEP_RESPONSE_TIMEOUT_MS = 8_000
@@ -82,31 +83,6 @@ function waitForTabComplete(tabId: number, timeoutMs: number): Promise<void> {
     }, timeoutMs)
     chrome.tabs.onUpdated.addListener(onUpdated)
   })
-}
-
-/**
- * Resolve the active tab — prefers the focused window's active tab, falls
- * back to `tabs.query`. Mirrors `resolveActiveTab` in
- * `locator-validation-controller.ts` since both controllers need the same
- * "where should I run this?" lookup.
- */
-async function resolveActiveTab(): Promise<chrome.tabs.Tab | null> {
-  try {
-    const win = await chrome.windows.getLastFocused({
-      populate: true,
-      windowTypes: ['normal'],
-    })
-    const found = win.tabs?.find((t) => t.active)
-    if (found?.id !== undefined) return found
-  } catch {
-    /* fall through */
-  }
-  try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-    return tab ?? null
-  } catch {
-    return null
-  }
 }
 
 /**

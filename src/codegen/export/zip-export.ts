@@ -1,6 +1,7 @@
 import JSZip from 'jszip'
 import type { GeneratedCode } from '@shared/types/generated'
 import type { Session } from '@shared/types/session'
+import { slugifyFilename } from '@shared/slug'
 
 const README_TEMPLATE = (session: Session, framework: string) => {
   const isCypress = framework === 'cypress'
@@ -156,11 +157,7 @@ export async function downloadZipExport(session: Session, code: GeneratedCode): 
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `${slugify(session.name)}_${session.sessionId.slice(0, 8)}.zip`
+  a.download = `${slugifyFilename(session.name)}_${session.sessionId.slice(0, 8)}.zip`
   a.click()
   URL.revokeObjectURL(url)
-}
-
-function slugify(name: string): string {
-  return name.replace(/\s+/g, '_').replace(/[^\w-]/g, '')
 }

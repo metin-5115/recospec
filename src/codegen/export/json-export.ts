@@ -1,5 +1,6 @@
 import type { Session } from '@shared/types/session'
 import type { RecordedAction } from '@shared/types/action'
+import { slugifyFilename } from '@shared/slug'
 
 export interface JsonExportPayload {
   exportedAt: number
@@ -23,11 +24,7 @@ export function downloadJsonExport(session: Session, actions: RecordedAction[]):
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `${slugify(session.name)}_${session.sessionId.slice(0, 8)}.json`
+  a.download = `${slugifyFilename(session.name)}_${session.sessionId.slice(0, 8)}.json`
   a.click()
   URL.revokeObjectURL(url)
-}
-
-function slugify(name: string): string {
-  return name.replace(/\s+/g, '_').replace(/[^\w-]/g, '')
 }

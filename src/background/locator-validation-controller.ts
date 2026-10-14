@@ -6,6 +6,7 @@ import {
   LOCATOR_VALIDATION_MAX_TARGETS,
 } from '@shared/constants'
 import { logger } from '@shared/logger'
+import { resolveActiveTab } from './active-tab'
 
 interface PendingValidation {
   sessionId: string
@@ -17,25 +18,6 @@ interface PendingValidation {
 
 const pending = new Map<string, PendingValidation>()
 const VALIDATION_TIMEOUT_MS = 8_000
-
-async function resolveActiveTab(): Promise<chrome.tabs.Tab | null> {
-  try {
-    const win = await chrome.windows.getLastFocused({
-      populate: true,
-      windowTypes: ['normal'],
-    })
-    const active = win.tabs?.find((t) => t.active)
-    if (active?.id !== undefined) return active
-  } catch {
-    /* fall through */
-  }
-  try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-    return tab ?? null
-  } catch {
-    return null
-  }
-}
 
 function annotateUrlMismatch(
   results: LocatorValidationResult[],

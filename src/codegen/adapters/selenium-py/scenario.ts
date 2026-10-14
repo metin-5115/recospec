@@ -1,12 +1,11 @@
-import type { IRScenario, IRStep, AssertionDetail, IRElement, TestDataConfig } from '../../ir/types'
+import type { IRScenario, IRStep, IRElement, TestDataConfig } from '../../ir/types'
 import { renderLocatorTuple, pyStr } from './locator'
 import { renderPyInteraction, pyInteractionImports } from './interaction'
+import { renderPyAssertion } from './assertion'
 import { newContextState, wrapStepContext, renderTestContextHelpers } from './context'
 import { renderNetworkNote } from './network-note'
 import {
-  DEFAULT_SCREENSHOT_THRESHOLD,
   renderScreenshotHelper,
-  screenshotName,
   screenshotStdlibImports,
   screenshotThirdPartyImports,
 } from './screenshot'
@@ -30,57 +29,6 @@ export function toSnakeCase(name: string): string {
     .replace(/[^A-Za-z0-9]+/g, '_')
     .toLowerCase()
     .replace(/^_+|_+$/g, '')
-}
-
-function renderAssertion(d: AssertionDetail, el: IRElement | undefined, indent: string): string {
-  const tuple = el ? renderLocatorTuple(el) : null
-  switch (d.type) {
-    case 'visible':
-      if (!tuple) return `${indent}# assert visible (no element)`
-      return `${indent}assert WebDriverWait(driver, 10).until(EC.visibility_of_element_located(${tuple})) is not None`
-    case 'hidden':
-      if (!tuple) return `${indent}# assert hidden (no element)`
-      return `${indent}assert WebDriverWait(driver, 10).until(EC.invisibility_of_element_located(${tuple}))`
-    case 'text': {
-      if (!tuple) return `${indent}# assert text (no element)`
-      const expected = pyStr(String(d.expected ?? ''))
-      return `${indent}assert driver.find_element(*${tuple}).text == ${expected}`
-    }
-    case 'text-contains': {
-      if (!tuple) return `${indent}# assert text contains (no element)`
-      const expected = pyStr(String(d.expected ?? ''))
-      return `${indent}assert ${expected} in driver.find_element(*${tuple}).text`
-    }
-    case 'not-empty': {
-      if (!tuple) return `${indent}# assert not empty (no element)`
-      return `${indent}assert driver.find_element(*${tuple}).text.strip() != ""`
-    }
-    case 'matches': {
-      if (!tuple) return `${indent}# assert matches (no element)`
-      const pattern = pyStr(String(d.expected ?? ''))
-      return `${indent}assert re.search(${pattern}, driver.find_element(*${tuple}).text)`
-    }
-    case 'value': {
-      if (!tuple) return `${indent}# assert value (no element)`
-      const expected = pyStr(String(d.expected ?? ''))
-      return `${indent}assert driver.find_element(*${tuple}).get_attribute('value') == ${expected}`
-    }
-    case 'attribute': {
-      if (!tuple) return `${indent}# assert attribute (no element)`
-      const attr = pyStr(d.attribute ?? '')
-      const expected = pyStr(String(d.expected ?? ''))
-      return `${indent}assert driver.find_element(*${tuple}).get_attribute(${attr}) == ${expected}`
-    }
-    case 'count': {
-      if (!tuple) return `${indent}# assert count (no element)`
-      const expected = Number(d.expected ?? 0)
-      return `${indent}assert len(driver.find_elements(*${tuple})) == ${expected}`
-    }
-    case 'screenshot': {
-      const name = pyStr(screenshotName(d.name))
-      return `${indent}_assert_screenshot(driver, ${name}, ${d.threshold ?? DEFAULT_SCREENSHOT_THRESHOLD})`
-    }
-  }
 }
 
 function renderWait(step: IRStep, indent: string): string {
@@ -139,7 +87,15 @@ function renderStepInTest(step: IRStep, indent: string): string {
   }
   if (step.action === 'assert') {
     if (step.assertionDetail) {
-      return renderAssertion(step.assertionDetail, step.element, indent)
+      return renderPyAssertion(
+        step.assertionDetail,
+        {
+          driver: 'driver',
+          wait: 'WebDriverWait(driver, 10)',
+          locator: step.element ? renderLocatorTuple(step.element) : null,
+        },
+        indent,
+      )
     }
     return `${indent}# assert: ${step.annotation ?? ''}`
   }

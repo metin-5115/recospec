@@ -1,6 +1,7 @@
 import type { AssertionSuggestion, ElementSnapshot } from './types/action'
 import { isDynamicValue } from './dynamic-value'
 import { suggestedPattern, stableSubstring } from './assertion-pattern'
+import { slugifyKebab } from './slug'
 
 /**
  * Value assertions for an element's text. Stable text → exact + contains.
@@ -25,15 +26,6 @@ export function valueAssertionSuggestions(text: string): AssertionSuggestion[] {
   const pattern = suggestedPattern(text)
   out.push({ type: 'matches', label: `Expect text matches: /${pattern}/`, expected: pattern })
   return out
-}
-
-function slugifyTitle(title: string): string {
-  const slug = title
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-  return slug || 'snapshot'
 }
 
 /**
@@ -69,7 +61,7 @@ export function suggestionsForSnapshot(
   suggestions.push({
     type: 'screenshot',
     label: 'Screenshot match',
-    name: slugifyTitle(pageTitle),
+    name: slugifyKebab(pageTitle, 'snapshot'),
     threshold: 0.2,
   })
 

@@ -1,4 +1,5 @@
 import type { IRStep } from '../../ir/types'
+import { indentLines } from '../../shared/indent'
 import { pyStr, renderByTuple } from './locator'
 
 /**
@@ -33,13 +34,6 @@ function hostsOf(step: IRStep): string[] {
 }
 
 const WAIT_TIMEOUT_SEC = 10
-
-function indentBlock(text: string, extra: string): string {
-  return text
-    .split('\n')
-    .map((line) => (line ? `${extra}${line}` : line))
-    .join('\n')
-}
 
 /** Wrap an already-rendered step with the frame / shadow switching it needs. */
 export function wrapStepContext(
@@ -83,7 +77,7 @@ export function wrapStepContext(
       `${indent}self.driver = self._shadow_root(${args})`,
       `${indent}self.wait = WebDriverWait(self.driver, ${WAIT_TIMEOUT_SEC})`,
       `${indent}try:`,
-      indentBlock(rendered, '    '),
+      indentLines(rendered, '    '),
       `${indent}finally:`,
       `${indent}    self.driver, self.wait = _outer_driver, _outer_wait`,
     )

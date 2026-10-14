@@ -1,32 +1,8 @@
 import type { GeneratedFile } from '@shared/types/generated'
 import type { IRScenario, IRPage } from '../../ir/types'
-import {
-  mapScenarioToGherkin,
-  literalArgsFor,
-  type GherkinStep,
-  type GherkinFeature,
-} from '../../bdd/gherkin-mapper'
+import { mapScenarioToGherkin, literalArgsFor, type GherkinStep } from '../../bdd/gherkin-mapper'
 
-// ---------------------------------------------------------------------------
-// .feature renderer
-// ---------------------------------------------------------------------------
-
-function indentBlock(text: string, spaces: number): string {
-  const pad = ' '.repeat(spaces)
-  return text
-    .split('\n')
-    .map((line) => (line.length ? `${pad}${line}` : line))
-    .join('\n')
-}
-
-export function renderFeatureFile(scenario: IRScenario): string {
-  const feature: GherkinFeature = mapScenarioToGherkin(scenario)
-  const scenarioBlocks = feature.scenarios.map((sc) => {
-    const stepLines = sc.steps.map((s) => `${s.keyword} ${s.text}`).join('\n')
-    return `Scenario: ${sc.name}\n${indentBlock(stepLines, 2)}`
-  })
-  return `Feature: ${feature.name}\n\n${indentBlock(scenarioBlocks.join('\n\n'), 2)}\n`
-}
+export { renderFeatureFile } from '../../bdd/feature-file'
 
 // ---------------------------------------------------------------------------
 // .steps.js renderer

@@ -3,17 +3,15 @@ import type {
   IRElement,
   IRStep,
   InferredMethod,
-  AssertionDetail,
   IRParamType,
   TestDataConfig,
 } from '../../ir/types'
 import { renderLocatorTuple, renderFallbackTuple, pyStr } from './locator'
 import { renderPyInteraction, pyInteractionImports } from './interaction'
+import { renderPyAssertion } from './assertion'
 import { newContextState, wrapStepContext, renderPageContextHelpers } from './context'
 import {
-  DEFAULT_SCREENSHOT_THRESHOLD,
   renderScreenshotHelper,
-  screenshotName,
   screenshotStdlibImports,
   screenshotThirdPartyImports,
 } from './screenshot'
@@ -126,57 +124,6 @@ function renderLocatorConstant(el: IRElement): string {
 // Step rendering
 // ---------------------------------------------------------------------------
 
-function renderAssertion(d: AssertionDetail, el: IRElement | undefined, indent: string): string {
-  const constRef = el ? `self.${toConstName(el.name)}` : null
-  switch (d.type) {
-    case 'visible':
-      if (!constRef) return `${indent}# assert visible (no element)`
-      return `${indent}assert self.wait.until(EC.visibility_of_element_located(${constRef})) is not None`
-    case 'hidden':
-      if (!constRef) return `${indent}# assert hidden (no element)`
-      return `${indent}assert self.wait.until(EC.invisibility_of_element_located(${constRef}))`
-    case 'text': {
-      if (!constRef) return `${indent}# assert text (no element)`
-      const expected = pyStr(String(d.expected ?? ''))
-      return `${indent}assert self.driver.find_element(*${constRef}).text == ${expected}`
-    }
-    case 'text-contains': {
-      if (!constRef) return `${indent}# assert text contains (no element)`
-      const expected = pyStr(String(d.expected ?? ''))
-      return `${indent}assert ${expected} in self.driver.find_element(*${constRef}).text`
-    }
-    case 'not-empty': {
-      if (!constRef) return `${indent}# assert not empty (no element)`
-      return `${indent}assert self.driver.find_element(*${constRef}).text.strip() != ""`
-    }
-    case 'matches': {
-      if (!constRef) return `${indent}# assert matches (no element)`
-      const pattern = pyStr(String(d.expected ?? ''))
-      return `${indent}assert re.search(${pattern}, self.driver.find_element(*${constRef}).text)`
-    }
-    case 'value': {
-      if (!constRef) return `${indent}# assert value (no element)`
-      const expected = pyStr(String(d.expected ?? ''))
-      return `${indent}assert self.driver.find_element(*${constRef}).get_attribute('value') == ${expected}`
-    }
-    case 'attribute': {
-      if (!constRef) return `${indent}# assert attribute (no element)`
-      const attr = pyStr(d.attribute ?? '')
-      const expected = pyStr(String(d.expected ?? ''))
-      return `${indent}assert self.driver.find_element(*${constRef}).get_attribute(${attr}) == ${expected}`
-    }
-    case 'count': {
-      if (!constRef) return `${indent}# assert count (no element)`
-      const expected = Number(d.expected ?? 0)
-      return `${indent}assert len(self.driver.find_elements(*${constRef})) == ${expected}`
-    }
-    case 'screenshot': {
-      const name = pyStr(screenshotName(d.name))
-      return `${indent}_assert_screenshot(self.driver, ${name}, ${d.threshold ?? DEFAULT_SCREENSHOT_THRESHOLD})`
-    }
-  }
-}
-
 function renderStepInMethod(step: IRStep, indent: string): string {
   if (step.action === 'navigate' && step.url) {
     return `${indent}self.driver.get(${pyStr(step.url)})`
@@ -206,7 +153,15 @@ function renderStepInMethod(step: IRStep, indent: string): string {
   }
   if (step.action === 'assert') {
     if (step.assertionDetail) {
-      return renderAssertion(step.assertionDetail, step.element, indent)
+      return renderPyAssertion(
+        step.assertionDetail,
+        {
+          driver: 'self.driver',
+          wait: 'self.wait',
+          locator: step.element ? `self.${toConstName(step.element.name)}` : null,
+        },
+        indent,
+      )
     }
     return `${indent}# assert: ${step.annotation ?? ''}`
   }

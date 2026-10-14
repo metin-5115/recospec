@@ -2,6 +2,7 @@ import type { ElementSnapshot, AssertionSuggestion } from '@shared/types/action'
 import type { LocatorBundle } from '@shared/types/locator'
 import { LocatorEngine } from '@locator/index'
 import { valueAssertionSuggestions } from '@shared/assertion-suggestions'
+import { slugifyKebab } from '@shared/slug'
 import { detectShadowContext, detectFrameContext } from './shadow-pierce'
 import { sendToBackground } from '@shared/messaging/send'
 import { logger } from '@shared/logger'
@@ -24,15 +25,6 @@ function buildSnapshot(el: Element): ElementSnapshot {
   }
 }
 
-function slugifyTitle(title: string): string {
-  const slug = title
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-  return slug || 'snapshot'
-}
-
 function buildSuggestions(el: Element, snapshot: ElementSnapshot): AssertionSuggestion[] {
   const suggestions: AssertionSuggestion[] = [{ type: 'visible', label: 'Expect visible' }]
 
@@ -50,7 +42,7 @@ function buildSuggestions(el: Element, snapshot: ElementSnapshot): AssertionSugg
   suggestions.push({
     type: 'screenshot',
     label: 'Screenshot match',
-    name: slugifyTitle(document.title),
+    name: slugifyKebab(document.title, 'snapshot'),
     threshold: 0.2,
   })
 
