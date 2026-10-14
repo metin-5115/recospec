@@ -1,6 +1,7 @@
 import type { IRScenario, IRStep, AssertionDetail, IRElement, TestDataConfig } from '../../ir/types'
 import { renderLocatorTuple, pyStr } from './locator'
 import { renderPyInteraction, pyInteractionImports } from './interaction'
+import { newContextState, wrapStepContext, renderTestContextHelpers } from './context'
 import { resolveTestData } from '../../planner/test-data-resolver'
 
 let TEST_DATA: TestDataConfig | undefined
@@ -156,9 +157,18 @@ export function renderScenario(scenario: IRScenario): string {
     .map((p) => `from pages.${toSnakeCase(p.className)} import ${p.className}`)
     .join('\n')
 
+  const contextState = newContextState()
   const body = scenario.pages
-    .flatMap((page) => page.steps.map((step) => renderStepInTest(step, '    ')).filter(Boolean))
+    .flatMap((page) =>
+      page.steps
+        .map((step) =>
+          wrapStepContext(step, renderStepInTest(step, '    '), '    ', contextState, 'test'),
+        )
+        .filter(Boolean),
+    )
     .join('\n')
+  const helpers = renderTestContextHelpers(scenario.pages.flatMap((p) => p.steps))
+  const helpersBlock = helpers ? `${helpers}\n\n\n` : ''
 
   const safeBody = body || '    pass'
   const slug = testNameSlug(scenario.name)
@@ -187,7 +197,7 @@ from selenium.webdriver.support import expected_conditions as EC
 ${interactionImports}${pageImports}
 
 
-def test_${slug}(driver):
+${helpersBlock}def test_${slug}(driver):
 ${docstring}
 ${pomBlock}${safeBody}
 `

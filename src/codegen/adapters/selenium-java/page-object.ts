@@ -18,6 +18,13 @@ import {
   javaInteractionImports,
   type JavaInteractionTarget,
 } from './interaction'
+import {
+  frameStatements,
+  javaContextImports,
+  newContextState,
+  renderContextHelpers,
+  type JavaContextState,
+} from './context'
 import { resolveTestData } from '../../planner/test-data-resolver'
 
 let TEST_DATA: TestDataConfig | undefined
@@ -239,6 +246,27 @@ function renderAssertion(d: AssertionDetail, el: IRElement | undefined, indent: 
 }
 
 /**
+ * Statements that put the driver in the right frame, and re-resolve a shadow
+ * element's field through `ShadowBy` (PageFactory binds fields to the document).
+ */
+function withContext(
+  step: IRStep,
+  rendered: string | null,
+  indent: string,
+  state: JavaContextState,
+): string {
+  if (!rendered) return ''
+  const lines = frameStatements(step, indent, state)
+  const el = step.element
+  if (el && el.locatorStrategy !== 'template' && (el.shadowContext?.hostChain.length ?? 0) > 0) {
+    lines.push(
+      `${indent}this.${toJavaFieldName(el.name)} = driver.findElement(${renderByExpression(el)});`,
+    )
+  }
+  return [...lines, rendered].join('\n')
+}
+
+/**
  * Page-object fields are already WebElements — wait for visibility, then use
  * them. Referenced via `this.` because a method parameter may share the field's
  * name (an element named `country` with a `country` parameter).
@@ -295,56 +323,58 @@ function renderInferredMethod(method: InferredMethod): string {
   const types = method.paramTypes ?? method.params.map(() => 'string' as IRParamType)
   const params = method.params.map((p, i) => `${javaType(types[i])} ${p}`).join(', ')
 
+  const contextState = newContextState()
+  const renderOne = (s: IRStep): string | null => {
+    // A click on a template element receives the formatted label as a parameter.
+    if (s.action === 'click' && s.element?.template) {
+      const param = s.element.template.kind === 'date' ? 'date' : 'value'
+      const idx = method.params.indexOf(param)
+      if (idx !== -1) {
+        const accessor = toJavaFieldName(s.element.name)
+        return `        wait.until(ExpectedConditions.elementToBeClickable(${accessor}(${method.params[idx]}))).click();`
+      }
+    }
+    if (s.action === 'fill' && s.element) {
+      const slug = paramSlugFromElement(s.element.name)
+      const idx = method.params.findIndex((p) => p === slug)
+      if (idx !== -1) {
+        const fieldRef = toJavaFieldName(s.element.name)
+        const paramName = method.params[idx]
+        const valueExpr =
+          types[idx] === 'string'
+            ? paramName
+            : types[idx] === 'boolean'
+              ? `Boolean.toString(${paramName})`
+              : `Double.toString(${paramName})`
+        return [
+          `        wait.until(ExpectedConditions.visibilityOf(${fieldRef}));`,
+          `        ${fieldRef}.clear();`,
+          `        ${fieldRef}.sendKeys(${valueExpr});`,
+        ].join('\n')
+      }
+    }
+    if (s.action === 'select' && s.element) {
+      const idx = method.params.findIndex((p) => p === paramSlugFromElement(s.element!.name))
+      if (idx !== -1) {
+        return renderJavaInteraction(s, fieldTarget(s.element), '        ', {
+          selectArg: method.params[idx],
+        })
+      }
+    }
+    if ((s.action === 'check' || s.action === 'uncheck') && s.element) {
+      const idx = method.params.findIndex(
+        (p, i) => types[i] === 'boolean' && p === paramSlugFromElement(s.element!.name),
+      )
+      if (idx !== -1) {
+        return renderJavaInteraction(s, fieldTarget(s.element), '        ', {
+          toggleParam: method.params[idx],
+        })
+      }
+    }
+    return renderStepInMethod(s, '        ')
+  }
   const body = method.steps
-    .map((s) => {
-      // A click on a template element receives the formatted label as a parameter.
-      if (s.action === 'click' && s.element?.template) {
-        const param = s.element.template.kind === 'date' ? 'date' : 'value'
-        const idx = method.params.indexOf(param)
-        if (idx !== -1) {
-          const accessor = toJavaFieldName(s.element.name)
-          return `        wait.until(ExpectedConditions.elementToBeClickable(${accessor}(${method.params[idx]}))).click();`
-        }
-      }
-      if (s.action === 'fill' && s.element) {
-        const slug = paramSlugFromElement(s.element.name)
-        const idx = method.params.findIndex((p) => p === slug)
-        if (idx !== -1) {
-          const fieldRef = toJavaFieldName(s.element.name)
-          const paramName = method.params[idx]
-          const valueExpr =
-            types[idx] === 'string'
-              ? paramName
-              : types[idx] === 'boolean'
-                ? `Boolean.toString(${paramName})`
-                : `Double.toString(${paramName})`
-          return [
-            `        wait.until(ExpectedConditions.visibilityOf(${fieldRef}));`,
-            `        ${fieldRef}.clear();`,
-            `        ${fieldRef}.sendKeys(${valueExpr});`,
-          ].join('\n')
-        }
-      }
-      if (s.action === 'select' && s.element) {
-        const idx = method.params.findIndex((p) => p === paramSlugFromElement(s.element!.name))
-        if (idx !== -1) {
-          return renderJavaInteraction(s, fieldTarget(s.element), '        ', {
-            selectArg: method.params[idx],
-          })
-        }
-      }
-      if ((s.action === 'check' || s.action === 'uncheck') && s.element) {
-        const idx = method.params.findIndex(
-          (p, i) => types[i] === 'boolean' && p === paramSlugFromElement(s.element!.name),
-        )
-        if (idx !== -1) {
-          return renderJavaInteraction(s, fieldTarget(s.element), '        ', {
-            toggleParam: method.params[idx],
-          })
-        }
-      }
-      return renderStepInMethod(s, '        ')
-    })
+    .map((s) => withContext(s, renderOne(s), '        ', contextState))
     .filter(Boolean)
     .join('\n')
 
@@ -375,9 +405,10 @@ export function renderPageObject(page: IRPage): string {
   if (page.inferredMethods?.length) {
     methodsBlock = '\n\n' + page.inferredMethods.map(renderInferredMethod).join('\n\n')
   } else {
+    const contextState = newContextState()
     const stepLines = page.steps
       .filter((s) => s.action !== 'navigate')
-      .map((s) => renderStepInMethod(s, '        '))
+      .map((s) => withContext(s, renderStepInMethod(s, '        '), '        ', contextState))
       .filter(Boolean)
       .join('\n')
     if (stepLines) {
@@ -391,6 +422,7 @@ export function renderPageObject(page: IRPage): string {
 
   const fieldsBlock = fieldDecls ? `${fieldDecls}\n\n` : ''
   const allSteps = [...page.steps, ...(page.inferredMethods ?? []).flatMap((m) => m.steps)]
+  const contextHelpers = renderContextHelpers(allSteps)
 
   return `package pages;
 
@@ -403,7 +435,7 @@ import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.PageFactory;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-${javaInteractionImports(allSteps)}
+${javaInteractionImports(allSteps)}${javaContextImports(allSteps)}
 public class ${page.className} {
 ${collisionComment}    private final WebDriver driver;
     private final WebDriverWait wait;
@@ -416,7 +448,7 @@ ${fieldsBlock}    public ${page.className}(WebDriver driver) {
 
     public void goTo() {
         driver.get(${javaStr(gotoUrl)});
-    }${accessorsBlock}${methodsBlock}
+    }${accessorsBlock}${methodsBlock}${contextHelpers}
 }
 `
 }
