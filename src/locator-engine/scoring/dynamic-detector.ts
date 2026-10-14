@@ -9,7 +9,32 @@ const DYNAMIC_CLASS_PATTERNS = [
   /^Mui[A-Z]/,
   /^makeStyles-/,
   /^[a-zA-Z]+-[0-9a-f]{5,}$/,
+
+  // Emotion's styled-component class: `e1ie3l1u0` (e + digit + base36 + digit).
+  /^e[0-9][a-z0-9]{5,8}[0-9]$/,
+
+  // Angular: view-encapsulation markers (`ng-tns-c12-3`, `_ngcontent-abc-c12`,
+  // `_nghost-abc-c12`) and form-state classes that flip while the user types.
+  /^ng-tns-c[0-9]+-[0-9]+$/,
+  /^_ng(content|host)-/,
+  /^ng-(dirty|pristine|touched|untouched|valid|invalid|pending)$/,
+
+  // Svelte scoped styles: `svelte-1x7k2ab` — base36 hash, always carries a digit.
+  /^svelte-[a-z0-9]*[0-9][a-z0-9]*$/,
 ]
+
+/**
+ * CSS Modules: `[file]_[local]__[hash]` (`Button_primary__3xZ2a`). The hash must
+ * carry a digit or mixed case, otherwise hand-written `block_mod__elem` BEM-ish
+ * names would be misread as generated.
+ */
+const CSS_MODULE_PATTERN = /^[A-Za-z0-9-]+_[A-Za-z0-9-]+__([A-Za-z0-9_-]{5,8})$/
+
+function isCssModuleClass(cls: string): boolean {
+  const hash = CSS_MODULE_PATTERN.exec(cls)?.[1]
+  if (!hash) return false
+  return /[0-9]/.test(hash) || (/[a-z]/.test(hash) && /[A-Z]/.test(hash))
+}
 
 const DYNAMIC_ID_PATTERNS = [
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
@@ -92,6 +117,7 @@ function looksLikeRandomHash(value: string, minLength: number): boolean {
 
 export function isDynamicClass(cls: string): boolean {
   if (DYNAMIC_CLASS_PATTERNS.some((p) => p.test(cls))) return true
+  if (isCssModuleClass(cls)) return true
   return looksLikeRandomHash(cls, 8)
 }
 
