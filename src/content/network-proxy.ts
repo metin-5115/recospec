@@ -6,9 +6,11 @@
  * No new permissions required — the second content_scripts entry in
  * manifest.json with `"world": "MAIN"` is what gets us here.
  */
-const EVENT_NAME = 'recospec:network'
-const MAX_BYTES = 50_000
-const BLOCKED_PATTERNS = ['chrome-extension://', 'moz-extension://']
+import {
+  NETWORK_BODY_MAX_BYTES,
+  NETWORK_CAPTURE_EVENT_NAME,
+  NETWORK_URL_BLOCKLIST,
+} from '@shared/constants'
 
 interface NetworkDetail {
   method: string
@@ -21,16 +23,16 @@ interface NetworkDetail {
 }
 
 function shouldSkip(url: string): boolean {
-  return BLOCKED_PATTERNS.some((p) => url.startsWith(p))
+  return NETWORK_URL_BLOCKLIST.some((p) => url.startsWith(p))
 }
 
 function truncate(s: string): string {
-  return s.length > MAX_BYTES ? s.slice(0, MAX_BYTES) : s
+  return s.length > NETWORK_BODY_MAX_BYTES ? s.slice(0, NETWORK_BODY_MAX_BYTES) : s
 }
 
 function dispatch(detail: NetworkDetail): void {
   try {
-    window.dispatchEvent(new CustomEvent(EVENT_NAME, { detail }))
+    window.dispatchEvent(new CustomEvent(NETWORK_CAPTURE_EVENT_NAME, { detail }))
   } catch {
     // ignore — proxy failures must never break the page
   }

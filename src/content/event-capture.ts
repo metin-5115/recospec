@@ -20,6 +20,7 @@ import { logger } from '@shared/logger'
 import {
   AUTO_WAIT_DEFAULT_TIMEOUT_MS,
   AUTO_WAIT_NETWORK_DEBOUNCE_MS,
+  NETWORK_CAPTURE_EVENT_NAME,
   SNAPSHOT_TEXT_MAX_LENGTH,
 } from '@shared/constants'
 
@@ -241,7 +242,7 @@ export function startCapture(sessionId: string): void {
   document.addEventListener('click', onClickCapture, { capture: true })
   document.addEventListener('change', onChangeCapture, { capture: true })
   document.addEventListener('dblclick', onDblclickCapture, { capture: true })
-  window.addEventListener('recospec:network', onNetworkCapture as EventListener)
+  window.addEventListener(NETWORK_CAPTURE_EVENT_NAME, onNetworkCapture as EventListener)
   logger.info('[CS] Capture started', sessionId)
 }
 
@@ -253,6 +254,6 @@ export function stopCapture(): void {
   document.removeEventListener('click', onClickCapture, { capture: true })
   document.removeEventListener('change', onChangeCapture, { capture: true })
   document.removeEventListener('dblclick', onDblclickCapture, { capture: true })
-  window.removeEventListener('recospec:network', onNetworkCapture as EventListener)
+  window.removeEventListener(NETWORK_CAPTURE_EVENT_NAME, onNetworkCapture as EventListener)
   logger.info('[CS] Capture stopped')
 }

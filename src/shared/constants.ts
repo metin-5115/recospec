@@ -31,6 +31,8 @@ export const SESSION_NAME_PREFIX = 'Session' as const
 export const CONTENT_REINJECT_MAX_ATTEMPTS = 3 as const
 export const GC_ARCHIVED_DAYS = 30 as const
 export const STORAGE_QUOTA_WARN_RATIO = 0.8 as const
+/** CustomEvent the MAIN-world network proxy dispatches for the ISOLATED content script. */
+export const NETWORK_CAPTURE_EVENT_NAME = 'recospec:network' as const
 /** Cap for captured request/response bodies — keeps IndexedDB usage bounded. */
 export const NETWORK_BODY_MAX_BYTES = 50_000 as const
 /** Name of the alarm that keeps the MV3 service worker alive during a replay. */
