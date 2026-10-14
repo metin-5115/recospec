@@ -20,8 +20,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build extension
-        run: pnpm build
+      - name: Build extension (E2E mode exposes the Dexie seeder)
+        run: pnpm build:e2e
 
       - name: Install Playwright Chromium
         run: pnpm exec playwright install chromium --with-deps

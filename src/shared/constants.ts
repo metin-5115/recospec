@@ -19,12 +19,32 @@ export const MAX_DYNAMIC_ID_ENTROPY = 3.5 as const
  * domain ids and accepted by the locator engine.
  */
 export const MIN_DYNAMIC_ID_DIGIT_SUFFIX = 5 as const
+/** Cap for the element text stored on a recorded snapshot (events and assertion probes). */
+export const SNAPSHOT_TEXT_MAX_LENGTH = 200 as const
+/**
+ * Page-origin localStorage key that mirrors the closed-shadow opt-in from the
+ * ISOLATED content script to the MAIN-world proxy (the only synchronous
+ * cross-world channel available at `document_start`).
+ */
+export const PIERCE_CLOSED_SHADOW_FLAG_KEY = 'recospec:pierce-closed-shadow' as const
 export const SESSION_NAME_PREFIX = 'Session' as const
 export const CONTENT_REINJECT_MAX_ATTEMPTS = 3 as const
 export const GC_ARCHIVED_DAYS = 30 as const
 export const STORAGE_QUOTA_WARN_RATIO = 0.8 as const
 /** Cap for captured request/response bodies — keeps IndexedDB usage bounded. */
 export const NETWORK_BODY_MAX_BYTES = 50_000 as const
+/** Name of the alarm that keeps the MV3 service worker alive during a replay. */
+export const REPLAY_KEEPALIVE_ALARM_NAME = 'recospec-replay-keepalive' as const
+/** How long the replay waits for the content script to answer one step. */
+export const REPLAY_STEP_RESPONSE_TIMEOUT_MS = 8_000 as const
+/** How long the replay waits for a navigation to settle before continuing. */
+export const REPLAY_NAVIGATION_SETTLE_TIMEOUT_MS = 10_000 as const
+/** Pause between replayed steps so the page can react before the next one. */
+export const REPLAY_STEP_PACING_MS = 200 as const
+/** How long the background waits for the content script to answer a locator validation. */
+export const LOCATOR_VALIDATION_TIMEOUT_MS = 8_000 as const
+/** Largest repeated-container group the composed strategy will probe (keeps it O(n) cheap). */
+export const MAX_CONTAINER_GROUP_SIZE = 400 as const
 /** Substrings that exclude a request from capture (extension internals, browser noise). */
 export const NETWORK_URL_BLOCKLIST = ['chrome-extension://', 'moz-extension://'] as const
 /**

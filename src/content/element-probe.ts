@@ -6,6 +6,7 @@ import { slugifyKebab } from '@shared/slug'
 import { detectShadowContext, detectFrameContext } from './shadow-pierce'
 import { sendToBackground } from '@shared/messaging/send'
 import { logger } from '@shared/logger'
+import { SNAPSHOT_TEXT_MAX_LENGTH } from '@shared/constants'
 
 const engine = new LocatorEngine()
 const frameContext = detectFrameContext()
@@ -21,7 +22,7 @@ function buildSnapshot(el: Element): ElementSnapshot {
   return {
     tagName: el.tagName.toLowerCase(),
     attributes,
-    textContent: (el.textContent ?? '').trim().slice(0, 200),
+    textContent: (el.textContent ?? '').trim().slice(0, SNAPSHOT_TEXT_MAX_LENGTH),
   }
 }
 

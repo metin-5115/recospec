@@ -24,15 +24,16 @@ initMessageRouter()
 ;(globalThis as unknown as { __recospecReplay: typeof startReplay }).__recospecReplay = startReplay
 
 // Test-only Dexie seeder so the replay E2E suite can load a session without
-// driving the side panel UI. Writes one session + N actions in a single
-// shot; broadcasting is intentionally skipped (the side panel isn't open
-// during E2E, and Dexie is the source of truth the replay controller reads
-// from anyway).
-async function seedSession(session: Session, actions: RecordedAction[]): Promise<void> {
-  await db.sessions.put(session)
-  await db.actions.bulkPut(actions)
+// driving the side panel UI. It is registered only in an `--mode e2e` build
+// (`pnpm build:e2e`): the shipped extension must not expose an unauthenticated
+// database writer on the service-worker global.
+if (import.meta.env.MODE === 'e2e') {
+  const seedSession = async (session: Session, actions: RecordedAction[]): Promise<void> => {
+    await db.sessions.put(session)
+    await db.actions.bulkPut(actions)
+  }
+  ;(globalThis as unknown as { __recospecSeed: typeof seedSession }).__recospecSeed = seedSession
 }
-;(globalThis as unknown as { __recospecSeed: typeof seedSession }).__recospecSeed = seedSession
 
 restoreActiveSession().catch((err) => logger.error('[BG] Failed to restore session', err))
 

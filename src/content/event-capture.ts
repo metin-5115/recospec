@@ -17,7 +17,11 @@ import { observeForSpinner } from './spinner-detector'
 import { normalizeClickTarget, ancestorsFromComposedPath } from './normalize-click-target'
 import { sendToBackground } from '@shared/messaging/send'
 import { logger } from '@shared/logger'
-import { AUTO_WAIT_DEFAULT_TIMEOUT_MS, AUTO_WAIT_NETWORK_DEBOUNCE_MS } from '@shared/constants'
+import {
+  AUTO_WAIT_DEFAULT_TIMEOUT_MS,
+  AUTO_WAIT_NETWORK_DEBOUNCE_MS,
+  SNAPSHOT_TEXT_MAX_LENGTH,
+} from '@shared/constants'
 
 const engine = new LocatorEngine()
 const frameContext = detectFrameContext()
@@ -30,7 +34,7 @@ function buildSnapshot(el: Element): ElementSnapshot {
   return {
     tagName: el.tagName.toLowerCase(),
     attributes,
-    textContent: (el.textContent ?? '').trim().slice(0, 200),
+    textContent: (el.textContent ?? '').trim().slice(0, SNAPSHOT_TEXT_MAX_LENGTH),
   }
 }
 

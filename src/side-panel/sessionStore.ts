@@ -70,6 +70,10 @@ interface SessionStore {
   setOutputSelection: (selection: OutputSelection) => void
 }
 
+// UI preferences only (no recorded data). localStorage is used deliberately: the
+// store needs them synchronously to build its initial state, which an async
+// IndexedDB read cannot provide without a flash of default values. All reads
+// and writes are guarded, and recordings themselves live in Dexie.
 const FRAMEWORK_STORAGE_KEY = 'recospec.selectedFramework'
 const AUTO_WAIT_STORAGE_KEY = 'recospec.autoWaitEnabled'
 const BDD_ENABLED_STORAGE_KEY = 'recospec.bddEnabled'

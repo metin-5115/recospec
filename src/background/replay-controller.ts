@@ -2,12 +2,13 @@ import { broadcastToUI, sendToTab } from '@shared/messaging/send'
 import { getActionsBySession } from '@storage/action-repo'
 import { getSession } from '@storage/session-repo'
 import { logger } from '@shared/logger'
+import {
+  REPLAY_KEEPALIVE_ALARM_NAME,
+  REPLAY_NAVIGATION_SETTLE_TIMEOUT_MS,
+  REPLAY_STEP_PACING_MS,
+  REPLAY_STEP_RESPONSE_TIMEOUT_MS,
+} from '@shared/constants'
 import { resolveActiveTab } from './active-tab'
-
-const KEEPALIVE_ALARM_NAME = 'recospec-replay-keepalive'
-const STEP_RESPONSE_TIMEOUT_MS = 8_000
-const NAVIGATION_SETTLE_TIMEOUT_MS = 10_000
-const STEP_PACING_MS = 200
 
 type StepWaiter = (status: 'pass' | 'fail' | 'skipped', error?: string) => void
 
@@ -20,6 +21,13 @@ interface ActiveReplay {
   pendingActionId: string | null
 }
 
+/**
+ * Intentionally in-memory (documented exception to the "SW state lives in
+ * IndexedDB" rule): it holds a live promise resolver and the target tab for the
+ * run in flight, neither of which can be serialised. The keepalive alarm keeps
+ * the worker alive for the run, and everything durable (session, actions) is
+ * read from IndexedDB.
+ */
 let active: ActiveReplay | null = null
 
 /**
@@ -30,8 +38,8 @@ let active: ActiveReplay | null = null
 function startKeepalive(): void {
   // chrome.alarms.create is fire-and-forget; clearing first guarantees a
   // fresh schedule on rapid replay restarts.
-  chrome.alarms.clear(KEEPALIVE_ALARM_NAME).catch(() => undefined)
-  chrome.alarms.create(KEEPALIVE_ALARM_NAME, { periodInMinutes: 0.4 }).catch?.((err) => {
+  chrome.alarms.clear(REPLAY_KEEPALIVE_ALARM_NAME).catch(() => undefined)
+  chrome.alarms.create(REPLAY_KEEPALIVE_ALARM_NAME, { periodInMinutes: 0.4 }).catch?.((err) => {
     logger.warn('[BG] keepalive alarm create failed', err)
   })
   // Guard against double-registration; the listener is idempotent for our
@@ -42,13 +50,13 @@ function startKeepalive(): void {
 }
 
 function onKeepaliveAlarm(alarm: chrome.alarms.Alarm): void {
-  if (alarm.name === KEEPALIVE_ALARM_NAME) {
+  if (alarm.name === REPLAY_KEEPALIVE_ALARM_NAME) {
     // No-op. Touching the listener prevents the SW from going idle.
   }
 }
 
 function stopKeepalive(): void {
-  chrome.alarms.clear(KEEPALIVE_ALARM_NAME).catch(() => undefined)
+  chrome.alarms.clear(REPLAY_KEEPALIVE_ALARM_NAME).catch(() => undefined)
 }
 
 function delay(ms: number): Promise<void> {
@@ -105,7 +113,7 @@ function awaitStepResponse(
         active.pendingResolve = null
         resolve({ status: 'fail', error: 'Step response timed out' })
       }
-    }, STEP_RESPONSE_TIMEOUT_MS)
+    }, REPLAY_STEP_RESPONSE_TIMEOUT_MS)
     active.pendingResolve = (status, error) => {
       clearTimeout(timer)
       resolve({ status, error })
@@ -246,10 +254,10 @@ export async function startReplay(sessionId: string): Promise<void> {
       // Navigation steps need the destination to finish loading before we
       // try to bind locators on the next step.
       if (action.type === 'navigate' && result.status === 'pass') {
-        await waitForTabComplete(active.tabId, NAVIGATION_SETTLE_TIMEOUT_MS)
+        await waitForTabComplete(active.tabId, REPLAY_NAVIGATION_SETTLE_TIMEOUT_MS)
       } else if (i < actions.length - 1) {
         // Small breath so animations / focus rings settle between steps.
-        await delay(STEP_PACING_MS)
+        await delay(REPLAY_STEP_PACING_MS)
       }
     }
   } catch (err) {

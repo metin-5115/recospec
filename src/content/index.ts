@@ -6,6 +6,7 @@ import { highlightLocator, validateTargets } from './locator-validator'
 import { executeReplayStep } from './replay-runner'
 import { mountBadge, unmountBadge } from './recording-badge'
 import { logger } from '@shared/logger'
+import { PIERCE_CLOSED_SHADOW_FLAG_KEY } from '@shared/constants'
 
 logger.info('[CS] Content script loaded')
 
@@ -15,9 +16,11 @@ onContentMessage((message) => {
     // proxy reads at document_start on the NEXT navigation (it cannot reach
     // chrome.storage). Writing it now covers SPA-attached roots immediately.
     try {
-      const key = 'recospec:pierce-closed-shadow'
-      if (message.config.pierceClosedShadow) window.localStorage.setItem(key, 'true')
-      else window.localStorage.removeItem(key)
+      if (message.config.pierceClosedShadow) {
+        window.localStorage.setItem(PIERCE_CLOSED_SHADOW_FLAG_KEY, 'true')
+      } else {
+        window.localStorage.removeItem(PIERCE_CLOSED_SHADOW_FLAG_KEY)
+      }
     } catch {
       /* sandboxed localStorage — piercing simply stays off */
     }

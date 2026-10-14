@@ -142,7 +142,7 @@ test.describe('Replay flow', () => {
     const recording = buildFixtureRecording({ sessionId, fixtureUrl: fixturePath })
 
     // Seed Dexie via the SW global. `__recospecSeed` is exposed by
-    // background/index.ts specifically for this kind of out-of-band write.
+    // background/index.ts only in the `pnpm build:e2e` build.
     await worker.evaluate(async (seed) => {
       const fn = (globalThis as { __recospecSeed?: (s: unknown, a: unknown) => Promise<void> })
         .__recospecSeed

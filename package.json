@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:e2e": "vite build --mode e2e",
     "build:cli": "vite build --config vite.config.cli.ts",
     "build:vscode": "vite build --config vite.config.vscode.ts",
     "package:vscode": "pnpm build && pnpm build:vscode && node scripts/package-vscode.mjs",

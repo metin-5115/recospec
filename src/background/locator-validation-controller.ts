@@ -4,6 +4,7 @@ import { broadcastToUI, sendToTab } from '@shared/messaging/send'
 import {
   LOCATOR_VALIDATION_HIGHLIGHT_DURATION_MS,
   LOCATOR_VALIDATION_MAX_TARGETS,
+  LOCATOR_VALIDATION_TIMEOUT_MS,
 } from '@shared/constants'
 import { logger } from '@shared/logger'
 import { resolveActiveTab } from './active-tab'
@@ -16,8 +17,13 @@ interface PendingValidation {
   timeout: number
 }
 
+/**
+ * Intentionally in-memory (documented exception to the "SW state lives in
+ * IndexedDB" rule): each entry owns a live `setTimeout` handle that cannot be
+ * persisted. A worker restart drops the entry and the 8 s validation window,
+ * which only costs the user a re-click.
+ */
 const pending = new Map<string, PendingValidation>()
-const VALIDATION_TIMEOUT_MS = 8_000
 
 function annotateUrlMismatch(
   results: LocatorValidationResult[],
@@ -73,11 +79,11 @@ export async function handleValidateLocators(
       type: 'LOCATOR_VALIDATION_RESULT',
       sessionId,
       results: [],
-      durationMs: VALIDATION_TIMEOUT_MS,
+      durationMs: LOCATOR_VALIDATION_TIMEOUT_MS,
       pageUrl: tab.url ?? '',
       error: 'Validation timed out — the page may have navigated or stopped responding.',
     })
-  }, VALIDATION_TIMEOUT_MS) as unknown as number
+  }, LOCATOR_VALIDATION_TIMEOUT_MS) as unknown as number
 
   pending.set(sessionId, {
     sessionId,

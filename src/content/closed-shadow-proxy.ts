@@ -15,14 +15,14 @@
  * navigations and SPA-attached roots are covered. This is acceptable for an
  * invasive, explicit opt-in.
  */
+import { PIERCE_CLOSED_SHADOW_FLAG_KEY } from '@shared/constants'
 import { installClosedShadowProxy } from './closed-shadow'
 
-const FLAG_KEY = 'recospec:pierce-closed-shadow'
 const PIERCED_ATTR = 'data-recospec-pierced'
 
 function piercingEnabled(): boolean {
   try {
-    return window.localStorage.getItem(FLAG_KEY) === 'true'
+    return window.localStorage.getItem(PIERCE_CLOSED_SHADOW_FLAG_KEY) === 'true'
   } catch {
     // Some pages sandbox localStorage — fail safe to OFF.
     return false

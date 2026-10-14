@@ -5,6 +5,7 @@ import { computeAccessibleName } from './accessible-name'
 import { selectorForRole } from './role-table'
 import { isA11yVisible } from '../pipeline/resolve'
 import { cssAttrValue, xpathLiteral } from '@shared/selector-escape'
+import { MAX_CONTAINER_GROUP_SIZE } from '@shared/constants'
 
 /**
  * Composed (anchor + target) locator production — invoked by the engine when
@@ -242,7 +243,6 @@ function directTextOf(el: Element): string {
 
 /** Cap candidate labels + group size so the O(candidates × group) probe stays cheap. */
 const MAX_LABEL_CANDIDATES = 12
-const MAX_CONTAINER_GROUP = 400
 
 /**
  * Find a stable descendant text inside `container` that uniquely identifies it
@@ -304,7 +304,7 @@ function findContainerAnchor(
     const key = shapeKey(container)
     const css = containerCss(container)
     const group = queryAll(doc, css).filter((c) => shapeKey(c) === key)
-    if (group.length < 2 || group.length > MAX_CONTAINER_GROUP) continue
+    if (group.length < 2 || group.length > MAX_CONTAINER_GROUP_SIZE) continue
 
     const baseXPath = containerCssToXPath(container)
     const groupText = group.map((c) => normText(c.textContent))
