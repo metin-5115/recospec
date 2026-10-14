@@ -1,5 +1,6 @@
 import type { IRScenario, IRStep, AssertionDetail, IRElement, TestDataConfig } from '../../ir/types'
 import { renderLocator } from './locator'
+import { renderInteraction } from './interaction'
 import { resolveTestData } from '../../planner/test-data-resolver'
 
 let TEST_DATA: TestDataConfig | undefined
@@ -73,6 +74,10 @@ function renderStepInSpec(step: IRStep, indent: string): string {
   if (step.action === 'fill' && step.element) {
     const expr = renderFillValueExpr(step.element, step.value ?? '')
     return `${indent}${renderLocator(step.element)}.clear().type(${expr});`
+  }
+  if (step.element) {
+    const interaction = renderInteraction(step, renderLocator(step.element), indent)
+    if (interaction) return interaction
   }
   if (step.action === 'keypress' && step.key) {
     return `${indent}cy.focused().type(${JSON.stringify(`{${step.key.toLowerCase()}}`)});`

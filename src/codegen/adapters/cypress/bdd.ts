@@ -69,6 +69,18 @@ function renderStepBody(step: GherkinStep, paramNames: string[]): string {
   if (sourceAction === 'fill') {
     return `  cy.findByLabelText(${paramNames[0] ?? '""'}).clear().type(${paramNames[1] ?? '""'});`
   }
+  if (sourceAction === 'select') {
+    return `  cy.findByLabelText(${paramNames[1] ?? '""'}).select(${paramNames[0] ?? '""'});`
+  }
+  if (sourceAction === 'check' || sourceAction === 'uncheck') {
+    return `  cy.findByLabelText(${paramNames[0] ?? '""'}).${sourceAction}();`
+  }
+  if (sourceAction === 'hover') {
+    return `  cy.contains(${paramNames[0] ?? '""'}).trigger('mouseover');`
+  }
+  if (sourceAction === 'dblclick') {
+    return `  cy.contains(${paramNames[0] ?? '""'}).dblclick();`
+  }
   if (sourceAction === 'keypress') {
     return `  cy.focused().type(\`{\${String(${paramNames[0] ?? '""'}).toLowerCase()}}\`);`
   }

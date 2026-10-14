@@ -1,5 +1,6 @@
 import type { IRScenario, IRStep, AssertionDetail, IRElement, TestDataConfig } from '../../ir/types'
 import { renderByExpression, javaStr } from './locator'
+import { renderJavaInteraction, javaInteractionImports } from './interaction'
 import { resolveTestData } from '../../planner/test-data-resolver'
 
 let TEST_DATA: TestDataConfig | undefined
@@ -111,6 +112,21 @@ function renderStepInTest(step: IRStep, indent: string): string {
       `${indent}_el.sendKeys(${expr});`,
     ].join('\n')
   }
+  if (step.element) {
+    const byExpr = renderByExpression(step.element)
+    const interaction = renderJavaInteraction(
+      step,
+      {
+        prelude: [
+          `WebElement _el = wait.until(ExpectedConditions.visibilityOfElementLocated(${byExpr}));`,
+        ],
+        ref: '_el',
+        scoped: true,
+      },
+      indent,
+    )
+    if (interaction) return interaction
+  }
   if (step.action === 'keypress' && step.key) {
     return `${indent}driver.switchTo().activeElement().sendKeys(Keys.${step.key.toUpperCase()});`
   }
@@ -142,6 +158,7 @@ export function renderScenario(scenario: IRScenario): string {
   const className = `Test${methodSuffix.charAt(0).toUpperCase() + methodSuffix.slice(1)}`
 
   const pageVarsBlock = pageVars ? `${pageVars}\n` : ''
+  const interactionImports = javaInteractionImports(scenario.pages.flatMap((p) => p.steps))
 
   return `package tests;
 
@@ -157,7 +174,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-${pageImports}
+${interactionImports}${pageImports}
 
 public class ${className} {
     private WebDriver driver;

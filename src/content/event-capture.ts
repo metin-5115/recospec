@@ -134,11 +134,45 @@ export function realTargetFromEvent(e: {
   return e.target instanceof Element ? e.target : null
 }
 
+function hasToggleType(input: HTMLInputElement): boolean {
+  return input.type === 'checkbox' || input.type === 'radio'
+}
+
+function isToggleInput(el: Element | null | undefined): el is HTMLInputElement {
+  return el instanceof HTMLInputElement && hasToggleType(el)
+}
+
+/**
+ * True when the click lands on a `<label>` whose checkbox/radio will receive its
+ * own synthetic click right after — recording both would double the step.
+ */
+function isLabelForwardingToToggle(target: Element): boolean {
+  const label = target.closest('label')
+  return (
+    Boolean(label && label !== target && isToggleInput(label.control)) ||
+    (target instanceof HTMLLabelElement && isToggleInput(target.control))
+  )
+}
+
+function sendCaptured(sessionId: string, event: CapturedEvent): void {
+  sendToBackground({ type: 'EVENT_CAPTURED', sessionId, event }).catch((err) =>
+    logger.error('[CS] Failed to send EVENT_CAPTURED', err),
+  )
+}
+
 function onClickCapture(e: MouseEvent): void {
   if (!activeSessionId) return
   const path = e.composedPath()
   const realTarget = realTargetFromEvent(e)
   if (!realTarget) return
+  if (isToggleInput(realTarget)) {
+    // The browser toggles `checked` before dispatching click, so it already
+    // holds the post-click state; radios can only ever become checked.
+    const type: ActionType = realTarget.checked ? 'check' : 'uncheck'
+    sendCaptured(activeSessionId, buildEvent(type, realTarget, undefined, path))
+    return
+  }
+  if (isLabelForwardingToToggle(realTarget)) return
   // Promote presentational leaf clicks (icon paths, card text) to the nearest
   // actionable ancestor — the element the user actually meant to target.
   const target = normalizeClickTarget(realTarget, ancestorsFromComposedPath(realTarget, path))
@@ -151,12 +185,30 @@ function onClickCapture(e: MouseEvent): void {
 }
 
 function onChangeCapture(e: Event): void {
-  if (!activeSessionId || !(e.target instanceof HTMLInputElement)) return
-  const sessionId = activeSessionId
-  const event = buildEvent('fill', e.target, { value: e.target.value })
-  sendToBackground({ type: 'EVENT_CAPTURED', sessionId, event }).catch((err) =>
-    logger.error('[CS] Failed to send EVENT_CAPTURED', err),
-  )
+  if (!activeSessionId) return
+  const target = e.target
+  if (target instanceof HTMLSelectElement) {
+    const label = target.selectedOptions[0]?.text.trim()
+    sendCaptured(activeSessionId, buildEvent('select', target, { value: target.value, label }))
+    return
+  }
+  if (target instanceof HTMLTextAreaElement) {
+    sendCaptured(activeSessionId, buildEvent('fill', target, { value: target.value }))
+    return
+  }
+  // Checkbox/radio state is recorded from the click as check/uncheck instead.
+  if (target instanceof HTMLInputElement && !hasToggleType(target)) {
+    sendCaptured(activeSessionId, buildEvent('fill', target, { value: target.value }))
+  }
+}
+
+function onDblclickCapture(e: MouseEvent): void {
+  if (!activeSessionId) return
+  const path = e.composedPath()
+  const realTarget = realTargetFromEvent(e)
+  if (!realTarget) return
+  const target = normalizeClickTarget(realTarget, ancestorsFromComposedPath(realTarget, path))
+  sendCaptured(activeSessionId, buildEvent('dblclick', target, undefined, path))
 }
 
 function onNetworkCapture(e: Event): void {
@@ -184,6 +236,7 @@ export function startCapture(sessionId: string): void {
   startTextMutationTracking()
   document.addEventListener('click', onClickCapture, { capture: true })
   document.addEventListener('change', onChangeCapture, { capture: true })
+  document.addEventListener('dblclick', onDblclickCapture, { capture: true })
   window.addEventListener('recospec:network', onNetworkCapture as EventListener)
   logger.info('[CS] Capture started', sessionId)
 }
@@ -195,6 +248,7 @@ export function stopCapture(): void {
   stopTextMutationTracking()
   document.removeEventListener('click', onClickCapture, { capture: true })
   document.removeEventListener('change', onChangeCapture, { capture: true })
+  document.removeEventListener('dblclick', onDblclickCapture, { capture: true })
   window.removeEventListener('recospec:network', onNetworkCapture as EventListener)
   logger.info('[CS] Capture stopped')
 }

@@ -8,6 +8,7 @@ import type {
   TestDataConfig,
 } from '../../ir/types'
 import { renderLocator } from './locator'
+import { renderInteraction, renderToggleByParam } from './interaction'
 import { resolveTestData } from '../../planner/test-data-resolver'
 import { dateFnsLocaleImportName } from '@shared/date-template'
 
@@ -174,6 +175,10 @@ function renderStepInMethod(step: IRStep, indent: string): string {
     const expr = renderFillValueExpr(step.element, step.value ?? '')
     return `${indent}this.${step.element.name}().clear().type(${expr});`
   }
+  if (step.element) {
+    const interaction = renderInteraction(step, templateCallExpr(step.element), indent)
+    if (interaction) return interaction
+  }
   if (step.action === 'keypress' && step.key) {
     return `${indent}cy.focused().type(${JSON.stringify(`{${step.key.toLowerCase()}}`)});`
   }
@@ -194,6 +199,14 @@ function renderStepInMethod(step: IRStep, indent: string): string {
 // Inferred methods (e.g. login(email, password))
 // ---------------------------------------------------------------------------
 
+function paramSlug(elementName: string): string {
+  const base = elementName.replace(
+    /Input$|Button$|Btn$|Link$|Select$|Field$|Box$|Toggle$|Checkbox$|Radio$/,
+    '',
+  )
+  return base.charAt(0).toLowerCase() + base.slice(1)
+}
+
 function renderInferredMethod(method: InferredMethod): string {
   const paramList = method.params.join(', ')
   const bodyLines = method.steps
@@ -212,6 +225,19 @@ function renderInferredMethod(method: InferredMethod): string {
         const paramIdx = method.params.indexOf(param)
         if (paramIdx !== -1) {
           return `    this.${s.element.name}().clear().type(${method.params[paramIdx]});`
+        }
+      }
+      if (s.action === 'select' && s.element) {
+        const paramIdx = method.params.indexOf(paramSlug(s.element.name))
+        if (paramIdx !== -1) {
+          const chain = templateCallExpr(s.element)
+          return renderInteraction(s, chain, '    ', method.params[paramIdx])
+        }
+      }
+      if ((s.action === 'check' || s.action === 'uncheck') && s.element) {
+        const paramIdx = method.params.indexOf(paramSlug(s.element.name))
+        if (paramIdx !== -1 && method.paramTypes?.[paramIdx] === 'boolean') {
+          return renderToggleByParam(templateCallExpr(s.element), method.params[paramIdx]!, '    ')
         }
       }
       return renderStepInMethod(s, '    ')

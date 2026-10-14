@@ -72,6 +72,15 @@ function renderStepBody(step: GherkinStep, paramNames: string[]): string {
   if (sourceAction === 'fill') {
     return `  await page.getByLabel(${paramNames[0] ?? '""'}).fill(${paramNames[1] ?? '""'});`
   }
+  if (sourceAction === 'select') {
+    return `  await page.getByLabel(${paramNames[1] ?? '""'}).selectOption(${paramNames[0] ?? '""'});`
+  }
+  if (sourceAction === 'check' || sourceAction === 'uncheck') {
+    return `  await page.getByLabel(${paramNames[0] ?? '""'}).${sourceAction}();`
+  }
+  if (sourceAction === 'hover' || sourceAction === 'dblclick') {
+    return `  await page.getByText(${paramNames[0] ?? '""'}).${sourceAction}();`
+  }
   if (sourceAction === 'keypress') {
     return `  await page.keyboard.press(${paramNames[0] ?? '""'});`
   }

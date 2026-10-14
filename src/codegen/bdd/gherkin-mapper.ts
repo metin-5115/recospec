@@ -179,13 +179,18 @@ const METHOD_TEMPLATES: Record<string, NamedTemplate> = {
   },
 }
 
+/** Steps whose recorded `value` feeds an inferred method parameter. */
+function isValueStep(step: IRStep): boolean {
+  return step.action === 'fill' || step.action === 'select'
+}
+
 function paramValueFromStep(method: InferredMethod, idx: number): string {
-  const step = method.steps.find((s) => s.action === 'fill' && s.element)
+  const step = method.steps.find((s) => isValueStep(s) && s.element)
   return step?.value ?? `value${idx + 1}`
 }
 
 function quoted(method: InferredMethod, idx: number): string {
-  const fillSteps = method.steps.filter((s) => s.action === 'fill')
+  const fillSteps = method.steps.filter(isValueStep)
   const value = fillSteps[idx]?.value ?? paramValueFromStep(method, idx)
   return renderValueLiteral(value)
 }
@@ -230,6 +235,30 @@ function defaultMethodTemplate(method: InferredMethod): NamedTemplate {
           pattern: `I fill the {string} field with ${placeholder}`,
         }
       },
+    }
+  }
+  if (name.startsWith('select') && method.params.length > 0) {
+    const subject = humanizeIdentifier(name.slice('select'.length)).toLowerCase() || 'option'
+    return {
+      keyword: 'When',
+      render: (m) => ({
+        text: `I select ${quoted(m, 0)} from the ${subject}`,
+        pattern: `I select ${ph(m, 0)} from the ${subject}`,
+      }),
+    }
+  }
+  const toggleVerbs: Array<[prefix: string, verb: string, fallback: string]> = [
+    ['uncheck', 'uncheck', 'option'],
+    ['check', 'check', 'option'],
+    ['hover', 'hover over', 'element'],
+    ['doubleClick', 'double-click', 'element'],
+  ]
+  for (const [prefix, verb, fallback] of toggleVerbs) {
+    if (!name.startsWith(prefix)) continue
+    const subject = humanizeIdentifier(name.slice(prefix.length)).toLowerCase() || fallback
+    return {
+      keyword: 'When',
+      render: () => ({ text: `I ${verb} the ${subject}`, pattern: `I ${verb} the ${subject}` }),
     }
   }
   if (name.startsWith('press')) {
@@ -318,6 +347,38 @@ export function mapIRStepToGherkin(step: IRStep, keyword: GherkinKeyword): Gherk
       pattern: `I fill the {string} ${role} with {string}`,
       params: [label, value],
       paramTypes: ['string', 'string'],
+      sourceSteps: [step],
+    }
+  }
+  if (step.action === 'select' && step.element) {
+    const role = elementRoleLabel(step.element.tagName, step.element.inputType)
+    const label = elementDisplayName(step)
+    const value = step.value ?? ''
+    return {
+      keyword,
+      text: `I select ${JSON.stringify(value)} from the ${JSON.stringify(label)} ${role}`,
+      pattern: `I select {string} from the {string} ${role}`,
+      params: [value, label],
+      paramTypes: ['string', 'string'],
+      sourceSteps: [step],
+    }
+  }
+  const elementVerbs: Partial<Record<IRStep['action'], string>> = {
+    check: 'check',
+    uncheck: 'uncheck',
+    hover: 'hover over',
+    dblclick: 'double-click',
+  }
+  const elementVerb = elementVerbs[step.action]
+  if (elementVerb && step.element) {
+    const role = elementRoleLabel(step.element.tagName, step.element.inputType)
+    const label = elementDisplayName(step)
+    return {
+      keyword,
+      text: `I ${elementVerb} the ${JSON.stringify(label)} ${role}`,
+      pattern: `I ${elementVerb} the {string} ${role}`,
+      params: [label],
+      paramTypes: ['string'],
       sourceSteps: [step],
     }
   }
@@ -433,12 +494,16 @@ export function mapInferredMethodToGherkin(
   const rendered = template.render(method)
 
   // Derive parameter values (in declaration order) from method.steps.
-  const fillSteps = method.steps.filter((s) => s.action === 'fill')
+  const fillSteps = method.steps.filter(isValueStep)
+  const toggleStep = method.steps.find((s) => s.action === 'check' || s.action === 'uncheck')
   const values: Array<string | number | boolean> = method.params.map((_, idx) => {
     const t = method.paramTypes?.[idx] ?? 'string'
     const raw = fillSteps[idx]?.value
     if (t === 'number') return raw === undefined ? 0 : Number(raw)
-    if (t === 'boolean') return raw === undefined ? false : raw === 'true' || raw === 'on'
+    if (t === 'boolean') {
+      if (toggleStep) return toggleStep.action === 'check'
+      return raw === undefined ? false : raw === 'true' || raw === 'on'
+    }
     return raw ?? ''
   })
 

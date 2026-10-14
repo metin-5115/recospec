@@ -61,6 +61,11 @@ function isCheckboxLike(el: IRElement | undefined): boolean {
   return t === 'checkbox' || t === 'radio'
 }
 
+function isCheckboxToggle(step: IRStep): boolean {
+  if (step.action === 'check' || step.action === 'uncheck') return true
+  return step.action === 'click' && isCheckboxLike(step.element)
+}
+
 function isPasswordField(el: IRElement | undefined): boolean {
   return el?.inputType?.toLowerCase() === 'password' || /password|pwd/i.test(el?.name ?? '')
 }
@@ -116,6 +121,35 @@ function defaultDraft(step: IRStep): MethodDraft {
       paramElements: [step.element],
       steps: [step],
     }
+  }
+  if (step.action === 'select' && step.element) {
+    return {
+      name: `select${capitalize(stripElementSuffix(step.element.name) || 'Option')}`,
+      params: [paramName(step.element, 'value')],
+      paramTypes: ['string'],
+      paramSecret: [false],
+      paramElements: [step.element],
+      steps: [step],
+    }
+  }
+  if (step.action === 'check' || step.action === 'uncheck') {
+    const verb = step.action === 'check' ? 'check' : 'uncheck'
+    return emptyDraft(
+      `${verb}${capitalize(stripElementSuffix(step.element?.name ?? '') || 'Option')}`,
+      step,
+    )
+  }
+  if (step.action === 'hover') {
+    return emptyDraft(
+      `hover${capitalize(stripElementSuffix(step.element?.name ?? '') || 'Element')}`,
+      step,
+    )
+  }
+  if (step.action === 'dblclick') {
+    return emptyDraft(
+      `doubleClick${capitalize(stripElementSuffix(step.element?.name ?? '') || 'Element')}`,
+      step,
+    )
   }
   if (step.action === 'keypress' && step.key) {
     return emptyDraft(`press${capitalize(step.key.toLowerCase())}`, step)
@@ -309,13 +343,8 @@ export function inferMethods(steps: IRStep[]): InferredMethod[] {
       // single trailing fill — fall through to default naming
     }
 
-    // 6: checkbox + click(submit) → acceptAndSubmit
-    if (
-      s0?.action === 'click' &&
-      isCheckboxLike(s0.element) &&
-      s1?.action === 'click' &&
-      isSubmitLike(s1.element)
-    ) {
+    // 6: checkbox (click or check/uncheck) + click(submit) → acceptAndSubmit
+    if (s0 && isCheckboxToggle(s0) && s1?.action === 'click' && isSubmitLike(s1.element)) {
       drafts.push({
         name: 'acceptAndSubmit',
         params: [paramName(s0.element, 'consent')],

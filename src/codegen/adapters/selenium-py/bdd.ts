@@ -120,6 +120,33 @@ function renderStepBody(step: GherkinStep, argNames: string[]): string {
       `    _el.send_keys(${valueRef})`,
     ].join('\n')
   }
+  if (sourceAction === 'select') {
+    const valueRef = argNames[0] ?? '""'
+    const labelRef = argNames[1] ?? '""'
+    return [
+      `    _xpath = "//*[@aria-label='" + ${labelRef} + "' or @name='" + ${labelRef} + "']"`,
+      `    Select(driver.find_element(By.XPATH, _xpath)).select_by_value(${valueRef})`,
+    ].join('\n')
+  }
+  if (sourceAction === 'check' || sourceAction === 'uncheck') {
+    const labelRef = argNames[0] ?? '""'
+    const condition = sourceAction === 'check' ? 'not _el.is_selected()' : '_el.is_selected()'
+    return [
+      `    _xpath = "//*[@aria-label='" + ${labelRef} + "' or @name='" + ${labelRef} + "']"`,
+      `    _el = driver.find_element(By.XPATH, _xpath)`,
+      `    if ${condition}:`,
+      `        _el.click()`,
+    ].join('\n')
+  }
+  if (sourceAction === 'hover' || sourceAction === 'dblclick') {
+    const textRef = argNames[0] ?? '""'
+    const call = sourceAction === 'hover' ? 'move_to_element(_el)' : 'double_click(_el)'
+    return [
+      `    _xpath = "//*[normalize-space()='" + ${textRef} + "']"`,
+      `    _el = driver.find_element(By.XPATH, _xpath)`,
+      `    ActionChains(driver).${call}.perform()`,
+    ].join('\n')
+  }
   if (sourceAction === 'keypress') {
     const keyRef = argNames[0] ?? '""'
     return `    driver.switch_to.active_element.send_keys(getattr(Keys, ${keyRef}.upper()))`
@@ -195,6 +222,13 @@ export function renderStepsFile(scenario: IRScenario): string {
   const importLines: string[] = ['from pytest_bdd import scenarios, given, when, then, parsers']
   importLines.push('from selenium.webdriver.common.by import By')
   importLines.push('from selenium.webdriver.common.keys import Keys')
+  const stepsText = stepDefs.join('\n')
+  if (/\bSelect\(/.test(stepsText)) {
+    importLines.push('from selenium.webdriver.support.ui import Select')
+  }
+  if (/\bActionChains\(/.test(stepsText)) {
+    importLines.push('from selenium.webdriver.common.action_chains import ActionChains')
+  }
   if (pomImports.size > 0) {
     for (const name of Array.from(pomImports).sort()) {
       importLines.push(`from pages.${toSnakeCase(name)} import ${name}`)

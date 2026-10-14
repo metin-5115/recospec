@@ -1,5 +1,6 @@
 import type { IRScenario, IRStep, AssertionDetail, IRElement, TestDataConfig } from '../../ir/types'
 import { renderLocatorTuple, pyStr } from './locator'
+import { renderPyInteraction, pyInteractionImports } from './interaction'
 import { resolveTestData } from '../../planner/test-data-resolver'
 
 let TEST_DATA: TestDataConfig | undefined
@@ -115,6 +116,12 @@ function renderStepInTest(step: IRStep, indent: string): string {
       `${indent}_el.send_keys(${expr})`,
     ].join('\n')
   }
+  if (step.element) {
+    const tuple = renderLocatorTuple(step.element)
+    const elementExpr = `WebDriverWait(driver, 10).until(EC.visibility_of_element_located(${tuple}))`
+    const interaction = renderPyInteraction(step, elementExpr, 'driver', indent)
+    if (interaction) return interaction
+  }
   if (step.action === 'keypress' && step.key) {
     return `${indent}driver.switch_to.active_element.send_keys(Keys.${step.key.toUpperCase()})`
   }
@@ -163,6 +170,7 @@ export function renderScenario(scenario: IRScenario): string {
   const pomReferences = scenario.pages.map((p) => `    _ = ${p.className}  # noqa: F841`).join('\n')
   const pomBlock = pomReferences ? `${pomReferences}\n` : ''
 
+  const interactionImports = pyInteractionImports(scenario.pages.flatMap((p) => p.steps))
   const needsOsImport = (TEST_DATA?.params ?? []).some((p) => p.useEnvVar)
   const needsReImport = scenario.pages.some((p) =>
     p.steps.some((s) => s.assertionDetail?.type === 'matches'),
@@ -176,7 +184,7 @@ export function renderScenario(scenario: IRScenario): string {
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-${pageImports}
+${interactionImports}${pageImports}
 
 
 def test_${slug}(driver):

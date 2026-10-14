@@ -420,3 +420,104 @@ describe('mapScenarioToGherkin', () => {
     expect(keywords).toEqual(['Given', 'When', 'And', 'Then'])
   })
 })
+
+describe('select / check / hover / dblclick', () => {
+  const selectEl: IRElement = {
+    name: 'countrySelect',
+    locatorStrategy: 'testid',
+    locatorValue: '[data-testid="country"]',
+    tagName: 'select',
+  }
+  const rowEl: IRElement = {
+    name: 'rowItem',
+    locatorStrategy: 'testid',
+    locatorValue: '[data-testid="row"]',
+    tagName: 'tr',
+  }
+
+  it('select → I select "<value>" from the "<label>" dropdown', () => {
+    const out = mapIRStepToGherkin(ir({ action: 'select', element: selectEl, value: 'tr' }), 'When')
+    expect(out.text).toBe('I select "tr" from the "country" dropdown')
+    expect(out.pattern).toBe('I select {string} from the {string} dropdown')
+    expect(out.params).toEqual(['tr', 'country'])
+  })
+
+  it('check / uncheck → I check the "<label>" checkbox', () => {
+    const on = mapIRStepToGherkin(ir({ action: 'check', element: checkboxEl }), 'When')
+    const off = mapIRStepToGherkin(ir({ action: 'uncheck', element: checkboxEl }), 'When')
+    expect(on.text).toBe('I check the "terms" checkbox')
+    expect(off.text).toBe('I uncheck the "terms" checkbox')
+    expect(on.params).toEqual(['terms'])
+  })
+
+  it('hover and dblclick get their own verbs', () => {
+    const hover = mapIRStepToGherkin(ir({ action: 'hover', element: rowEl }), 'When')
+    const dbl = mapIRStepToGherkin(ir({ action: 'dblclick', element: rowEl }), 'When')
+    expect(hover.text).toBe('I hover over the "row Item" element')
+    expect(dbl.text).toBe('I double-click the "row Item" element')
+  })
+
+  it('a selectX method keeps its recorded value as a step parameter', () => {
+    const step = ir({ action: 'select', element: selectEl, value: 'tr' })
+    const method: InferredMethod = {
+      name: 'selectCountry',
+      params: ['country'],
+      paramTypes: ['string'],
+      steps: [step],
+    }
+    const page: IRPage = {
+      name: 'Checkout',
+      className: 'CheckoutPage',
+      normalizedUrl: '/checkout',
+      elements: [selectEl],
+      steps: [step],
+      inferredMethods: [method],
+    }
+    const out = mapInferredMethodToGherkin(method, page, null)
+    expect(out.text).toBe('I select "tr" from the country')
+    expect(out.pattern).toBe('I select {string} from the country')
+    expect(out.params).toEqual(['tr'])
+  })
+
+  it('a check step supplies true for the boolean parameter', () => {
+    const step = ir({ action: 'check', element: checkboxEl })
+    const method: InferredMethod = {
+      name: 'acceptAndSubmit',
+      params: ['terms'],
+      paramTypes: ['boolean'],
+      steps: [step],
+    }
+    const page: IRPage = {
+      name: 'Signup',
+      className: 'SignupPage',
+      normalizedUrl: '/signup',
+      elements: [checkboxEl],
+      steps: [step],
+      inferredMethods: [method],
+    }
+    expect(mapInferredMethodToGherkin(method, page, null).params).toEqual([true])
+  })
+
+  it('checkX / hoverX / doubleClickX methods map to a parameterless sentence', () => {
+    const page: IRPage = {
+      name: 'P',
+      className: 'PPage',
+      normalizedUrl: '/p',
+      elements: [],
+      steps: [],
+    }
+    const make = (name: string): InferredMethod => ({ name, params: [], steps: [] })
+    expect(mapInferredMethodToGherkin(make('checkTerms'), page, null).text).toBe(
+      'I check the terms',
+    )
+    expect(mapInferredMethodToGherkin(make('uncheckTerms'), page, null).text).toBe(
+      'I uncheck the terms',
+    )
+    expect(mapInferredMethodToGherkin(make('hoverAccountMenu'), page, null).text).toBe(
+      'I hover over the account menu',
+    )
+    expect(mapInferredMethodToGherkin(make('doubleClickRowItem'), page, null).text).toBe(
+      'I double-click the row item',
+    )
+  })
+})

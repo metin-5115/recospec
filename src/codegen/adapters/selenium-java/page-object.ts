@@ -13,6 +13,11 @@ import {
   renderByExpression,
   javaStr,
 } from './locator'
+import {
+  renderJavaInteraction,
+  javaInteractionImports,
+  type JavaInteractionTarget,
+} from './interaction'
 import { resolveTestData } from '../../planner/test-data-resolver'
 
 let TEST_DATA: TestDataConfig | undefined
@@ -233,6 +238,20 @@ function renderAssertion(d: AssertionDetail, el: IRElement | undefined, indent: 
   }
 }
 
+/**
+ * Page-object fields are already WebElements — wait for visibility, then use
+ * them. Referenced via `this.` because a method parameter may share the field's
+ * name (an element named `country` with a `country` parameter).
+ */
+function fieldTarget(el: IRElement): JavaInteractionTarget {
+  const ref = `this.${toJavaFieldName(el.name)}`
+  return {
+    prelude: [`wait.until(ExpectedConditions.visibilityOf(${ref}));`],
+    ref,
+    scoped: false,
+  }
+}
+
 function renderStepInMethod(step: IRStep, indent: string): string {
   if (step.action === 'navigate' && step.url) {
     return `${indent}driver.get(${javaStr(step.url)});`
@@ -249,6 +268,10 @@ function renderStepInMethod(step: IRStep, indent: string): string {
       `${indent}${fieldRef}.clear();`,
       `${indent}${fieldRef}.sendKeys(${expr});`,
     ].join('\n')
+  }
+  if (step.element) {
+    const interaction = renderJavaInteraction(step, fieldTarget(step.element), indent)
+    if (interaction) return interaction
   }
   if (step.action === 'keypress' && step.key) {
     const keyConst = step.key.toUpperCase()
@@ -302,6 +325,24 @@ function renderInferredMethod(method: InferredMethod): string {
           ].join('\n')
         }
       }
+      if (s.action === 'select' && s.element) {
+        const idx = method.params.findIndex((p) => p === paramSlugFromElement(s.element!.name))
+        if (idx !== -1) {
+          return renderJavaInteraction(s, fieldTarget(s.element), '        ', {
+            selectArg: method.params[idx],
+          })
+        }
+      }
+      if ((s.action === 'check' || s.action === 'uncheck') && s.element) {
+        const idx = method.params.findIndex(
+          (p, i) => types[i] === 'boolean' && p === paramSlugFromElement(s.element!.name),
+        )
+        if (idx !== -1) {
+          return renderJavaInteraction(s, fieldTarget(s.element), '        ', {
+            toggleParam: method.params[idx],
+          })
+        }
+      }
       return renderStepInMethod(s, '        ')
     })
     .filter(Boolean)
@@ -349,6 +390,7 @@ export function renderPageObject(page: IRPage): string {
     : ''
 
   const fieldsBlock = fieldDecls ? `${fieldDecls}\n\n` : ''
+  const allSteps = [...page.steps, ...(page.inferredMethods ?? []).flatMap((m) => m.steps)]
 
   return `package pages;
 
@@ -361,7 +403,7 @@ import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.PageFactory;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-
+${javaInteractionImports(allSteps)}
 public class ${page.className} {
 ${collisionComment}    private final WebDriver driver;
     private final WebDriverWait wait;

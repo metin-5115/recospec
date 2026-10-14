@@ -256,3 +256,63 @@ describe('inferMethods — network steps', () => {
     expect(methods[0].steps.some((s) => s.action === 'network')).toBe(true)
   })
 })
+
+function elementStep(
+  action: IRStep['action'],
+  name: string,
+  tagName: string,
+  extra: Partial<IRStep> = {},
+  inputType?: string,
+): IRStep {
+  return {
+    id: crypto.randomUUID(),
+    action,
+    element: {
+      name,
+      locatorStrategy: 'testid',
+      locatorValue: `[data-testid="${name}"]`,
+      tagName,
+      inputType,
+    },
+    ...extra,
+  }
+}
+
+describe('inferMethods — select / check / hover / dblclick', () => {
+  it('names a lone select step after the element and exposes the value as a param', () => {
+    const methods = inferMethods([
+      elementStep('select', 'countrySelect', 'select', { value: 'tr' }),
+    ])
+    expect(methods).toHaveLength(1)
+    expect(methods[0].name).toBe('selectCountry')
+    expect(methods[0].params).toEqual(['country'])
+    expect(methods[0].paramTypes).toEqual(['string'])
+  })
+
+  it('names check and uncheck steps without parameters', () => {
+    const methods = inferMethods([
+      elementStep('check', 'termsCheckbox', 'input', {}, 'checkbox'),
+      elementStep('uncheck', 'newsletterCheckbox', 'input', {}, 'checkbox'),
+    ])
+    expect(methods.map((m) => m.name)).toEqual(['checkTerms', 'uncheckNewsletter'])
+    expect(methods.every((m) => m.params.length === 0)).toBe(true)
+  })
+
+  it('names hover and dblclick steps', () => {
+    const methods = inferMethods([
+      elementStep('hover', 'accountMenu', 'div'),
+      elementStep('dblclick', 'rowItem', 'tr'),
+    ])
+    expect(methods.map((m) => m.name)).toEqual(['hoverAccountMenu', 'doubleClickRowItem'])
+  })
+
+  it('Pattern 6 — check + submit → acceptAndSubmit with a boolean param', () => {
+    const methods = inferMethods([
+      elementStep('check', 'consentCheckbox', 'input', {}, 'checkbox'),
+      clickStep('submitBtn'),
+    ])
+    expect(methods).toHaveLength(1)
+    expect(methods[0].name).toBe('acceptAndSubmit')
+    expect(methods[0].paramTypes).toEqual(['boolean'])
+  })
+})
