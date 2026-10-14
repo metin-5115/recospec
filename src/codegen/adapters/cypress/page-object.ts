@@ -9,6 +9,7 @@ import type {
 } from '../../ir/types'
 import { renderLocator } from './locator'
 import { renderInteraction, renderToggleByParam } from './interaction'
+import { renderCypressMocks } from './mock'
 import { resolveTestData } from '../../planner/test-data-resolver'
 import { dateFnsLocaleImportName } from '@shared/date-template'
 
@@ -245,7 +246,11 @@ function renderInferredMethod(method: InferredMethod): string {
     .filter(Boolean)
     .join('\n')
 
-  return `  ${method.name}(${paramList}) {\n${bodyLines}\n  }`
+  // Mocks go first: an intercept registered after the click would miss the request.
+  const mocks = renderCypressMocks(method.steps, '    ')
+  const body = [mocks, bodyLines].filter(Boolean).join('\n')
+
+  return `  ${method.name}(${paramList}) {\n${body}\n  }`
 }
 
 // ---------------------------------------------------------------------------
@@ -284,9 +289,12 @@ export function renderPageObject(page: IRPage): string {
   if (page.inferredMethods?.length) {
     methodsBlock = '\n' + page.inferredMethods.map(renderInferredMethod).join('\n\n')
   } else {
-    const stepLines = page.steps
-      .filter((s) => s.action !== 'navigate')
-      .map((s) => renderStepInMethod(s, '    '))
+    const stepLines = [
+      renderCypressMocks(page.steps, '    '),
+      ...page.steps
+        .filter((s) => s.action !== 'navigate')
+        .map((s) => renderStepInMethod(s, '    ')),
+    ]
       .filter(Boolean)
       .join('\n')
     if (stepLines) {

@@ -1,6 +1,7 @@
 import type { IRScenario, IRStep, AssertionDetail, IRElement, TestDataConfig } from '../../ir/types'
 import { renderLocator } from './locator'
 import { renderInteraction } from './interaction'
+import { renderCypressMocks } from './mock'
 import { resolveTestData } from '../../planner/test-data-resolver'
 
 let TEST_DATA: TestDataConfig | undefined
@@ -103,9 +104,15 @@ export function renderScenario(scenario: IRScenario): string {
     .map((p) => `import { ${p.className} } from '../pages/${p.className}';`)
     .join('\n')
 
-  const testBody = scenario.pages
+  // Mocks first: an intercept registered after the click would miss the request.
+  const mocks = renderCypressMocks(
+    scenario.pages.flatMap((page) => page.steps),
+    '    ',
+  )
+  const stepLines = scenario.pages
     .flatMap((page) => page.steps.map((step) => renderStepInSpec(step, '    ')).filter(Boolean))
     .join('\n')
+  const testBody = [mocks, stepLines].filter(Boolean).join('\n')
 
   return `${imports}
 
