@@ -1,9 +1,16 @@
 import { normalizeActions } from '../normalizer/action-normalizer'
 import { groupIntoPages } from '../planner/page-grouper'
 import { getEnvVarName } from '../planner/sensitive-detector'
+import {
+  PROMPT_ELEMENT_TEXT_PREVIEW_MAX,
+  PROMPT_STRIPPED_HEADERS,
+  SECRET_PARAM_DEFAULT_VALUE,
+} from '@shared/constants'
+import { xmlBlock, xmlText } from './prompt-xml'
+import { getFrameworkConvention } from './prompt-conventions'
 import type { JsonExportPayload } from './json-export'
 import type { FrameworkId, PromptMode } from '@shared/types/generated'
-import type { IRPage, IRStep, IRParamType } from '../ir/types'
+import type { IRElement, IRPage, IRStep, IRParamType } from '../ir/types'
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -18,30 +25,28 @@ export interface PromptOptions {
   flowSlug?: string
   /**
    * When true (default), sensitive fill values are replaced with
-   * `<REDACTED:RECOSPEC_*>` placeholders and `renderPromptMarkdown` enforces
+   * `[REDACTED:RECOSPEC_*]` placeholders and `renderPromptMarkdown` enforces
    * the leak guard. When false, raw values are preserved and the guard is
    * bypassed — useful for local debugging only.
    */
   redactSecrets?: boolean
 }
 
+/** Data sections come first; `instructions` is always last (queries-at-end ordering). */
 export type PromptSectionId =
-  | 'mission'
-  | 'summary'
+  | 'role'
+  | 'scenario'
   | 'pages'
-  | 'locator-catalogue'
-  | 'fragility'
-  | 'verification'
-  | 'mocks'
+  | 'flow'
+  | 'network-mocks'
   | 'secrets'
-  | 'self-healing'
-  | 'footer'
+  | 'fragility'
+  | 'instructions'
 
 export interface PromptSection {
   id: PromptSectionId
-  /** Markdown H2 heading; when omitted the section body is rendered raw. */
-  title?: string
-  body: string
+  /** Fully rendered XML element for this section. */
+  xml: string
 }
 
 export interface PromptRedaction {
@@ -73,7 +78,7 @@ export class PromptRedactionError extends Error {
 }
 
 /**
- * Defense-in-depth guard. Scans rendered markdown for `keyword[:=]value`
+ * Defense-in-depth guard. Scans the rendered prompt for `keyword[:=]value`
  * patterns that look like accidentally embedded secrets. Throws a
  * {@link PromptRedactionError} listing every match.
  */
@@ -88,6 +93,10 @@ export function assertNoLeakedSecrets(markdown: string): void {
 // ---------------------------------------------------------------------------
 // Pipeline
 // ---------------------------------------------------------------------------
+
+const ROOT_TAG = 'recospec_prompt'
+
+type Redact = (value: string) => string
 
 export function buildPromptDocument(
   payload: JsonExportPayload,
@@ -106,24 +115,22 @@ export function buildPromptDocument(
         .map((r) => ({
           rawValue: r.rawValue,
           envVarName: r.envVarName!,
-          placeholder: `<REDACTED:${r.envVarName!}>`,
+          placeholder: `[REDACTED:${r.envVarName!}]`,
         }))
     : []
+  const redact = buildRedactor(redactionMap)
 
-  const rawSections: PromptSection[] = [
-    buildMissionSection(flowSlug, opts.framework),
-    buildSummarySection(payload, pages, flatSteps),
-    buildPagesSection(pages),
-    buildLocatorCatalogueSection(pages),
-    buildFragilitySection(pages),
-    buildVerificationSection(pages),
-    buildMocksSection(pages),
-    buildSecretsSection(rows, redactSecrets),
-    buildSelfHealingSection(),
-    buildFooterSection(payload.session.sessionId, payload.exportedAt),
+  const sections: PromptSection[] = [
+    { id: 'role', xml: buildRole() },
+    { id: 'scenario', xml: buildScenario(payload, pages, flatSteps, redact) },
+    { id: 'pages', xml: buildPages(pages, redact) },
+    { id: 'flow', xml: buildFlow(pages, redact) },
+    { id: 'network-mocks', xml: buildNetworkMocks(pages, redact) },
+    { id: 'secrets', xml: buildSecrets(rows, redactSecrets) },
+    { id: 'fragility', xml: buildFragility(pages) },
+    { id: 'instructions', xml: buildInstructions(flowSlug, pages, rows, opts.framework) },
   ]
 
-  const sections = redactSecrets ? applyRedaction(rawSections, redactionMap) : rawSections
   const frontmatter = opts.mode === 'slash' ? buildFrontmatter(flowSlug, opts.framework) : undefined
 
   return {
@@ -139,23 +146,33 @@ export function buildPromptDocument(
   }
 }
 
+/** Renders the prompt document. Kept under its historical name for existing callers. */
 export function renderPromptMarkdown(doc: PromptDocument): string {
-  const body = doc.sections.map(renderSection).join('\n\n')
+  const root = xmlBlock(
+    ROOT_TAG,
+    {
+      flow: doc.flowSlug,
+      framework: doc.framework,
+      session: doc.sessionId,
+      generated_at: doc.generatedAtIso,
+    },
+    doc.sections.map((s) => s.xml),
+  )
 
-  let markdown: string
+  let output: string
   if (doc.mode === 'slash') {
-    markdown = `${doc.frontmatter}\n\n${body}\n`
+    output = `${doc.frontmatter}\n\n${root}\n`
   } else if (doc.mode === 'claude-md') {
-    markdown =
+    output =
       `<!-- BEGIN recospec:${doc.flowSlug} -->\n` +
-      `${body}\n` +
+      `${root}\n` +
       `<!-- END recospec:${doc.flowSlug} -->\n`
   } else {
-    markdown = `${body}\n`
+    output = `${root}\n`
   }
 
-  if (doc.redactSecrets) assertNoLeakedSecrets(markdown)
-  return markdown
+  if (doc.redactSecrets) assertNoLeakedSecrets(output)
+  return output
 }
 
 // ---------------------------------------------------------------------------
@@ -207,12 +224,11 @@ function collectContractRows(pages: IRPage[]): ContractRow[] {
   return rows
 }
 
-function applyRedaction(sections: PromptSection[], map: PromptRedaction[]): PromptSection[] {
-  if (map.length === 0) return sections
-  return sections.map((s) => ({
-    ...s,
-    body: map.reduce((acc, r) => acc.split(r.rawValue).join(r.placeholder), s.body),
-  }))
+/** Longest values first so a secret that contains another one is masked whole. */
+function buildRedactor(map: PromptRedaction[]): Redact {
+  if (map.length === 0) return (value) => value
+  const ordered = [...map].sort((a, b) => b.rawValue.length - a.rawValue.length)
+  return (value) => ordered.reduce((acc, r) => acc.split(r.rawValue).join(r.placeholder), value)
 }
 
 function buildFrontmatter(slug: string, framework: FrameworkId | undefined): string {
@@ -226,108 +242,125 @@ function buildFrontmatter(slug: string, framework: FrameworkId | undefined): str
   ].join('\n')
 }
 
-function buildMissionSection(slug: string, framework?: FrameworkId): PromptSection {
-  const fw = framework ?? 'the project framework'
-  const body =
-    `You are Recospec's recorded test author for the **${slug}** flow. ` +
-    `Generate or update the ${fw} test using the locator catalogue below as ground truth. ` +
-    'Never invent selectors — every interaction must reuse one of the locators listed in this ' +
-    'document or fall back to one of its alternates. When you add an assertion, reuse the ' +
-    'listed elements; when you mock a request, reuse the captured signatures.'
-  return { id: 'mission', body }
+function truncate(text: string, max: number): string {
+  const collapsed = text.replace(/\s+/g, ' ').trim()
+  return collapsed.length > max ? `${collapsed.slice(0, max)}…` : collapsed
 }
 
-function buildSummarySection(
+// ---------------------------------------------------------------------------
+// Data sections
+// ---------------------------------------------------------------------------
+
+function buildRole(): string {
+  return xmlText(
+    'role',
+    {},
+    "You are Recospec's recorded test author. The recording below is ground truth: write the " +
+      'test code it describes and do not invent selectors, pages or flows.',
+  )
+}
+
+function buildScenario(
   payload: JsonExportPayload,
   pages: IRPage[],
   flatSteps: IRStep[],
-): PromptSection {
-  const date = new Date(payload.exportedAt).toISOString().slice(0, 10)
+  redact: Redact,
+): string {
   const { viewport, timezone } = payload.session.metadata
-  const networkCount = flatSteps.filter((s) => s.action === 'network').length
-  const body = [
-    `- Captured: ${date}`,
-    `- Start URL: ${payload.session.startUrl}`,
-    `- Viewport: ${viewport.width}×${viewport.height}`,
-    `- Timezone: ${timezone}`,
-    `- Pages: ${pages.length}`,
-    `- Steps: ${flatSteps.length}`,
-    `- Network captures: ${networkCount}`,
-  ].join('\n')
-  return { id: 'summary', title: 'Scenario summary', body }
+  return xmlBlock('scenario', {
+    name: payload.session.name,
+    start_url: redact(payload.session.startUrl),
+    viewport: `${viewport.width}x${viewport.height}`,
+    timezone,
+    captured: new Date(payload.exportedAt).toISOString().slice(0, 10),
+    pages: pages.length,
+    steps: flatSteps.length,
+    network_captures: flatSteps.filter((s) => s.action === 'network').length,
+  })
 }
 
-function buildPagesSection(pages: IRPage[]): PromptSection {
-  if (pages.length === 0) {
-    return { id: 'pages', title: 'Pages & inferred methods', body: '_No pages captured._' }
+function buildElement(el: IRElement, redact: Redact): string {
+  const snapshot = el.elementSnapshot
+  const children: string[] = [
+    xmlText('locator', { strategy: el.locatorStrategy }, redact(el.locatorValue)),
+  ]
+  ;(el.fallbackLocators ?? []).forEach((fallback, idx) => {
+    children.push(
+      xmlText(
+        'fallback',
+        { rank: idx + 1, strategy: fallback.strategy },
+        redact(fallback.locatorValue),
+      ),
+    )
+  })
+  if (el.shadowContext && el.shadowContext.hostChain.length > 0) {
+    children.push(xmlText('shadow_host_chain', {}, el.shadowContext.hostChain.join(' >> ')))
   }
-  const lines = ['| Page | Method | Parameters | Steps |', '| ---- | ------ | ---------- | ----- |']
-  for (const page of pages) {
-    const methods = page.inferredMethods ?? []
-    if (methods.length === 0) {
-      lines.push(
-        `| ${page.className} | _(no inferred methods)_ | _(none)_ | ${page.steps.length} |`,
-      )
-      continue
-    }
-    for (const method of methods) {
-      const params = method.params.length
-        ? method.params.map((p, i) => (method.paramSecret?.[i] ? `${p} 🔒` : p)).join(', ')
-        : '_(none)_'
-      lines.push(`| ${page.className} | ${method.name} | ${params} | ${method.steps.length} |`)
-    }
+  if (el.frameContext && el.frameContext.frameChain.length > 0) {
+    children.push(xmlText('frame_chain', {}, el.frameContext.frameChain.join(' >> ')))
   }
-  return { id: 'pages', title: 'Pages & inferred methods', body: lines.join('\n') }
-}
-
-function buildLocatorCatalogueSection(pages: IRPage[]): PromptSection {
-  if (pages.length === 0) {
-    return {
-      id: 'locator-catalogue',
-      title: 'Locator catalogue',
-      body: '_No locators captured._',
-    }
-  }
-  const blocks: string[] = []
-  for (const page of pages) {
-    const elements = page.elements.map((el) => ({
+  return xmlBlock(
+    'element',
+    {
       name: el.name,
       tag: el.tagName,
-      inputType: el.inputType,
-      primary: { strategy: el.locatorStrategy, value: el.locatorValue },
-      fallbacks: (el.fallbackLocators ?? []).map((f) => ({
-        strategy: f.strategy,
-        value: f.locatorValue,
-      })),
-      snapshot: el.elementSnapshot,
-      shadow: el.shadowContext ? { hostChain: el.shadowContext.hostChain } : undefined,
-      frame: el.frameContext ? { chain: el.frameContext.frameChain } : undefined,
-    }))
-    blocks.push(`### ${page.className}\n\n\`\`\`json\n${JSON.stringify(elements, null, 2)}\n\`\`\``)
-  }
-  return { id: 'locator-catalogue', title: 'Locator catalogue', body: blocks.join('\n\n') }
+      input_type: el.inputType,
+      role: snapshot?.role,
+      test_id: snapshot?.testId,
+      text: snapshot?.textContent
+        ? redact(truncate(snapshot.textContent, PROMPT_ELEMENT_TEXT_PREVIEW_MAX))
+        : undefined,
+    },
+    children,
+  )
 }
 
-function buildFragilitySection(pages: IRPage[]): PromptSection {
-  const warnings: string[] = []
-  for (const page of pages) {
-    for (const el of page.elements) {
-      if (el.locatorStrategy === 'css' || el.locatorStrategy === 'xpath') {
-        warnings.push(
-          `- **${page.className}.${el.name}** uses \`${el.locatorStrategy}\` — last-resort strategy. Prefer one of the listed fallbacks if available.`,
-        )
-      }
-      if (el.shadowClosed) {
-        warnings.push(
-          `- **${page.className}.${el.name}** lives inside a closed shadow root — the recorded locator may be unreliable across renders.`,
-        )
-      }
-    }
-  }
-  const body = warnings.length
-    ? warnings.join('\n')
-    : '_No fragile locators detected — every element resolved to a semantic strategy (testid, aria, role, label, text, or id)._'
-  return { id: 'fragility', title: 'Fragility hints', body }
+function buildMethods(page: IRPage): string | undefined {
+  const methods = page.inferredMethods ?? []
+  if (methods.length === 0) return undefined
+  return xmlBlock(
+    'methods',
+    {},
+    methods.map((method) =>
+      xmlBlock(
+        'method',
+        { name: method.name, steps: method.steps.length },
+        method.params.map((param, idx) => {
+          const sensitive = method.paramSecret?.[idx] ?? false
+          return xmlBlock('param', {
+            name: param,
+            type: method.paramTypes?.[idx] ?? 'string',
+            sensitive: sensitive ? true : undefined,
+            env_var: sensitive ? getEnvVarName(param) : undefined,
+          })
+        }),
+      ),
+    ),
+  )
+}
+
+function buildPages(pages: IRPage[], redact: Redact): string {
+  if (pages.length === 0) return xmlBlock('pages', { empty: true })
+  return xmlBlock(
+    'pages',
+    {},
+    pages.map((page) => {
+      const children = [
+        xmlBlock(
+          'elements',
+          {},
+          page.elements.map((el) => buildElement(el, redact)),
+        ),
+      ]
+      const methods = buildMethods(page)
+      if (methods) children.push(methods)
+      return xmlBlock(
+        'page',
+        { class: page.className, url: redact(page.normalizedUrl), title: page.pageTitle },
+        children,
+      )
+    }),
+  )
 }
 
 function describeAssertion(step: IRStep): string {
@@ -364,98 +397,183 @@ function describeAssertion(step: IRStep): string {
   }
 }
 
-function buildVerificationSection(pages: IRPage[]): PromptSection {
-  const lines: string[] = []
+function buildFlow(pages: IRPage[], redact: Redact): string {
+  const steps: string[] = []
   for (const page of pages) {
     for (const step of page.steps) {
-      if (step.action === 'assert') {
-        lines.push(`- (${page.className}) ${describeAssertion(step)}`)
+      if (step.action === 'network') continue
+      const attrs = {
+        n: steps.length + 1,
+        page: page.className,
+        action: step.action,
+        element: step.element?.name,
+        value: step.value !== undefined ? redact(step.value) : undefined,
+        url: step.url !== undefined ? redact(step.url) : undefined,
+        key: step.key,
+        reason: step.wait?.reason,
+        timeout_ms: step.wait?.timeoutMs,
       }
+      steps.push(
+        step.action === 'assert'
+          ? xmlText('step', attrs, redact(describeAssertion(step)))
+          : xmlBlock('step', attrs),
+      )
     }
   }
-  const body = lines.length
-    ? lines.join('\n')
-    : '_No assertions captured. Add an explicit visibility / text check after the primary action when generating the test._'
-  return { id: 'verification', title: 'Verification expectations', body }
+  if (steps.length === 0) return xmlBlock('flow', { empty: true })
+  return xmlBlock('flow', {}, steps)
 }
 
-function buildMocksSection(pages: IRPage[]): PromptSection {
-  const captures: { pageClass: string; step: IRStep }[] = []
+function buildNetworkMocks(pages: IRPage[], redact: Redact): string {
+  const requests: string[] = []
   for (const page of pages) {
     for (const step of page.steps) {
-      if (step.action === 'network' && step.network) {
-        captures.push({ pageClass: page.className, step })
-      }
+      if (step.action !== 'network' || !step.network) continue
+      const n = step.network
+      requests.push(
+        xmlText(
+          'request',
+          { page: page.className, method: n.method, status: n.status, content_type: n.contentType },
+          redact(n.url),
+        ),
+      )
     }
   }
-  if (captures.length === 0) {
-    return {
-      id: 'mocks',
-      title: 'Mock guidance',
-      body: '_No network captures. Skip the mock checkbox unless your test needs to deterministically replay an API response._',
-    }
-  }
-  const lines = [
-    'Before shipping fixtures from the requests below, **strip** the `Authorization`, ' +
-      '`Cookie`, and `Set-Cookie` headers — they leak credentials. Replay only the response ' +
-      'shape your assertion depends on.',
-    '',
-    '| Page | Method | URL | Status | Content-Type |',
-    '| ---- | ------ | --- | ------ | ------------ |',
-  ]
-  for (const { pageClass, step } of captures) {
-    const n = step.network!
-    lines.push(
-      `| ${pageClass} | ${n.method} | ${n.url} | ${n.status ?? '—'} | ${n.contentType ?? '—'} |`,
+  if (requests.length === 0) return xmlBlock('network_mocks', { empty: true })
+  return xmlBlock('network_mocks', { strip_headers: PROMPT_STRIPPED_HEADERS }, requests)
+}
+
+function buildSecrets(rows: ContractRow[], redactSecrets: boolean): string {
+  const sensitive = rows.filter((r) => r.isSecret)
+  if (sensitive.length === 0) return xmlBlock('secrets', { empty: true })
+  const children = sensitive.map((row) => {
+    const envVar = row.envVarName ?? ''
+    const fallback = redactSecrets
+      ? `[REDACTED:${envVar}]`
+      : row.rawValue || SECRET_PARAM_DEFAULT_VALUE
+    return xmlBlock('sensitive_param', {
+      name: row.paramName,
+      page: row.pageClass,
+      method: row.methodName,
+      env_var: envVar,
+      default: fallback,
+    })
+  })
+  if (!redactSecrets) {
+    children.push(
+      xmlText(
+        'warning',
+        {},
+        'Redaction was disabled at export time. Treat this document as confidential and rotate any value that may have leaked.',
+      ),
     )
   }
-  return { id: 'mocks', title: 'Mock guidance', body: lines.join('\n') }
+  return xmlBlock('secrets', {}, children)
 }
 
-function buildSecretsSection(rows: ContractRow[], redactSecrets: boolean): PromptSection {
-  const sensitive = rows.filter((r) => r.isSecret)
-  if (sensitive.length === 0) {
-    return {
-      id: 'secrets',
-      title: 'Sensitive values contract',
-      body: '_No sensitive parameters detected in this flow._',
+function buildFragility(pages: IRPage[]): string {
+  const hints: string[] = []
+  for (const page of pages) {
+    for (const el of page.elements) {
+      const target = `${page.className}.${el.name}`
+      if (el.locatorStrategy === 'css' || el.locatorStrategy === 'xpath') {
+        hints.push(
+          xmlText(
+            'hint',
+            { element: target, reason: `${el.locatorStrategy}-last-resort` },
+            `Uses ${el.locatorStrategy}, a last-resort strategy. Prefer a listed fallback when one exists.`,
+          ),
+        )
+      }
+      if (el.shadowClosed) {
+        hints.push(
+          xmlText(
+            'hint',
+            { element: target, reason: 'closed-shadow-root' },
+            'Lives inside a closed shadow root; the recorded locator may be unreliable across renders.',
+          ),
+        )
+      }
+      if (el.fragile) {
+        hints.push(
+          xmlText(
+            'hint',
+            { element: target, reason: 'positional-index' },
+            'Relies on a positional index; verify it still resolves to the intended element.',
+          ),
+        )
+      }
     }
   }
-  const lines = ['| Parameter | Env var | Default |', '| --------- | ------- | ------- |']
-  for (const row of sensitive) {
-    const envVar = row.envVarName ?? ''
-    const def = redactSecrets ? `\`<REDACTED:${envVar}>\`` : `\`${row.rawValue || 'change-me'}\``
-    lines.push(`| \`${row.paramName}\` 🔒 | \`${envVar}\` | ${def} |`)
-  }
-  lines.push('')
-  lines.push(
-    redactSecrets
-      ? 'Never inline these defaults into the generated test — adapters must emit env-var lookups (`process.env.X ?? "change-me"` or equivalent) so committed code never carries the secret.'
-      : '⚠️ Redaction was disabled at export time. Treat this document as confidential and rotate any value that may have leaked.',
-  )
-  return { id: 'secrets', title: 'Sensitive values contract', body: lines.join('\n') }
+  if (hints.length === 0) return xmlBlock('fragility_hints', { empty: true })
+  return xmlBlock('fragility_hints', {}, hints)
 }
 
-function buildSelfHealingSection(): PromptSection {
-  const body =
-    'Each element in the locator catalogue ships with a `primary` selector plus an ordered ' +
-    '`fallbacks` array. When the primary breaks (DOM refactor, framework upgrade, A/B test), ' +
-    'walk the fallbacks **in order** before regenerating — the engine ranked them by stability. ' +
-    'Treat `testid`, `aria-label`, `role-name`, and `label` as durable; `css` and `xpath` are ' +
-    'last-resort. Never hand-edit the locator catalogue inline — request a fresh recording so ' +
-    'Recospec can re-score against the new DOM.'
-  return { id: 'self-healing', title: 'Self-healing instructions', body }
-}
+// ---------------------------------------------------------------------------
+// Instructions (always last)
+// ---------------------------------------------------------------------------
 
-function buildFooterSection(sessionId: string, generatedAt: number): PromptSection {
-  const iso = new Date(generatedAt).toISOString()
-  return {
-    id: 'footer',
-    body: `<!-- Generated by Recospec — session ${sessionId} at ${iso} -->`,
-  }
-}
+function buildInstructions(
+  slug: string,
+  pages: IRPage[],
+  rows: ContractRow[],
+  framework: FrameworkId | undefined,
+): string {
+  const convention = getFrameworkConvention(framework)
+  const hasSecrets = rows.some((r) => r.isSecret)
 
-function renderSection(section: PromptSection): string {
-  if (!section.title) return section.body
-  return `## ${section.title}\n\n${section.body}`
+  const deliverables = [
+    ...pages.map((page) =>
+      xmlBlock('file', {
+        kind: 'page-object',
+        page: page.className,
+        path: convention.pageObjectPath(page.className),
+      }),
+    ),
+    xmlBlock('file', { kind: 'scenario', path: convention.scenarioPath(slug) }),
+  ]
+
+  const rules = [
+    'Use only the locators in the pages section. Try each locator first; if it fails, walk its fallback entries in rank order. Never invent selectors.',
+    'Treat testid, aria-label, role-name and label locators as durable; css and xpath are last-resort. Check fragility_hints before relying on one.',
+    'Expose each method as a page-object method with exactly the listed params and types, and replay the flow steps in order in the scenario.',
+    'Implement every assert step in the flow as an assertion on the referenced element.',
+    'A section marked empty="true" means the recording produced no data for it; do not fabricate any.',
+    hasSecrets
+      ? `Never inline a value from the secrets section. Read each one through its env_var using ${convention.envLookup} (X is the env_var name) so committed code never carries the value.`
+      : 'No sensitive parameters were detected; still never hard-code credentials.',
+    `Only mock the requests in network_mocks that an assertion depends on, and strip the ${PROMPT_STRIPPED_HEADERS} headers from any fixture.`,
+    'If the project already has page objects or tests for these pages, extend them with the missing methods instead of duplicating them.',
+    'Do not hand-edit recorded locator values to make a test pass; report the failing element so the flow can be re-recorded.',
+    ...convention.rules,
+  ]
+
+  return xmlBlock('instructions', {}, [
+    xmlText(
+      'task',
+      {},
+      `Write the test for the "${slug}" flow recorded above using ${convention.label}: one page ` +
+        'object per page plus one scenario that replays the flow.',
+    ),
+    xmlBlock('deliverables', {}, deliverables),
+    xmlBlock(
+      'rules',
+      {},
+      rules.map((rule) => xmlText('rule', {}, rule)),
+    ),
+    xmlBlock('verification', {}, [
+      xmlText('step', {}, `Run ${convention.runCommand} and fix failures until the test passes.`),
+      xmlText(
+        'step',
+        {},
+        'Confirm the generated files contain no literal secret values and no unused locators.',
+      ),
+    ]),
+    xmlText(
+      'output_format',
+      {},
+      'Create the files listed in deliverables, then reply with the files created or modified ' +
+        'and the exact command you ran with its result. No other prose.',
+    ),
+  ])
 }

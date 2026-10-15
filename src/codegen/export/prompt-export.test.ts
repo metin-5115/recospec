@@ -197,15 +197,16 @@ describe('buildPromptDocument — login flow (sensitive redaction)', () => {
     const md = renderPromptMarkdown(doc)
 
     expect(md).not.toContain('supersecret123')
-    expect(md).toContain('<REDACTED:RECOSPEC_PASSWORD>')
+    expect(md).toContain('[REDACTED:RECOSPEC_PASSWORD]')
 
     const pwEntry = doc.redactionMap.find((r) => r.envVarName === 'RECOSPEC_PASSWORD')
     expect(pwEntry).toBeDefined()
     expect(pwEntry?.rawValue).toBe('supersecret123')
-    expect(pwEntry?.placeholder).toBe('<REDACTED:RECOSPEC_PASSWORD>')
+    expect(pwEntry?.placeholder).toBe('[REDACTED:RECOSPEC_PASSWORD]')
 
-    expect(md).toContain('## Sensitive values contract')
-    expect(md).toContain('`password` 🔒')
+    expect(md).toContain('<secrets>')
+    expect(md).toContain('<sensitive_param name="password"')
+    expect(md).toContain('env_var="RECOSPEC_PASSWORD"')
     expect(md).toMatchSnapshot()
   })
 })
@@ -224,7 +225,8 @@ describe('buildPromptDocument — search flow (single inferred method)', () => {
     const md = renderPromptMarkdown(doc)
     expect(md).toContain('search')
     expect(md).toContain('Recospec')
-    expect(md).toContain('## Pages & inferred methods')
+    expect(md).toContain('<pages>')
+    expect(md).toContain('<method name=')
     expect(md).toMatchSnapshot()
   })
 })
@@ -234,13 +236,12 @@ describe('buildPromptDocument — multi-page flow (page grouping)', () => {
     const payload = makePayload(multiPageFlow)
     const doc = buildPromptDocument(payload, { mode: 'prompt', framework: 'playwright-ts' })
 
-    expect(doc.sections.find((s) => s.id === 'locator-catalogue')?.body).toContain('### LoginPage')
-    expect(doc.sections.find((s) => s.id === 'locator-catalogue')?.body).toContain(
-      '### DashboardPage',
-    )
+    const pagesXml = doc.sections.find((s) => s.id === 'pages')?.xml
+    expect(pagesXml).toContain('<page class="LoginPage"')
+    expect(pagesXml).toContain('<page class="DashboardPage"')
 
     const md = renderPromptMarkdown(doc)
-    const pageMatches = md.match(/### (Login|Dashboard)Page/g) ?? []
+    const pageMatches = md.match(/<page class="(Login|Dashboard)Page"/g) ?? []
     expect(pageMatches.length).toBeGreaterThanOrEqual(2)
     expect(md).toMatchSnapshot()
   })
@@ -252,8 +253,8 @@ describe('buildPromptDocument — network mock guidance', () => {
     const doc = buildPromptDocument(payload, { mode: 'prompt', framework: 'playwright-ts' })
 
     const md = renderPromptMarkdown(doc)
-    expect(md).toContain('## Mock guidance')
-    expect(md).toContain('POST')
+    expect(md).toContain('<network_mocks strip_headers=')
+    expect(md).toContain('method="POST"')
     expect(md).toContain('https://api.example.com/auth/login')
     expect(md).toContain('Authorization')
     expect(md).toContain('Cookie')
@@ -334,11 +335,11 @@ describe('buildPromptDocument — empty session', () => {
     const payload = makePayload([], { name: 'Empty', startUrl: 'https://example.com/' })
     const doc = buildPromptDocument(payload, { mode: 'prompt' })
     const md = renderPromptMarkdown(doc)
-    expect(md).toContain('_No pages captured._')
-    expect(md).toContain('_No locators captured._')
-    expect(md).toContain('_No assertions captured.')
-    expect(md).toContain('_No network captures.')
-    expect(md).toContain('_No sensitive parameters detected')
+    expect(md).toContain('<pages empty="true"/>')
+    expect(md).toContain('<flow empty="true"/>')
+    expect(md).toContain('<network_mocks empty="true"/>')
+    expect(md).toContain('<secrets empty="true"/>')
+    expect(md).toContain('<fragility_hints empty="true"/>')
     expect(doc.redactionMap).toHaveLength(0)
   })
 })
@@ -354,10 +355,8 @@ describe('buildPromptDocument — --no-redact path', () => {
     const md = renderPromptMarkdown(doc)
     expect(md).toContain('supersecret123')
     expect(md).toContain('Redaction was disabled')
-    // Even though raw values are present, the markdown table format avoids
-    // the `keyword[:=]value` shape the guard checks for, so a direct call to
-    // assertNoLeakedSecrets remains clean — we are verifying the guard was
-    // *bypassed* internally, not that it would have fired.
+    // Raw values are present; the guard was *bypassed* internally rather than
+    // satisfied, which is what this test pins down.
   })
 })
 
@@ -376,8 +375,8 @@ describe('buildPromptDocument — fragility hints', () => {
     const payload = makePayload(fragileFlow, { startUrl: 'https://example.com/page' })
     const doc = buildPromptDocument(payload, { mode: 'prompt' })
     const md = renderPromptMarkdown(doc)
-    expect(md).toContain('## Fragility hints')
-    expect(md).toContain('`xpath`')
+    expect(md).toContain('<fragility_hints>')
+    expect(md).toContain('reason="xpath-last-resort"')
     expect(md).toContain('last-resort')
   })
 
@@ -418,8 +417,8 @@ describe('buildPromptDocument — fragility hints', () => {
     const md = renderPromptMarkdown(doc)
     expect(md).toContain('closed shadow root')
     // Fallback locator surfaces in the catalogue JSON block:
-    expect(md).toContain('"strategy": "aria-label"')
-    expect(md).toContain('[aria-label=\\"Submit\\"]')
+    expect(md).toContain('<fallback rank="1" strategy="aria-label">')
+    expect(md).toContain('[aria-label=&quot;Submit&quot;]')
   })
 })
 
@@ -494,17 +493,92 @@ describe('buildPromptDocument — verification expectations from assertions', ()
       startUrl: 'https://example.com/dashboard',
     })
     const doc = buildPromptDocument(payload, { mode: 'prompt' })
-    const verification = doc.sections.find((s) => s.id === 'verification')
-    expect(verification?.body).toContain('Verify')
-    expect(verification?.body).toContain('is visible')
-    expect(verification?.body).toContain('is hidden')
-    expect(verification?.body).toContain('has text')
-    expect(verification?.body).toContain('has value')
-    expect(verification?.body).toContain('attribute')
-    expect(verification?.body).toContain('resolves to 3 elements')
-    expect(verification?.body).toContain('Capture visual baseline `dashboard-hero`')
+    const flowSection = doc.sections.find((s) => s.id === 'flow')
+    expect(flowSection?.xml).toContain('Verify')
+    expect(flowSection?.xml).toContain('is visible')
+    expect(flowSection?.xml).toContain('is hidden')
+    expect(flowSection?.xml).toContain('has text')
+    expect(flowSection?.xml).toContain('has value')
+    expect(flowSection?.xml).toContain('attribute')
+    expect(flowSection?.xml).toContain('resolves to 3 elements')
+    expect(flowSection?.xml).toContain('Capture visual baseline `dashboard-hero`')
 
     const md = renderPromptMarkdown(doc)
-    expect(md).toContain('## Verification expectations')
+    expect(md).toContain('action="assert"')
+  })
+})
+
+describe('renderPromptMarkdown — XML structure', () => {
+  function assertBalanced(xml: string): void {
+    const stack: string[] = []
+    for (const m of xml.matchAll(/<(\/?)([a-z_]+)[^<>]*?(\/?)>/g)) {
+      const [, closing, name, selfClosing] = m
+      if (selfClosing) continue
+      if (closing) {
+        expect(stack.pop()).toBe(name)
+      } else {
+        stack.push(name as string)
+      }
+    }
+    expect(stack).toEqual([])
+  }
+
+  it('produces balanced tags for a full flow', () => {
+    const doc = buildPromptDocument(makePayload(networkFlow), {
+      mode: 'prompt',
+      framework: 'playwright-ts',
+    })
+    assertBalanced(renderPromptMarkdown(doc))
+  })
+
+  it('puts instructions last inside the root element', () => {
+    const doc = buildPromptDocument(makePayload(loginFlow), { mode: 'prompt' })
+    expect(doc.sections.at(-1)?.id).toBe('instructions')
+    const md = renderPromptMarkdown(doc)
+    expect(md.indexOf('<instructions>')).toBeGreaterThan(md.indexOf('<flow>'))
+    expect(md.trimEnd().endsWith('</recospec_prompt>')).toBe(true)
+  })
+
+  it('escapes selector characters that would break the markup', () => {
+    const flow: RecordedAction[] = [
+      clickAction(
+        0,
+        'form > button[title="a&b"]',
+        'Go',
+        'https://example.com/page',
+        'button',
+        'css',
+      ),
+    ]
+    const doc = buildPromptDocument(makePayload(flow, { startUrl: 'https://example.com/page' }), {
+      mode: 'prompt',
+    })
+    const md = renderPromptMarkdown(doc)
+    expect(md).toContain('form &gt; button[title=&quot;a&amp;b&quot;]')
+    expect(md).not.toContain('form > button')
+  })
+
+  it.each([
+    ['playwright-ts', 'pages/LoginPage.ts', 'tests/login-flow.spec.ts'],
+    ['cypress', 'cypress/pages/LoginPage.js', 'cypress/e2e/login-flow.cy.js'],
+    ['selenium-py', 'pages/login_page.py', 'tests/test_login_flow.py'],
+    [
+      'selenium-java',
+      'src/main/java/pages/LoginPage.java',
+      'src/test/java/tests/TestLoginFlow.java',
+    ],
+  ] as const)(
+    'lists %s deliverables at framework-idiomatic paths',
+    (framework, pagePath, testPath) => {
+      const doc = buildPromptDocument(makePayload(loginFlow), { mode: 'prompt', framework })
+      const md = renderPromptMarkdown(doc)
+      expect(md).toContain(`path="${pagePath}"`)
+      expect(md).toContain(`path="${testPath}"`)
+    },
+  )
+
+  it('falls back to generic deliverables when no framework is known', () => {
+    const doc = buildPromptDocument(makePayload(loginFlow), { mode: 'prompt' })
+    expect(renderPromptMarkdown(doc)).toContain("the project's existing test framework")
   })
 })
