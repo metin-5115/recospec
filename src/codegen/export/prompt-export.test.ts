@@ -59,10 +59,9 @@ function makeAction(
 }
 
 /**
- * Build a `fill` action keyed by an aria-label. We use aria-label strategy so
- * the element-namer produces clean camelCase names (e.g. `emailInput`) — the
- * raw testid selector (`[data-testid="email"]`) would otherwise collapse to
- * `dataTestidEmail` and drown the prompt assertions in noise.
+ * Build a `fill` action keyed by an aria-label. The aria-label strategy yields
+ * a suffixed camelCase name (e.g. `emailInput`), which keeps the prompt
+ * assertions readable.
  */
 function fillAction(
   idx: number,

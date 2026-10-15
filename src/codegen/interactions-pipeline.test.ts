@@ -134,7 +134,7 @@ describe('recorded select / check / hover / dblclick reach every adapter', () =>
     expect(all).toContain('new Select(')
     expect(all).toContain('.isSelected()')
     // The parameter shares the element's name — the field must be addressed via `this.`.
-    expect(all).toContain('this.dataTestidTerms.isSelected()')
+    expect(all).toContain('this.terms.isSelected()')
     expect(all).toContain('new Actions(driver)')
     for (const f of javaFiles) {
       const result = validateJavaSource(f.content)

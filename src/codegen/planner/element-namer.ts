@@ -21,6 +21,12 @@ function toCamelCase(raw: string): string {
     .join('')
 }
 
+/** `[data-testid="sign-in"]` / `[data-cy='x']` → the attribute value; raw values pass through. */
+function testIdValue(selector: string): string {
+  const match = selector.match(/^\[[\w-]+=(["'])(.*)\1\]$/)
+  return match?.[2] ?? selector
+}
+
 function uniquify(base: string, usedNames: Set<string>): string {
   if (!usedNames.has(base)) return base
   let i = 2
@@ -44,7 +50,7 @@ export function nameElement(
     // it from the text would freeze one recorded sample into the identifier.
     baseName = locator.template.kind === 'date' ? 'dateCell' : 'itemByValue'
   } else if (locator.strategy === 'testid' && typeof locator.selector === 'string') {
-    baseName = toCamelCase(locator.selector)
+    baseName = toCamelCase(testIdValue(locator.selector))
   } else if (locator.strategy === 'aria-label' && attrs['aria-label']) {
     baseName = toCamelCase(attrs['aria-label']) + suffix
   } else if (snapshot.textContent?.trim()) {
