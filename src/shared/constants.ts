@@ -98,6 +98,15 @@ export const SECRET_PARAM_DEFAULT_VALUE = 'change-me' as const
 /** Prefix for environment variable names emitted by adapters. */
 export const ENV_VAR_PREFIX = 'RECOSPEC_' as const
 
+/** How long a "Copied!" confirmation stays visible in the side panel. */
+export const COPY_FEEDBACK_MS = 2_000 as const
+
+/** Max characters of an element's text content echoed into the exported prompt. */
+export const PROMPT_ELEMENT_TEXT_PREVIEW_MAX = 80 as const
+
+/** Headers the exported prompt tells Claude to strip from mocked fixtures. */
+export const PROMPT_STRIPPED_HEADERS = 'Authorization, Cookie, Set-Cookie' as const
+
 /** Maximum number of locators evaluated in a single live "Test on Page" run. */
 export const LOCATOR_VALIDATION_MAX_TARGETS = 100 as const
 
