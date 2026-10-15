@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi, type MockInstance } from 'vitest'
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -125,8 +125,8 @@ function makePayload(): JsonExportPayload {
 
 let tmp: string
 let jsonPath: string
-let logSpy: ReturnType<typeof vi.spyOn>
-let warnSpy: ReturnType<typeof vi.spyOn>
+let logSpy: MockInstance<typeof console.log>
+let warnSpy: MockInstance<typeof console.warn>
 let errorSpy: ReturnType<typeof vi.spyOn>
 
 beforeEach(() => {
