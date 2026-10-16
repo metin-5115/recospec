@@ -1,7 +1,8 @@
-import { chromium, type BrowserContext } from '@playwright/test'
+import type { BrowserContext } from '@playwright/test'
 import { existsSync, mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
+import { ChromiumMissingError, isMissingBrowserError, loadPlaywright } from './playwright-loader'
 
 export class BundledExtensionMissingError extends Error {
   constructor(public readonly searchedPath: string) {
@@ -17,6 +18,8 @@ export class BundledExtensionMissingError extends Error {
 export interface LaunchOptions {
   /** Absolute path to the unpacked Chrome extension directory. */
   extensionPath: string
+  /** Directories Playwright is resolved from, most specific first (workspace, extension folder). */
+  searchDirs: string[]
   /**
    * Optional URL to navigate to in the first tab. When omitted the
    * Chromium default new-tab page is used and the user can navigate
@@ -65,19 +68,26 @@ export async function launchChromium(opts: LaunchOptions): Promise<LaunchedBrows
     throw new BundledExtensionMissingError(opts.extensionPath)
   }
 
+  const { chromium } = loadPlaywright({ searchDirs: opts.searchDirs })
+
   const userDataDir = opts.userDataDir ?? mkdtempSync(join(tmpdir(), 'recospec-rec-'))
-  const context = await chromium.launchPersistentContext(userDataDir, {
-    headless: false,
-    args: [
-      `--disable-extensions-except=${opts.extensionPath}`,
-      `--load-extension=${opts.extensionPath}`,
-      // Side panel must be opened by user action; this hint surfaces the
-      // Recospec action icon prominently so the user can click it.
-      '--no-first-run',
-      '--no-default-browser-check',
-    ],
-    viewport: null,
-  })
+  let context: BrowserContext
+  try {
+    context = await chromium.launchPersistentContext(userDataDir, {
+      headless: false,
+      args: [
+        `--disable-extensions-except=${opts.extensionPath}`,
+        `--load-extension=${opts.extensionPath}`,
+        // Side panel must be opened by user action; this hint surfaces the
+        // Recospec action icon prominently so the user can click it.
+        '--no-first-run',
+        '--no-default-browser-check',
+      ],
+      viewport: null,
+    })
+  } catch (err) {
+    throw isMissingBrowserError(err) ? new ChromiumMissingError(err) : err
+  }
 
   if (opts.startUrl) {
     const page = context.pages()[0] ?? (await context.newPage())

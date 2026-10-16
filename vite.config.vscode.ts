@@ -26,11 +26,12 @@ const NODE_BUILTIN_EXTERNALS = [
 
 /**
  * Bundling Playwright is impractical — it carries native browser binaries
- * and a heavy test-runner surface. We mark it external; in dev mode the
- * VS Code extension resolves it from the repo's own `node_modules`, and a
- * future VSIX recipe (sprint 8) will ship it via a `node_modules` payload
- * or runtime npm install. The Chromium binary is downloaded once via
- * Playwright's standard install command — not bundled.
+ * and a heavy test-runner surface. The extension never imports it by value:
+ * `src/vscode-ext/playwright-loader.ts` resolves it lazily at record time from
+ * the user's workspace, the extension folder, or the global npm root, so a
+ * machine without Playwright can still activate the extension. The names are
+ * kept external as a safety net should a static import slip in. The Chromium
+ * binary is downloaded once via `npx playwright install chromium`.
  */
 const PLAYWRIGHT_EXTERNALS = [
   '@playwright/test',

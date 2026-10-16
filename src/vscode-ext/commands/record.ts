@@ -8,10 +8,41 @@ import {
   resolveBundledExtensionPath,
 } from '../browser-controller'
 import { extractFromServiceWorker, NoStepsRecordedError, waitForExport } from '../recording-bridge'
+import { ChromiumMissingError, PlaywrightMissingError } from '../playwright-loader'
+import { PLAYWRIGHT_INSTALL_COMMAND } from '@shared/constants'
 import { resolveWorkspace } from '../workspace-utils'
 import { getSessionsDir } from '../tree-provider'
 import { applyJsonAtPath } from './apply-json'
 import type { RecospecStatusBar } from '../status-bar'
+
+const COPY_INSTALL_COMMAND = 'Copy install command'
+const OPEN_TERMINAL = 'Open terminal'
+
+/**
+ * Explains what is missing and lets the user fix it in one click. The terminal opens with the
+ * command typed but not executed, so nothing is installed without an explicit Enter.
+ */
+async function offerPlaywrightInstall(
+  err: PlaywrightMissingError | ChromiumMissingError,
+  projectDir: string,
+): Promise<void> {
+  const headline =
+    err instanceof PlaywrightMissingError
+      ? 'Recospec: Playwright is not installed in this project.'
+      : 'Recospec: Playwright is installed but its Chromium browser is missing.'
+  const choice = await vscode.window.showErrorMessage(
+    `${headline} Run: ${PLAYWRIGHT_INSTALL_COMMAND}`,
+    COPY_INSTALL_COMMAND,
+    OPEN_TERMINAL,
+  )
+  if (choice === COPY_INSTALL_COMMAND) {
+    await vscode.env.clipboard.writeText(PLAYWRIGHT_INSTALL_COMMAND)
+  } else if (choice === OPEN_TERMINAL) {
+    const terminal = vscode.window.createTerminal({ name: 'Recospec', cwd: projectDir })
+    terminal.show()
+    terminal.sendText(PLAYWRIGHT_INSTALL_COMMAND, false)
+  }
+}
 
 /**
  * Record orchestrator (Flow 1):
@@ -53,12 +84,19 @@ export function registerRecordCommand(
     statusBar.setBusy('recording')
     let launched
     try {
-      launched = await launchChromium({ extensionPath })
+      launched = await launchChromium({
+        extensionPath,
+        searchDirs: [ws.projectDir, context.extensionUri.fsPath],
+      })
     } catch (err) {
       const message = (err as Error).message
       output.appendLine(`[recospec] ERROR: ${message}`)
-      void vscode.window.showErrorMessage(`Recospec: failed to launch Chromium — ${message}`)
       statusBar.setIdle()
+      if (err instanceof PlaywrightMissingError || err instanceof ChromiumMissingError) {
+        void offerPlaywrightInstall(err, ws.projectDir)
+      } else {
+        void vscode.window.showErrorMessage(`Recospec: failed to launch Chromium — ${message}`)
+      }
       return
     }
 
