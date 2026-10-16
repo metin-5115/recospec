@@ -49,7 +49,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Prompt negative-scenario rule** — when a flow has sensitive parameters, the prompt tells
   Claude to derive deliberately invalid values from the env var for error cases instead of reusing
   the valid credentials the redacted value maps to.
-- Dependencies: `vitest` and `@vitest/coverage-v8` 4.1, `postcss` 8.5.30.
+- Dependencies: `vitest` and `@vitest/coverage-v8` 4.1, `postcss` 8.5.30; in-range updates of the
+  whole toolchain (`@vscode/vsce`, `@babel/*`, `@crxjs/vite-plugin`, `eslint`, `playwright` …) cut
+  `pnpm audit` from 58 findings to 1. The remaining one (`braces`, via `@vscode/vsce`) has no patched
+  release and is dev-only; production dependencies report none.
 - **`recospec prompt` now emits an XML-tagged coding prompt** — the Markdown
   report is replaced by a `<recospec_prompt>` document: recorded data first
   (`scenario`, `pages` with `<locator>`/`<fallback>` per element, ordered
