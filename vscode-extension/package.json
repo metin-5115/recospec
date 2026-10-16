@@ -2,7 +2,7 @@
   "name": "recospec",
   "displayName": "Recospec",
   "description": "Apply recorded Recospec sessions to your test project and generate Claude Code prompts — straight from VS Code.",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "publisher": "recospec",
   "license": "MIT",
   "repository": {

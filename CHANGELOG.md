@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] — 2026-10-16
+
 ### Added
 
 - **Extension icons and Chrome 114 floor** — 16/32/48/128px "R" icons generated from
