@@ -41,6 +41,4 @@ docs/**/*.md
 # extension at build time (vite.config.ts) and declared as a web-accessible
 # resource in the manifest, so the build needs it in a clean checkout.
 !docs/getting-started.md
-CHANGELOG.md
 test-harness/README.md
-vscode-extension/README.md
