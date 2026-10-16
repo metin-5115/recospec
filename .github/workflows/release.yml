@@ -24,10 +24,29 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build extension
-        run: pnpm build
+      # The tag, the Chrome manifest, the CLI and the VS Code extension must all agree.
+      - name: Verify tag matches package versions
+        run: node scripts/check-release-version.mjs "${{ github.ref_name }}"
 
-      - name: Zip dist
+      # Deterministic gates only. The timing-based benchmarks already run in CI on main.
+      - name: Type check
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Unit tests
+        run: pnpm exec vitest run src
+
+      # `pnpm build` wipes dist/, so each artifact is produced in an order that keeps the others.
+      - name: Package CLI (recospec-<version>.tgz)
+        run: pnpm package:cli
+
+      # Builds the Chrome extension (dist/), the VS Code bundle and the VSIX.
+      - name: Package VS Code extension (recospec-<version>.vsix)
+        run: pnpm package:vscode
+
+      - name: Zip Chrome extension
         run: |
           cd dist
           zip -r ../recospec-${{ github.ref_name }}.zip .
@@ -35,4 +54,8 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: recospec-${{ github.ref_name }}.zip
+          generate_release_notes: true
+          files: |
+            recospec-${{ github.ref_name }}.zip
+            releases/recospec-*.tgz
+            releases/recospec-*.vsix
