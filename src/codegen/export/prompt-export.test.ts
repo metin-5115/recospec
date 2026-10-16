@@ -581,3 +581,24 @@ describe('renderPromptMarkdown — XML structure', () => {
     expect(renderPromptMarkdown(doc)).toContain("the project's existing test framework")
   })
 })
+
+describe('buildPromptDocument — negative scenario rule', () => {
+  it('tells Claude to derive invalid values from the env var when the flow expects an error', () => {
+    const doc = buildPromptDocument(makePayload(loginFlow), {
+      mode: 'prompt',
+      framework: 'playwright-ts',
+    })
+    const md = renderPromptMarkdown(doc)
+    expect(md).toContain('expects an error')
+    expect(md).toContain('deliberately invalid')
+    expect(md).toContain('never reuse the valid value')
+  })
+
+  it('omits the rule when the flow has no sensitive parameters', () => {
+    const doc = buildPromptDocument(
+      makePayload(searchFlow, { name: 'Search Flow', startUrl: 'https://example.com/search' }),
+      { mode: 'prompt' },
+    )
+    expect(renderPromptMarkdown(doc)).not.toContain('deliberately invalid')
+  })
+})

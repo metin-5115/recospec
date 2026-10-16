@@ -542,6 +542,9 @@ function buildInstructions(
     hasSecrets
       ? `Never inline a value from the secrets section. Read each one through its env_var using ${convention.envLookup} (X is the env_var name) so committed code never carries the value.`
       : 'No sensitive parameters were detected; still never hard-code credentials.',
+    hasSecrets
+      ? 'Redacted values map to the VALID test data. If the flow expects an error or rejection (an assert on an error message, an invalid state, or an unchanged page), build a deliberately invalid value from the env var (for example the env value plus a "-wrong" suffix); never reuse the valid value for a negative case and never inline a literal.'
+      : undefined,
     `Only mock the requests in network_mocks that an assertion depends on, and strip the ${PROMPT_STRIPPED_HEADERS} headers from any fixture.`,
     'If the project already has page objects or tests for these pages, extend them with the missing methods instead of duplicating them.',
     'Do not hand-edit recorded locator values to make a test pass; report the failing element so the flow can be re-recorded.',
@@ -559,7 +562,9 @@ function buildInstructions(
     xmlBlock(
       'rules',
       {},
-      rules.map((rule) => xmlText('rule', {}, rule)),
+      rules
+        .filter((rule): rule is string => rule !== undefined)
+        .map((rule) => xmlText('rule', {}, rule)),
     ),
     xmlBlock('verification', {}, [
       xmlText('step', {}, `Run ${convention.runCommand} and fix failures until the test passes.`),

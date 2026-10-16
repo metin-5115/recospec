@@ -56,6 +56,7 @@ framework: playwright-ts
       <rule>Implement every assert step in the flow as an assertion on the referenced element.</rule>
       <rule>A section marked empty=&quot;true&quot; means the recording produced no data for it; do not fabricate any.</rule>
       <rule>Never inline a value from the secrets section. Read each one through its env_var using process.env.X ?? &quot;change-me&quot; (X is the env_var name) so committed code never carries the value.</rule>
+      <rule>Redacted values map to the VALID test data. If the flow expects an error or rejection (an assert on an error message, an invalid state, or an unchanged page), build a deliberately invalid value from the env var (for example the env value plus a &quot;-wrong&quot; suffix); never reuse the valid value for a negative case and never inline a literal.</rule>
       <rule>Only mock the requests in network_mocks that an assertion depends on, and strip the Authorization, Cookie, Set-Cookie headers from any fixture.</rule>
       <rule>If the project already has page objects or tests for these pages, extend them with the missing methods instead of duplicating them.</rule>
       <rule>Do not hand-edit recorded locator values to make a test pass; report the failing element so the flow can be re-recorded.</rule>
@@ -135,6 +136,7 @@ exports[`buildPromptDocument — multi-page flow (page grouping) > emits one pag
       <rule>Implement every assert step in the flow as an assertion on the referenced element.</rule>
       <rule>A section marked empty=&quot;true&quot; means the recording produced no data for it; do not fabricate any.</rule>
       <rule>Never inline a value from the secrets section. Read each one through its env_var using process.env.X ?? &quot;change-me&quot; (X is the env_var name) so committed code never carries the value.</rule>
+      <rule>Redacted values map to the VALID test data. If the flow expects an error or rejection (an assert on an error message, an invalid state, or an unchanged page), build a deliberately invalid value from the env var (for example the env value plus a &quot;-wrong&quot; suffix); never reuse the valid value for a negative case and never inline a literal.</rule>
       <rule>Only mock the requests in network_mocks that an assertion depends on, and strip the Authorization, Cookie, Set-Cookie headers from any fixture.</rule>
       <rule>If the project already has page objects or tests for these pages, extend them with the missing methods instead of duplicating them.</rule>
       <rule>Do not hand-edit recorded locator values to make a test pass; report the failing element so the flow can be re-recorded.</rule>
@@ -203,6 +205,7 @@ exports[`buildPromptDocument — network mock guidance > lists captured requests
       <rule>Implement every assert step in the flow as an assertion on the referenced element.</rule>
       <rule>A section marked empty=&quot;true&quot; means the recording produced no data for it; do not fabricate any.</rule>
       <rule>Never inline a value from the secrets section. Read each one through its env_var using process.env.X ?? &quot;change-me&quot; (X is the env_var name) so committed code never carries the value.</rule>
+      <rule>Redacted values map to the VALID test data. If the flow expects an error or rejection (an assert on an error message, an invalid state, or an unchanged page), build a deliberately invalid value from the env var (for example the env value plus a &quot;-wrong&quot; suffix); never reuse the valid value for a negative case and never inline a literal.</rule>
       <rule>Only mock the requests in network_mocks that an assertion depends on, and strip the Authorization, Cookie, Set-Cookie headers from any fixture.</rule>
       <rule>If the project already has page objects or tests for these pages, extend them with the missing methods instead of duplicating them.</rule>
       <rule>Do not hand-edit recorded locator values to make a test pass; report the failing element so the flow can be re-recorded.</rule>
