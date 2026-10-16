@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Test runner pinned back to Vitest 3.2** — the 0.8.0 bump to Vitest 4 changed how v8 reports
+  branch coverage (the same suite dropped from 81.7% to 69.2%) and turned `pnpm test:ci` red on
+  the 75% threshold. `tinypool` is overridden to the patched 2.x. `pnpm audit` is down to 3
+  dev-only findings (`vitest`/`@vitest/mocker` path traversal fixed only in Vitest 4.1.11+, and
+  `braces` via `@vscode/vsce`, which has no patched release); production dependencies report none.
+
 ## [0.8.0] — 2026-10-16
 
 ### Added
