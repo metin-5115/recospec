@@ -7,6 +7,10 @@ import { runPrompt } from './commands/prompt'
 import type { PromptMode } from '@codegen/export/prompt-export'
 import type { FrameworkId } from '@shared/types/generated'
 
+/** Injected by `vite.config.cli.ts` from `cli/package.json`; absent under Vitest. */
+declare const __CLI_VERSION__: string | undefined
+const CLI_VERSION = typeof __CLI_VERSION__ === 'string' ? __CLI_VERSION__ : '0.0.0-dev'
+
 const PROMPT_MODES: PromptMode[] = ['slash', 'claude-md', 'prompt']
 
 function validatePromptMode(value: string): PromptMode {
@@ -70,7 +74,7 @@ const program = new Command()
 program
   .name('recospec')
   .description('Recospec — apply a recorded session JSON onto an existing test project.')
-  .version('0.7.0')
+  .version(CLI_VERSION)
 
 program
   .command('add')
@@ -143,7 +147,10 @@ program
   .argument('[projectDir]', 'Target project directory', '.')
   .option('-m, --mode <mode>', `Output mode: ${PROMPT_MODES.join(' | ')}`, 'slash')
   .option('-n, --slug <slug>', 'Override the flow slug (defaults to slugified session name)')
-  .option('-f, --framework <id>', 'Framework hint for the mission line / frontmatter')
+  .option(
+    '-f, --framework <id>',
+    'Target framework named in the prompt and slash-command frontmatter',
+  )
   .option('--no-redact', 'Embed sensitive values literally — leak guard is bypassed')
   .option('-o, --output <path>', 'Write to this exact path instead of the default location')
   .option('--force', 'Overwrite an existing output file without prompting')

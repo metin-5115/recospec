@@ -1,0 +1,45 @@
+{
+  "name": "recospec",
+  "version": "0.7.0",
+  "description": "Apply Recospec browser recordings to an existing test project and render Claude Code prompts. Playwright, Cypress, Selenium Python and Selenium Java.",
+  "type": "module",
+  "bin": {
+    "recospec": "dist/index.js"
+  },
+  "files": [
+    "dist/index.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT",
+  "author": "Metin Tunçbilek <tuncbilek.51metin@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/metin-5115/recospec.git",
+    "directory": "cli"
+  },
+  "homepage": "https://github.com/metin-5115/recospec#readme",
+  "bugs": {
+    "url": "https://github.com/metin-5115/recospec/issues"
+  },
+  "keywords": [
+    "playwright",
+    "cypress",
+    "selenium",
+    "test-automation",
+    "page-object-model",
+    "codegen",
+    "claude-code"
+  ],
+  "dependencies": {
+    "@babel/generator": "^7.25.0",
+    "@babel/parser": "^7.25.0",
+    "@babel/traverse": "^7.25.0",
+    "@cucumber/gherkin": "^39.1.0",
+    "commander": "^12.1.0",
+    "prompts": "^2.4.2"
+  }
+}

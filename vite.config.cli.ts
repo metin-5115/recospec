@@ -1,13 +1,20 @@
 import { defineConfig, type Plugin } from 'vite'
+import { readFileSync } from 'node:fs'
 import { resolve } from 'path'
+
+// The published package (`cli/package.json`) is the source of truth for `recospec --version`.
+const cliPackage = JSON.parse(readFileSync(resolve(__dirname, 'cli/package.json'), 'utf8')) as {
+  version: string
+}
 
 /**
  * Build config for the CLI bundle (`pnpm build:cli`).
  *
- * The CLI is a single ESM Node bundle written to `dist/cli/index.js`. We
- * inline Babel + commander + prompts to keep the bin self-contained, and we
- * preserve the `#!/usr/bin/env node` shebang from the entry file via the
- * `banner` option.
+ * The CLI is a single ESM Node bundle written to `dist/cli/index.js`. Our own
+ * code (`@codegen/*`, `@shared/*`) is inlined; npm dependencies (Babel,
+ * commander, prompts, gherkin) stay external and are declared in
+ * `cli/package.json` — `scripts/package-cli.mjs` verifies that. The
+ * `#!/usr/bin/env node` shebang is preserved via the `banner` option.
  *
  * `dexie`, `react`, and Chrome APIs are NOT imported from this entrypoint
  * (the CLI uses only `@codegen/*` + `@shared/*`), so they get tree-shaken.
@@ -29,6 +36,7 @@ const stripShebang = (): Plugin => ({
 
 export default defineConfig({
   plugins: [stripShebang()],
+  define: { __CLI_VERSION__: JSON.stringify(cliPackage.version) },
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
@@ -56,7 +64,7 @@ export default defineConfig({
     },
   },
   ssr: {
-    // Keep deps external — they're resolved from the host project's node_modules.
+    // Keep deps external — they are installed alongside the published `recospec` package.
     noExternal: [],
   },
 })
