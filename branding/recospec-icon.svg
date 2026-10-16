@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6366f1"/>
+      <stop offset="1" stop-color="#ec4899"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" fill="url(#bg)"/>
+  <!-- stem + bowl, with the counter cut out so the gradient shows through -->
+  <path fill="#fff" fill-rule="evenodd" d="M36 22H92V74H58V106H36Z M58 40H72V56H58Z"/>
+  <!-- leg -->
+  <path fill="#fff" d="M66 74H88L104 106H80Z"/>
+</svg>

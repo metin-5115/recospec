@@ -6,13 +6,14 @@ import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const source = resolve(root, process.argv[2] ?? 'vscode-extension/icons/recospec.png')
+const source = resolve(root, process.argv[2] ?? 'branding/recospec-icon.svg')
 const SIZES = [16, 32, 48, 128]
 
 const browser = await chromium.launch()
 try {
   const page = await browser.newPage()
-  const dataUrl = `data:image/png;base64,${readFileSync(source).toString('base64')}`
+  const mime = source.endsWith('.svg') ? 'image/svg+xml' : 'image/png'
+  const dataUrl = `data:${mime};base64,${readFileSync(source).toString('base64')}`
   const rendered = await page.evaluate(
     async ({ dataUrl, sizes }) => {
       const img = new Image()
@@ -34,6 +35,11 @@ try {
     const out = resolve(root, `public/icons/icon-${size}.png`)
     writeFileSync(out, Buffer.from(data, 'base64'))
     console.log(`wrote ${out}`)
+    if (size === 128) {
+      const vscodeIcon = resolve(root, 'vscode-extension/icons/recospec.png')
+      writeFileSync(vscodeIcon, Buffer.from(data, 'base64'))
+      console.log(`wrote ${vscodeIcon}`)
+    }
   }
 } finally {
   await browser.close()
