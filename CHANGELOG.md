@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Method inference on real recordings** — a real user clicks a field before typing, so every `fill`
+  was preceded by its own `click` and `login(email, password)` degraded to `clickEmail`,
+  `submitForm(email)`, `submitForm2(password)`. The normalizer now drops the focus click directly
+  before a `fill`/`select` on the same element. Covered by a fixture captured with the real extension.
+- **Request bodies are no longer captured** — the network recorder stored each request body, so a
+  login POST put the typed password into IndexedDB and every JSON export a second time. Nothing used
+  it (mocks only need the response), so `requestBody` was removed.
+
 ### Changed
 
 - **Test runner pinned back to Vitest 3.2** — the 0.8.0 bump to Vitest 4 changed how v8 reports
