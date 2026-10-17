@@ -1,0 +1,4183 @@
+{
+  "exportedAt": 1760000006000,
+  "formatVersion": 1,
+  "session": {
+    "sessionId": "real-checkout-fixture",
+    "name": "Checkout Flow",
+    "state": "stopped",
+    "startUrl": "http://localhost:4500/shop",
+    "startedAt": 1760000000000,
+    "tabId": 1955383494,
+    "metadata": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "timezone": "Europe/Istanbul"
+    },
+    "config": {
+      "captureClicks": true,
+      "captureInputs": true,
+      "captureNavigation": true
+    },
+    "iterationNumber": 1,
+    "flowSignature": "http://localhost:4500/shop::select|fill|click::composed|composed::e2da77a1",
+    "stoppedAt": 1760000005000
+  },
+  "actions": [
+    {
+      "actionId": "6d1ce5cd-a6c5-47e9-a489-f40639cede02",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 0,
+      "type": "select",
+      "timestamp": 1792241207102,
+      "pageUrl": "http://localhost:4500/shop",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "composed",
+          "selector": "article hasText=\"Trail Runner\" >> select",
+          "composed": {
+            "anchor": {
+              "kind": "container",
+              "value": "Trail Runner",
+              "css": "article",
+              "filterText": "Trail Runner"
+            },
+            "target": {
+              "tag": "select",
+              "css": "select"
+            },
+            "xpath": "//article[contains(normalize-space(.), 'Trail Runner')]//select"
+          },
+          "framework": {},
+          "features": {
+            "attrTier": 0,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 3,
+            "hasPositionalIndex": false,
+            "isComposed": true,
+            "anchorTier": 1,
+            "localeDependent": true
+          },
+          "score": 43,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "xpath",
+            "selector": "//section[contains(concat(' ', normalize-space(@class), ' '), \" grid \")]/article[1]/label[1]/select",
+            "framework": {},
+            "features": {
+              "attrTier": 0,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 4,
+              "hasPositionalIndex": true,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 0,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "combobox[name=\"Size\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 2
+          },
+          {
+            "strategy": "label",
+            "selector": "Size",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 2
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "select",
+          "attributes": {},
+          "textContent": "SML"
+        },
+        "quality": {
+          "level": "weak",
+          "score": 43,
+          "hint": "Weak locator (score 43) — consider adding a data-testid."
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "select",
+        "attributes": {},
+        "textContent": "SML"
+      },
+      "payload": {
+        "value": "M",
+        "label": "M"
+      }
+    },
+    {
+      "actionId": "504259a4-f423-4eb0-a6c1-00eed38a78c5",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 1,
+      "type": "fill",
+      "timestamp": 1792241208040,
+      "pageUrl": "http://localhost:4500/shop",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "composed",
+          "selector": "article hasText=\"Trail Runner\" >> input",
+          "composed": {
+            "anchor": {
+              "kind": "container",
+              "value": "Trail Runner",
+              "css": "article",
+              "filterText": "Trail Runner"
+            },
+            "target": {
+              "tag": "input",
+              "css": "input"
+            },
+            "xpath": "//article[contains(normalize-space(.), 'Trail Runner')]//input"
+          },
+          "framework": {},
+          "features": {
+            "attrTier": 0,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 3,
+            "hasPositionalIndex": false,
+            "isComposed": true,
+            "anchorTier": 1,
+            "localeDependent": true
+          },
+          "score": 43,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "xpath",
+            "selector": "//section[contains(concat(' ', normalize-space(@class), ' '), \" grid \")]/article[1]/label[2]/input",
+            "framework": {},
+            "features": {
+              "attrTier": 0,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 4,
+              "hasPositionalIndex": true,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 0,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "spinbutton[name=\"Quantity\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 4
+          },
+          {
+            "strategy": "label",
+            "selector": "Quantity",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 4
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "input",
+          "attributes": {
+            "type": "number",
+            "value": "1",
+            "min": "1"
+          },
+          "textContent": ""
+        },
+        "quality": {
+          "level": "weak",
+          "score": 43,
+          "hint": "Weak locator (score 43) — consider adding a data-testid."
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "input",
+        "attributes": {
+          "type": "number",
+          "value": "1",
+          "min": "1"
+        },
+        "textContent": ""
+      },
+      "payload": {
+        "value": "2"
+      }
+    },
+    {
+      "actionId": "212a1949-7f55-4516-9b9c-8776d7e6875f",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 2,
+      "type": "click",
+      "timestamp": 1792241208042,
+      "pageUrl": "http://localhost:4500/shop",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "composed",
+          "selector": "article hasText=\"Trail Runner\" >> button[name=\"Add to cart\"]",
+          "composed": {
+            "anchor": {
+              "kind": "container",
+              "value": "Trail Runner",
+              "css": "article",
+              "filterText": "Trail Runner"
+            },
+            "target": {
+              "tag": "button",
+              "role": "button",
+              "name": "Add to cart"
+            },
+            "xpath": "//article[contains(normalize-space(.), 'Trail Runner')]//button[normalize-space()='Add to cart']"
+          },
+          "framework": {},
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 3,
+            "hasPositionalIndex": false,
+            "isComposed": true,
+            "anchorTier": 1,
+            "localeDependent": true
+          },
+          "score": 68,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "xpath",
+            "selector": "//section[contains(concat(' ', normalize-space(@class), ' '), \" grid \")]/article[1]/button",
+            "framework": {},
+            "features": {
+              "attrTier": 0,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 3,
+              "hasPositionalIndex": true,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 0,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "button[name=\"Add to cart\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 4
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "button",
+          "attributes": {
+            "type": "button"
+          },
+          "textContent": "Add to cart"
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "button",
+        "attributes": {
+          "type": "button"
+        },
+        "textContent": "Add to cart"
+      }
+    },
+    {
+      "actionId": "a36b5c7f-1111-4a1c-a92a-3107d4062893",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 3,
+      "type": "click",
+      "timestamp": 1792241208515,
+      "pageUrl": "http://localhost:4500/shop",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "composed",
+          "selector": "article hasText=\"Canvas Tote\" >> button[name=\"Add to cart\"]",
+          "composed": {
+            "anchor": {
+              "kind": "container",
+              "value": "Canvas Tote",
+              "css": "article",
+              "filterText": "Canvas Tote"
+            },
+            "target": {
+              "tag": "button",
+              "role": "button",
+              "name": "Add to cart"
+            },
+            "xpath": "//article[contains(normalize-space(.), 'Canvas Tote')]//button[normalize-space()='Add to cart']"
+          },
+          "framework": {},
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 3,
+            "hasPositionalIndex": false,
+            "isComposed": true,
+            "anchorTier": 1,
+            "localeDependent": true
+          },
+          "score": 68,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "xpath",
+            "selector": "//section[contains(concat(' ', normalize-space(@class), ' '), \" grid \")]/article[2]/button",
+            "framework": {},
+            "features": {
+              "attrTier": 0,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 3,
+              "hasPositionalIndex": true,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 0,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "button[name=\"Add to cart\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 4
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "button",
+          "attributes": {
+            "type": "button"
+          },
+          "textContent": "Add to cart"
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "button",
+        "attributes": {
+          "type": "button"
+        },
+        "textContent": "Add to cart"
+      }
+    },
+    {
+      "actionId": "79061f0e-ae93-49c7-aebe-414ea2055715",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 4,
+      "type": "click",
+      "timestamp": 1792241208990,
+      "pageUrl": "http://localhost:4500/shop",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "id",
+          "selector": "#cart-link",
+          "framework": {},
+          "features": {
+            "attrTier": 1,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": false
+          },
+          "score": 65,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "href",
+            "selector": "a[href=\"/cart\"]",
+            "framework": {},
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          },
+          {
+            "strategy": "css",
+            "selector": "a[href=\"/cart\"]",
+            "framework": {},
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "link[name=\"Cart (3)\"]",
+            "volatile": true,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": true,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 22,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "a",
+          "attributes": {
+            "href": "/cart",
+            "data-link": "",
+            "id": "cart-link"
+          },
+          "textContent": "Cart (3)"
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "a",
+        "attributes": {
+          "href": "/cart",
+          "data-link": "",
+          "id": "cart-link"
+        },
+        "textContent": "Cart (3)"
+      }
+    },
+    {
+      "actionId": "9e302940-1859-4cfd-a54c-89e06e9862a1",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 5,
+      "type": "click",
+      "timestamp": 1792241209474,
+      "pageUrl": "http://localhost:4500/cart",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "role-name",
+          "selector": "textbox[name=\"Promo code\"]",
+          "volatile": false,
+          "framework": {},
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "label",
+            "selector": "Promo code",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "id",
+            "selector": "#promo",
+            "framework": {},
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "textbox[name=\"Promo code\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "label",
+            "selector": "Promo code",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "input",
+          "attributes": {
+            "type": "text",
+            "id": "promo"
+          },
+          "textContent": ""
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "input",
+        "attributes": {
+          "type": "text",
+          "id": "promo"
+        },
+        "textContent": ""
+      }
+    },
+    {
+      "actionId": "6d61394a-c910-412a-a0dd-17a73f9e6821",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 6,
+      "type": "fill",
+      "timestamp": 1792241209768,
+      "pageUrl": "http://localhost:4500/cart",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "role-name",
+          "selector": "textbox[name=\"Promo code\"]",
+          "volatile": false,
+          "framework": {},
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "label",
+            "selector": "Promo code",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "id",
+            "selector": "#promo",
+            "framework": {},
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "textbox[name=\"Promo code\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "label",
+            "selector": "Promo code",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "input",
+          "attributes": {
+            "type": "text",
+            "id": "promo"
+          },
+          "textContent": ""
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "input",
+        "attributes": {
+          "type": "text",
+          "id": "promo"
+        },
+        "textContent": ""
+      },
+      "payload": {
+        "value": "SAVE10"
+      }
+    },
+    {
+      "actionId": "4ed982c3-a627-4688-ba66-e8b60248fadf",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 7,
+      "type": "click",
+      "timestamp": 1792241210237,
+      "pageUrl": "http://localhost:4500/cart",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "role-name",
+          "selector": "button[name=\"Apply\"]",
+          "volatile": false,
+          "framework": {},
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "id",
+            "selector": "#apply",
+            "framework": {},
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          },
+          {
+            "strategy": "text",
+            "selector": "Apply",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 0,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 42,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "button[name=\"Apply\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "button",
+          "attributes": {
+            "type": "button",
+            "id": "apply"
+          },
+          "textContent": "Apply"
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "button",
+        "attributes": {
+          "type": "button",
+          "id": "apply"
+        },
+        "textContent": "Apply"
+      }
+    },
+    {
+      "actionId": "08f4f2bf-1230-4c9e-b46f-090c35d22990",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 8,
+      "type": "click",
+      "timestamp": 1792241210709,
+      "pageUrl": "http://localhost:4500/cart",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "testid",
+          "selector": "checkout",
+          "framework": {},
+          "features": {
+            "attrTier": 3,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": false
+          },
+          "score": 90,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "role-name",
+            "selector": "button[name=\"Checkout\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "text",
+            "selector": "Checkout",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 0,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 42,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "testid",
+            "selector": "checkout",
+            "framework": {},
+            "features": {
+              "attrTier": 3,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 90,
+            "matchCount": 1
+          },
+          {
+            "strategy": "role-name",
+            "selector": "button[name=\"Checkout\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "button",
+          "attributes": {
+            "type": "button",
+            "data-testid": "checkout"
+          },
+          "textContent": "Checkout"
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "button",
+        "attributes": {
+          "type": "button",
+          "data-testid": "checkout"
+        },
+        "textContent": "Checkout"
+      }
+    },
+    {
+      "actionId": "2dca8b47-46c3-40a9-96ab-e6761bb92e22",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 9,
+      "type": "click",
+      "timestamp": 1792241211189,
+      "pageUrl": "http://localhost:4500/checkout",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "role-name",
+          "selector": "textbox[name=\"Full name\"]",
+          "volatile": false,
+          "framework": {},
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "label",
+            "selector": "Full name",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "name",
+            "selector": "input[name=\"name\"]",
+            "framework": {},
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "textbox[name=\"Full name\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "label",
+            "selector": "Full name",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "input",
+          "attributes": {
+            "type": "text",
+            "name": "name",
+            "required": ""
+          },
+          "textContent": ""
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "input",
+        "attributes": {
+          "type": "text",
+          "name": "name",
+          "required": ""
+        },
+        "textContent": ""
+      }
+    },
+    {
+      "actionId": "ec84cfe9-33f0-42c4-a24f-41ec0bce736d",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 10,
+      "type": "fill",
+      "timestamp": 1792241211760,
+      "pageUrl": "http://localhost:4500/checkout",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "role-name",
+          "selector": "textbox[name=\"Full name\"]",
+          "volatile": false,
+          "framework": {},
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "label",
+            "selector": "Full name",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "name",
+            "selector": "input[name=\"name\"]",
+            "framework": {},
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "textbox[name=\"Full name\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "label",
+            "selector": "Full name",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "input",
+          "attributes": {
+            "type": "text",
+            "name": "name",
+            "required": ""
+          },
+          "textContent": ""
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "input",
+        "attributes": {
+          "type": "text",
+          "name": "name",
+          "required": ""
+        },
+        "textContent": ""
+      },
+      "payload": {
+        "value": "Ada Lovelace"
+      }
+    },
+    {
+      "actionId": "11804c6f-4335-47f8-a896-37248a98c45f",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 11,
+      "type": "click",
+      "timestamp": 1792241212231,
+      "pageUrl": "http://localhost:4500/checkout",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "role-name",
+          "selector": "textbox[name=\"Email\"]",
+          "volatile": false,
+          "framework": {},
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "label",
+            "selector": "Email",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "name",
+            "selector": "input[name=\"email\"]",
+            "framework": {},
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "textbox[name=\"Email\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "label",
+            "selector": "Email",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "input",
+          "attributes": {
+            "type": "email",
+            "name": "email",
+            "required": "",
+            "autocomplete": "email"
+          },
+          "textContent": ""
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "input",
+        "attributes": {
+          "type": "email",
+          "name": "email",
+          "required": "",
+          "autocomplete": "email"
+        },
+        "textContent": ""
+      }
+    },
+    {
+      "actionId": "f2a4a4b8-cc26-4b44-937a-b9bcff6fe00d",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 12,
+      "type": "fill",
+      "timestamp": 1792241213265,
+      "pageUrl": "http://localhost:4500/checkout",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "role-name",
+          "selector": "textbox[name=\"Email\"]",
+          "volatile": false,
+          "framework": {},
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "label",
+            "selector": "Email",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "name",
+            "selector": "input[name=\"email\"]",
+            "framework": {},
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "textbox[name=\"Email\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "label",
+            "selector": "Email",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "input",
+          "attributes": {
+            "type": "email",
+            "name": "email",
+            "required": "",
+            "autocomplete": "email"
+          },
+          "textContent": ""
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "input",
+        "attributes": {
+          "type": "email",
+          "name": "email",
+          "required": "",
+          "autocomplete": "email"
+        },
+        "textContent": ""
+      },
+      "payload": {
+        "value": "customer@recospec.test"
+      }
+    },
+    {
+      "actionId": "51f206d4-dfd5-4a4f-99fc-02af037c2244",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 13,
+      "type": "click",
+      "timestamp": 1792241213738,
+      "pageUrl": "http://localhost:4500/checkout",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "role-name",
+          "selector": "textbox[name=\"Address\"]",
+          "volatile": false,
+          "framework": {},
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "label",
+            "selector": "Address",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "name",
+            "selector": "input[name=\"line\"]",
+            "framework": {},
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "textbox[name=\"Address\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "label",
+            "selector": "Address",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "input",
+          "attributes": {
+            "type": "text",
+            "name": "line",
+            "required": ""
+          },
+          "textContent": ""
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "input",
+        "attributes": {
+          "type": "text",
+          "name": "line",
+          "required": ""
+        },
+        "textContent": ""
+      }
+    },
+    {
+      "actionId": "84b2c924-a56a-4c4f-bab2-6692253d1548",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 14,
+      "type": "fill",
+      "timestamp": 1792241214528,
+      "pageUrl": "http://localhost:4500/checkout",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "role-name",
+          "selector": "textbox[name=\"Address\"]",
+          "volatile": false,
+          "framework": {},
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "label",
+            "selector": "Address",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "name",
+            "selector": "input[name=\"line\"]",
+            "framework": {},
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "textbox[name=\"Address\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "label",
+            "selector": "Address",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "input",
+          "attributes": {
+            "type": "text",
+            "name": "line",
+            "required": ""
+          },
+          "textContent": ""
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "input",
+        "attributes": {
+          "type": "text",
+          "name": "line",
+          "required": ""
+        },
+        "textContent": ""
+      },
+      "payload": {
+        "value": "12 Analytical Way"
+      }
+    },
+    {
+      "actionId": "965d418d-76ef-434b-b582-aca8059f657a",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 15,
+      "type": "click",
+      "timestamp": 1792241215002,
+      "pageUrl": "http://localhost:4500/checkout",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "role-name",
+          "selector": "textbox[name=\"City\"]",
+          "volatile": false,
+          "framework": {},
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "label",
+            "selector": "City",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "name",
+            "selector": "input[name=\"city\"]",
+            "framework": {},
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "textbox[name=\"City\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "label",
+            "selector": "City",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "input",
+          "attributes": {
+            "type": "text",
+            "name": "city",
+            "required": ""
+          },
+          "textContent": ""
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "input",
+        "attributes": {
+          "type": "text",
+          "name": "city",
+          "required": ""
+        },
+        "textContent": ""
+      }
+    },
+    {
+      "actionId": "24e54bfd-6fdc-4fbb-a6ae-9ade46caa2c8",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 16,
+      "type": "fill",
+      "timestamp": 1792241215383,
+      "pageUrl": "http://localhost:4500/checkout",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "role-name",
+          "selector": "textbox[name=\"City\"]",
+          "volatile": false,
+          "framework": {},
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "label",
+            "selector": "City",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "name",
+            "selector": "input[name=\"city\"]",
+            "framework": {},
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "textbox[name=\"City\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "label",
+            "selector": "City",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "input",
+          "attributes": {
+            "type": "text",
+            "name": "city",
+            "required": ""
+          },
+          "textContent": ""
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "input",
+        "attributes": {
+          "type": "text",
+          "name": "city",
+          "required": ""
+        },
+        "textContent": ""
+      },
+      "payload": {
+        "value": "Istanbul"
+      }
+    },
+    {
+      "actionId": "a4abfc32-51e6-42d3-a501-7c999df8c27c",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 17,
+      "type": "click",
+      "timestamp": 1792241215856,
+      "pageUrl": "http://localhost:4500/checkout",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "role-name",
+          "selector": "textbox[name=\"Postal code\"]",
+          "volatile": false,
+          "framework": {},
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "label",
+            "selector": "Postal code",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "name",
+            "selector": "input[name=\"postal\"]",
+            "framework": {},
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "textbox[name=\"Postal code\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "label",
+            "selector": "Postal code",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "input",
+          "attributes": {
+            "type": "text",
+            "name": "postal",
+            "required": ""
+          },
+          "textContent": ""
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "input",
+        "attributes": {
+          "type": "text",
+          "name": "postal",
+          "required": ""
+        },
+        "textContent": ""
+      }
+    },
+    {
+      "actionId": "fc321436-ecb3-4afa-b1a8-83cf5f04dc26",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 18,
+      "type": "fill",
+      "timestamp": 1792241216101,
+      "pageUrl": "http://localhost:4500/checkout",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "role-name",
+          "selector": "textbox[name=\"Postal code\"]",
+          "volatile": false,
+          "framework": {},
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "label",
+            "selector": "Postal code",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "name",
+            "selector": "input[name=\"postal\"]",
+            "framework": {},
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "textbox[name=\"Postal code\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "label",
+            "selector": "Postal code",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "input",
+          "attributes": {
+            "type": "text",
+            "name": "postal",
+            "required": ""
+          },
+          "textContent": ""
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "input",
+        "attributes": {
+          "type": "text",
+          "name": "postal",
+          "required": ""
+        },
+        "textContent": ""
+      },
+      "payload": {
+        "value": "34000"
+      }
+    },
+    {
+      "actionId": "38f502ba-0710-4709-ba46-0e3bf1af0ca0",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 19,
+      "type": "select",
+      "timestamp": 1792241216560,
+      "pageUrl": "http://localhost:4500/checkout",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "role-name",
+          "selector": "combobox[name=\"Country\"]",
+          "volatile": false,
+          "framework": {},
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "label",
+            "selector": "Country",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "name",
+            "selector": "select[name=\"country\"]",
+            "framework": {},
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "combobox[name=\"Country\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "label",
+            "selector": "Country",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "select",
+          "attributes": {
+            "name": "country"
+          },
+          "textContent": "Choose…TürkiyeGermanyUnited States"
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "select",
+        "attributes": {
+          "name": "country"
+        },
+        "textContent": "Choose…TürkiyeGermanyUnited States"
+      },
+      "payload": {
+        "value": "TR",
+        "label": "Türkiye"
+      }
+    },
+    {
+      "actionId": "ce940b56-eb3d-424d-b0e0-bd93efb072fc",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 20,
+      "type": "check",
+      "timestamp": 1792241217036,
+      "pageUrl": "http://localhost:4500/checkout",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "role-name",
+          "selector": "radio[name=\"Express (+$12)\"]",
+          "volatile": false,
+          "framework": {},
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "label",
+            "selector": "Express (+$12)",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "radio[name=\"Express (+$12)\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "label",
+            "selector": "Express (+$12)",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "input",
+          "attributes": {
+            "type": "radio",
+            "name": "ship",
+            "value": "express"
+          },
+          "textContent": ""
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "input",
+        "attributes": {
+          "type": "radio",
+          "name": "ship",
+          "value": "express"
+        },
+        "textContent": ""
+      }
+    },
+    {
+      "actionId": "78c3dab5-9f41-4655-aa32-b64e18a08658",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 21,
+      "type": "check",
+      "timestamp": 1792241217507,
+      "pageUrl": "http://localhost:4500/checkout",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "role-name",
+          "selector": "checkbox[name=\"Gift wrap\"]",
+          "volatile": false,
+          "framework": {},
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "label",
+            "selector": "Gift wrap",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "name",
+            "selector": "input[name=\"gift\"]",
+            "framework": {},
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "checkbox[name=\"Gift wrap\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "label",
+            "selector": "Gift wrap",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "input",
+          "attributes": {
+            "type": "checkbox",
+            "name": "gift"
+          },
+          "textContent": ""
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "input",
+        "attributes": {
+          "type": "checkbox",
+          "name": "gift"
+        },
+        "textContent": ""
+      }
+    },
+    {
+      "actionId": "52801ce4-473d-4540-b5f2-95eacf7d9c45",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 22,
+      "type": "click",
+      "timestamp": 1792241217980,
+      "pageUrl": "http://localhost:4500/checkout",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "role-name",
+          "selector": "textbox[name=\"Delivery notes\"]",
+          "volatile": false,
+          "framework": {},
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "label",
+            "selector": "Delivery notes",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "name",
+            "selector": "textarea[name=\"notes\"]",
+            "framework": {},
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "textbox[name=\"Delivery notes\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "label",
+            "selector": "Delivery notes",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "textarea",
+          "attributes": {
+            "name": "notes",
+            "rows": "2"
+          },
+          "textContent": ""
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "textarea",
+        "attributes": {
+          "name": "notes",
+          "rows": "2"
+        },
+        "textContent": ""
+      }
+    },
+    {
+      "actionId": "316dcfb6-3445-4ef2-a696-a997c8b8dc71",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 23,
+      "type": "fill",
+      "timestamp": 1792241218774,
+      "pageUrl": "http://localhost:4500/checkout",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "role-name",
+          "selector": "textbox[name=\"Delivery notes\"]",
+          "volatile": false,
+          "framework": {},
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "label",
+            "selector": "Delivery notes",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "name",
+            "selector": "textarea[name=\"notes\"]",
+            "framework": {},
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "textbox[name=\"Delivery notes\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "label",
+            "selector": "Delivery notes",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "textarea",
+          "attributes": {
+            "name": "notes",
+            "rows": "2"
+          },
+          "textContent": ""
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "textarea",
+        "attributes": {
+          "name": "notes",
+          "rows": "2"
+        },
+        "textContent": ""
+      },
+      "payload": {
+        "value": "Leave at the door"
+      }
+    },
+    {
+      "actionId": "dfbfde0b-7ab7-40c2-8c5f-d8583de7e901",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 24,
+      "type": "click",
+      "timestamp": 1792241219244,
+      "pageUrl": "http://localhost:4500/checkout",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "role-name",
+          "selector": "button[name=\"Continue to payment\"]",
+          "volatile": false,
+          "framework": {},
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "css",
+            "selector": "button[type=\"submit\"]",
+            "framework": {},
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          },
+          {
+            "strategy": "xpath",
+            "selector": "//*[@id=\"f\"]/button",
+            "framework": {},
+            "features": {
+              "attrTier": 0,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 2,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 46,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "button[name=\"Continue to payment\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "button",
+          "attributes": {
+            "type": "submit"
+          },
+          "textContent": "Continue to payment"
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "button",
+        "attributes": {
+          "type": "submit"
+        },
+        "textContent": "Continue to payment"
+      }
+    },
+    {
+      "actionId": "0a97a6ed-131d-4557-b2e3-27439515b7b3",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 25,
+      "type": "click",
+      "timestamp": 1792241219730,
+      "pageUrl": "http://localhost:4500/payment",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "role-name",
+          "selector": "textbox[name=\"Card number\"]",
+          "volatile": false,
+          "framework": {},
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "label",
+            "selector": "Card number",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "name",
+            "selector": "input[name=\"num\"]",
+            "framework": {},
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "textbox[name=\"Card number\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "label",
+            "selector": "Card number",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "input",
+          "attributes": {
+            "type": "text",
+            "name": "num",
+            "inputmode": "numeric",
+            "required": ""
+          },
+          "textContent": ""
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "input",
+        "attributes": {
+          "type": "text",
+          "name": "num",
+          "inputmode": "numeric",
+          "required": ""
+        },
+        "textContent": ""
+      }
+    },
+    {
+      "actionId": "9b2cb5cf-fe11-4469-a7fe-2331368fde07",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 26,
+      "type": "fill",
+      "timestamp": 1792241220585,
+      "pageUrl": "http://localhost:4500/payment",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "role-name",
+          "selector": "textbox[name=\"Card number\"]",
+          "volatile": false,
+          "framework": {},
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "label",
+            "selector": "Card number",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "name",
+            "selector": "input[name=\"num\"]",
+            "framework": {},
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "textbox[name=\"Card number\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "label",
+            "selector": "Card number",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "input",
+          "attributes": {
+            "type": "text",
+            "name": "num",
+            "inputmode": "numeric",
+            "required": ""
+          },
+          "textContent": ""
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "input",
+        "attributes": {
+          "type": "text",
+          "name": "num",
+          "inputmode": "numeric",
+          "required": ""
+        },
+        "textContent": ""
+      },
+      "payload": {
+        "value": "4242 4242 4242 4242"
+      }
+    },
+    {
+      "actionId": "98fdacee-b139-4f82-a608-c234612c7842",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 27,
+      "type": "click",
+      "timestamp": 1792241221063,
+      "pageUrl": "http://localhost:4500/payment",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "role-name",
+          "selector": "textbox[name=\"Name on card\"]",
+          "volatile": false,
+          "framework": {},
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "label",
+            "selector": "Name on card",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "name",
+            "selector": "input[name=\"holder\"]",
+            "framework": {},
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "textbox[name=\"Name on card\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "label",
+            "selector": "Name on card",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "input",
+          "attributes": {
+            "type": "text",
+            "name": "holder",
+            "required": ""
+          },
+          "textContent": ""
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "input",
+        "attributes": {
+          "type": "text",
+          "name": "holder",
+          "required": ""
+        },
+        "textContent": ""
+      }
+    },
+    {
+      "actionId": "2f2036ac-6859-46a4-af5e-7da47a08b4b6",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 28,
+      "type": "fill",
+      "timestamp": 1792241221655,
+      "pageUrl": "http://localhost:4500/payment",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "role-name",
+          "selector": "textbox[name=\"Name on card\"]",
+          "volatile": false,
+          "framework": {},
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "label",
+            "selector": "Name on card",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "name",
+            "selector": "input[name=\"holder\"]",
+            "framework": {},
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "textbox[name=\"Name on card\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "label",
+            "selector": "Name on card",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "input",
+          "attributes": {
+            "type": "text",
+            "name": "holder",
+            "required": ""
+          },
+          "textContent": ""
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "input",
+        "attributes": {
+          "type": "text",
+          "name": "holder",
+          "required": ""
+        },
+        "textContent": ""
+      },
+      "payload": {
+        "value": "Ada Lovelace"
+      }
+    },
+    {
+      "actionId": "b6b78116-534b-4377-bf5b-2a271ff7ac0f",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 29,
+      "type": "click",
+      "timestamp": 1792241222124,
+      "pageUrl": "http://localhost:4500/payment",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "role-name",
+          "selector": "textbox[name=\"Expiry (MM/YY)\"]",
+          "volatile": false,
+          "framework": {},
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "label",
+            "selector": "Expiry (MM/YY)",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "name",
+            "selector": "input[name=\"exp\"]",
+            "framework": {},
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "textbox[name=\"Expiry (MM/YY)\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "label",
+            "selector": "Expiry (MM/YY)",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "input",
+          "attributes": {
+            "type": "text",
+            "name": "exp",
+            "required": ""
+          },
+          "textContent": ""
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "input",
+        "attributes": {
+          "type": "text",
+          "name": "exp",
+          "required": ""
+        },
+        "textContent": ""
+      }
+    },
+    {
+      "actionId": "b1c495c2-957c-4ce8-8044-0d9ae5a304e8",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 30,
+      "type": "fill",
+      "timestamp": 1792241222379,
+      "pageUrl": "http://localhost:4500/payment",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "role-name",
+          "selector": "textbox[name=\"Expiry (MM/YY)\"]",
+          "volatile": false,
+          "framework": {},
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "label",
+            "selector": "Expiry (MM/YY)",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "name",
+            "selector": "input[name=\"exp\"]",
+            "framework": {},
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "textbox[name=\"Expiry (MM/YY)\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "label",
+            "selector": "Expiry (MM/YY)",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "input",
+          "attributes": {
+            "type": "text",
+            "name": "exp",
+            "required": ""
+          },
+          "textContent": ""
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "input",
+        "attributes": {
+          "type": "text",
+          "name": "exp",
+          "required": ""
+        },
+        "textContent": ""
+      },
+      "payload": {
+        "value": "12/29"
+      }
+    },
+    {
+      "actionId": "82505e6b-de5e-4bef-83b6-37da8a0cee73",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 31,
+      "type": "click",
+      "timestamp": 1792241222861,
+      "pageUrl": "http://localhost:4500/payment",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "role-name",
+          "selector": "textbox[name=\"CVV\"]",
+          "volatile": false,
+          "framework": {},
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "label",
+            "selector": "CVV",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "name",
+            "selector": "input[name=\"cvv\"]",
+            "framework": {},
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "textbox[name=\"CVV\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "label",
+            "selector": "CVV",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "input",
+          "attributes": {
+            "type": "text",
+            "name": "cvv",
+            "required": ""
+          },
+          "textContent": ""
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "input",
+        "attributes": {
+          "type": "text",
+          "name": "cvv",
+          "required": ""
+        },
+        "textContent": ""
+      }
+    },
+    {
+      "actionId": "d6a83506-601f-4843-ba94-d9a816cd9937",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 32,
+      "type": "fill",
+      "timestamp": 1792241223017,
+      "pageUrl": "http://localhost:4500/payment",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "role-name",
+          "selector": "textbox[name=\"CVV\"]",
+          "volatile": false,
+          "framework": {},
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "label",
+            "selector": "CVV",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "name",
+            "selector": "input[name=\"cvv\"]",
+            "framework": {},
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "textbox[name=\"CVV\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "label",
+            "selector": "CVV",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "input",
+          "attributes": {
+            "type": "text",
+            "name": "cvv",
+            "required": ""
+          },
+          "textContent": ""
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "input",
+        "attributes": {
+          "type": "text",
+          "name": "cvv",
+          "required": ""
+        },
+        "textContent": ""
+      },
+      "payload": {
+        "value": "123"
+      }
+    },
+    {
+      "actionId": "92622a43-c32e-4368-ab8a-debded053828",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 33,
+      "type": "check",
+      "timestamp": 1792241223486,
+      "pageUrl": "http://localhost:4500/payment",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "role-name",
+          "selector": "checkbox[name=\"I accept the terms\"]",
+          "volatile": false,
+          "framework": {},
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "label",
+            "selector": "I accept the terms",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "name",
+            "selector": "input[name=\"terms\"]",
+            "framework": {},
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "checkbox[name=\"I accept the terms\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "label",
+            "selector": "I accept the terms",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "input",
+          "attributes": {
+            "type": "checkbox",
+            "name": "terms"
+          },
+          "textContent": ""
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "input",
+        "attributes": {
+          "type": "checkbox",
+          "name": "terms"
+        },
+        "textContent": ""
+      }
+    },
+    {
+      "actionId": "07f6badd-ec59-4774-9198-334d027fb185",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 34,
+      "type": "click",
+      "timestamp": 1792241223958,
+      "pageUrl": "http://localhost:4500/payment",
+      "pageTitle": "Northwind Shop",
+      "target": {
+        "primaryLocator": {
+          "strategy": "role-name",
+          "selector": "button[name=\"Place order\"]",
+          "volatile": false,
+          "framework": {},
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "css",
+            "selector": "button[type=\"submit\"]",
+            "framework": {},
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          },
+          {
+            "strategy": "xpath",
+            "selector": "//*[@id=\"p\"]/button",
+            "framework": {},
+            "features": {
+              "attrTier": 0,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 2,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 46,
+            "matchCount": 1
+          }
+        ],
+        "allCandidates": [
+          {
+            "strategy": "role-name",
+            "selector": "button[name=\"Place order\"]",
+            "volatile": false,
+            "framework": {},
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "button",
+          "attributes": {
+            "type": "submit"
+          },
+          "textContent": "Place order"
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "button",
+        "attributes": {
+          "type": "submit"
+        },
+        "textContent": "Place order"
+      }
+    },
+    {
+      "actionId": "04acd9d1-fce5-4ce1-b33d-2bcc8becbcce",
+      "sessionId": "real-checkout-fixture",
+      "sequenceNumber": 35,
+      "type": "network",
+      "timestamp": 1792241223962,
+      "pageUrl": "http://localhost:4500/payment",
+      "pageTitle": "Northwind Shop",
+      "payload": {
+        "method": "POST",
+        "url": "/api/order",
+        "status": 201,
+        "contentType": "application/json",
+        "responseBody": "{\"id\":\"ORD-1003\"}",
+        "durationMs": 3
+      }
+    }
+  ]
+}

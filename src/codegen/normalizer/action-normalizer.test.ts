@@ -350,3 +350,21 @@ describe('normalizeActions — focus clicks before typing', () => {
     expect(flatSteps[0].value).toBe('user@example.com')
   })
 })
+
+describe('normalizeActions — page URL per step', () => {
+  it('carries the normalized route of the page each interaction happened on', () => {
+    const { flatSteps } = normalizeActions([
+      makeAction({ ...makeClickAction('c1', 'a'), pageUrl: 'https://example.com/orders/123' }),
+      makeAction({ ...makeClickAction('c2', 'b'), pageUrl: 'https://example.com/cart' }),
+    ])
+    expect(flatSteps.map((s) => s.pageUrl)).toEqual(['/orders/:id', '/cart'])
+  })
+
+  it('leaves navigate steps with their own url only', () => {
+    const { flatSteps } = normalizeActions([
+      makeAction({ type: 'navigate', actionId: 'n1', pageUrl: 'https://example.com/login' }),
+    ])
+    expect(flatSteps[0]!.url).toBe('/login')
+    expect(flatSteps[0]!.pageUrl).toBeUndefined()
+  })
+})

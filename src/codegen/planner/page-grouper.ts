@@ -10,6 +10,11 @@ function uniquifyClassName(base: string, used: Set<string>): string {
   return `${name}${i}`
 }
 
+/** Waits and network calls fire after an action and report the route that follows it. */
+function isInteraction(step: IRStep): boolean {
+  return step.action !== 'wait' && step.action !== 'network'
+}
+
 export function groupIntoPages(flatSteps: IRStep[], sessionStartUrl: string): IRDocument['pages'] {
   const pages: IRPage[] = []
   const usedClassNames = new Set<string>()
@@ -60,6 +65,10 @@ export function groupIntoPages(flatSteps: IRStep[], sessionStartUrl: string): IR
     currentPageTitle = undefined
   }
 
+  // Route of the previous user interaction. A route that changes between two interactions with no
+  // navigate step in between is a single-page-app transition.
+  let previousInteractionUrl: string | undefined
+
   for (const step of flatSteps) {
     if (step.action === 'navigate' && step.url) {
       flushPage()
@@ -67,6 +76,18 @@ export function groupIntoPages(flatSteps: IRStep[], sessionStartUrl: string): IR
       currentPageTitle = step.pageTitle
       currentSteps.push(step)
       continue
+    }
+
+    if (isInteraction(step) && step.pageUrl) {
+      const routeChanged =
+        previousInteractionUrl !== undefined &&
+        step.pageUrl !== previousInteractionUrl &&
+        step.pageUrl !== currentUrl
+      if (routeChanged) {
+        flushPage()
+        currentUrl = step.pageUrl
+      }
+      previousInteractionUrl = step.pageUrl
     }
 
     currentSteps.push(step)

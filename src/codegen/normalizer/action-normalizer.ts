@@ -88,6 +88,7 @@ function buildElement(
   shadowClosed?: boolean,
   frameContext?: FrameContext,
   recordedAt?: number,
+  nameHints?: Locator[],
 ): IRElement {
   const key = rawSelector(primaryLocator)
   const irFallbacks = toIrFallbacks(fallbackLocators)
@@ -125,7 +126,7 @@ function buildElement(
   if (existing) {
     return { name: existing, ...shared }
   }
-  const name = nameElement(snapshot, primaryLocator, usedNames)
+  const name = nameElement(snapshot, primaryLocator, usedNames, nameHints)
   usedNames.add(name)
   locatorToName.set(key, name)
   return { name, ...shared }
@@ -218,6 +219,7 @@ export function normalizeActions(actions: RecordedAction[]): NormalizedActions {
         action.target.shadowClosed,
         action.target.frameContext,
         action.timestamp,
+        [...action.target.fallbackLocators, ...(action.target.allCandidates ?? [])],
       )
       const step: IRStep = { id, action: type, element, annotation }
       if (VALUE_ACTIONS.has(type) && payload?.value !== undefined) {
@@ -288,6 +290,12 @@ export function normalizeActions(actions: RecordedAction[]): NormalizedActions {
 
       steps.push({ id, action: 'assert', element, assertionDetail, annotation })
     }
+  }
+
+  const pageUrlById = new Map(actions.map((a) => [a.actionId, a.pageUrl]))
+  for (const step of steps) {
+    const recorded = pageUrlById.get(step.id)
+    if (step.action !== 'navigate' && recorded) step.pageUrl = normalizeUrl(recorded)
   }
 
   return { sessionId, flatSteps: steps }

@@ -154,6 +154,11 @@ export interface IRStep {
   element?: IRElement
   value?: string
   url?: string
+  /**
+   * Normalized route of the page the step happened on. Lets single-page apps, whose routes change
+   * without a recorded navigate step, be split into one page object per route.
+   */
+  pageUrl?: string
   pageTitle?: string
   key?: string
   annotation?: string
