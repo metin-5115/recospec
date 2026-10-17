@@ -1,9 +1,9 @@
 # Recospec
 
-[![Release](https://img.shields.io/badge/release-v0.8.1-6366f1)](https://github.com/metin-5115/recospec/releases/tag/v0.8.1)
+[![Release](https://img.shields.io/badge/release-v0.8.2-6366f1)](https://github.com/metin-5115/recospec/releases/tag/v0.8.2)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-1311%20passing-brightgreen)](#performance)
-[![VS Code](https://img.shields.io/badge/VS_Code-extension-007ACC)](#vs-code-extension-v081)
+[![Tests](https://img.shields.io/badge/tests-1313%20passing-brightgreen)](#performance)
+[![VS Code](https://img.shields.io/badge/VS_Code-extension-007ACC)](#vs-code-extension-v082)
 
 Recospec is an open-source Chrome extension that records your browser interactions and generates production-ready test automation code with smart locator strategies and automatic Page Object Model output — no manual editing required.
 
@@ -83,7 +83,7 @@ locations (`features/` for Playwright TS, `cypress/e2e/` for Cypress,
 `features/` for Selenium Py, `src/test/resources/features/` for Selenium
 Java).
 
-## VS Code extension (v0.8.1)
+## VS Code extension (v0.8.2)
 
 Recospec ships a companion VS Code extension that brings the **record →
 apply → Claude prompt** workflow directly into the editor. No terminal
@@ -113,7 +113,7 @@ Build from source:
 pnpm install
 pnpm build          # Chrome ext dist
 pnpm build:vscode   # VS Code ext dist (mirrors chrome-ext/ next door)
-pnpm package:vscode # → releases/recospec-0.8.1.vsix
+pnpm package:vscode # → releases/recospec-0.8.2.vsix
 ```
 
 ## Performance
@@ -127,7 +127,7 @@ Measured via `benchmarks/performance.test.ts` (jsdom, run on every CI pass):
 | CLI bundle (`pnpm build:cli`, uncompressed)  | **~203 KB** | < 250 KB |
 | Chrome dist JS (uncompressed)                | **~970 KB** | —        |
 | VS Code bundle (`pnpm build:vscode`)         | **~2.1 MB** | — (CJS)  |
-| Unit tests passing                           | **1311**    | —        |
+| Unit tests passing                           | **1313**    | —        |
 
 ## Screenshots
 

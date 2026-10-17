@@ -54,7 +54,7 @@ subsequent applies skip detection.
 
 ### From VSIX (recommended for v0.7)
 
-1. Download `recospec-0.8.1.vsix` from the
+1. Download `recospec-0.8.2.vsix` from the
    [releases page](https://github.com/metin-5115/recospec/releases).
 2. In VS Code: **Extensions** view → `…` menu → **Install from VSIX…** →
    pick the file.

@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.2] — 2026-10-17
+
 ### Fixed
 
 - **Recording inside iframes** — the recorder content script was never injected into frames (no
