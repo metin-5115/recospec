@@ -47,6 +47,14 @@ function networkStep(url: string, method = 'POST'): IRStep {
   }
 }
 
+function waitStep(): IRStep {
+  return {
+    id: crypto.randomUUID(),
+    action: 'wait',
+    wait: { reason: 'networkidle', timeoutMs: 10_000 },
+  }
+}
+
 describe('inferMethods — existing patterns (regressions)', () => {
   it('Pattern 1 — fill+Enter → search', () => {
     const methods = inferMethods([fillStep('searchInput'), keypressStep('Enter')])
@@ -314,5 +322,50 @@ describe('inferMethods — select / check / hover / dblclick', () => {
     expect(methods).toHaveLength(1)
     expect(methods[0].name).toBe('acceptAndSubmit')
     expect(methods[0].paramTypes).toEqual(['boolean'])
+  })
+})
+
+describe('inferMethods — auto-detected waits', () => {
+  it('attaches a wait to the method of the action it follows instead of inventing doAction', () => {
+    const save = clickStep('save')
+    const wait = waitStep()
+    const methods = inferMethods([save, wait])
+    expect(methods.map((m) => m.name)).toEqual(['clickSave'])
+    expect(methods[0]!.steps).toEqual([save, wait])
+  })
+
+  it('creates no method for a wait that has no preceding action', () => {
+    expect(inferMethods([waitStep()])).toEqual([])
+  })
+
+  it('keeps login intact when the recording ends with network and wait steps', () => {
+    const steps = [
+      fillStep('emailInput', 'input', 'email'),
+      fillStep('passwordInput', 'input', 'password'),
+      clickStep('signInButton'),
+      networkStep('/api/login'),
+      waitStep(),
+    ]
+    const methods = inferMethods(steps)
+    expect(methods.map((m) => m.name)).toEqual(['login'])
+    expect(methods[0]!.steps.map((s) => s.action)).toEqual([
+      'fill',
+      'fill',
+      'click',
+      'network',
+      'wait',
+    ])
+  })
+
+  it('still assigns each network step to the action that triggered it', () => {
+    const open = clickStep('open')
+    const netOpen = networkStep('/api/open')
+    const filter = clickStep('filter')
+    const netFilter = networkStep('/api/filter')
+    const methods = inferMethods([open, netOpen, waitStep(), filter, netFilter, waitStep()])
+    expect(methods.map((m) => m.name)).toEqual(['clickOpen', 'clickFilter'])
+    expect(methods[0]!.steps).toContain(netOpen)
+    expect(methods[0]!.steps).not.toContain(netFilter)
+    expect(methods[1]!.steps).toContain(netFilter)
   })
 })

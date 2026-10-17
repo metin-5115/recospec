@@ -168,6 +168,13 @@ function defaultDraft(step: IRStep): MethodDraft {
 // Pattern matching
 // ---------------------------------------------------------------------------
 
+/** Keeps chronology for the usual `action, network, wait` shape: the wait comes last. */
+function insertBeforeTrailingWaits(steps: IRStep[], step: IRStep): void {
+  let at = steps.length
+  while (at > 0 && steps[at - 1]?.action === 'wait') at--
+  steps.splice(at, 0, step)
+}
+
 /**
  * Infers semantic methods from a sequence of IRSteps.
  *
@@ -207,6 +214,13 @@ export function inferMethods(steps: IRStep[]): InferredMethod[] {
 
     // Skip lone navigate steps — handled by Page Object goto()
     if (s0?.action === 'navigate') {
+      i++
+      continue
+    }
+
+    // An auto-detected wait belongs to the action it follows; on its own it is not a method.
+    if (s0?.action === 'wait') {
+      drafts[drafts.length - 1]?.steps.push(s0)
       i++
       continue
     }
@@ -434,13 +448,15 @@ export function inferMethods(steps: IRStep[]): InferredMethod[] {
       const netIdx = indexOf.get(net) ?? 0
       let owner: MethodDraft | undefined
       for (const d of drafts) {
-        const lastIdx = indexOf.get(d.steps[d.steps.length - 1]!) ?? -1
+        // Trailing waits come after the network call they wait for, so they must not count.
+        const lastAction = [...d.steps].reverse().find((s) => s.action !== 'wait') ?? d.steps[0]!
+        const lastIdx = indexOf.get(lastAction) ?? -1
         if (lastIdx <= netIdx) owner = d
       }
       if (!owner) {
         owner = drafts[0]
       }
-      if (owner) owner.steps.push(net)
+      if (owner) insertBeforeTrailingWaits(owner.steps, net)
       else
         drafts.push({
           name: 'awaitNetwork',

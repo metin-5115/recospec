@@ -26,8 +26,8 @@ describe('real recording — login flow', () => {
     const [page] = groupIntoPages(flatSteps, payload.session.startUrl)
     const names = (page?.inferredMethods ?? []).map((m) => m.name)
 
-    expect(names).toContain('login')
-    expect(names).not.toContain('clickEmail')
+    // Exactly one method: no focus-click leftovers and no `doAction` for the trailing wait.
+    expect(names).toEqual(['login'])
     const login = page?.inferredMethods?.find((m) => m.name === 'login')
     expect(login?.params).toEqual(['email', 'password'])
     expect(login?.paramSecret).toEqual([true, true])
