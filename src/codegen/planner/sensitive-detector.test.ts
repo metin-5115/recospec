@@ -148,3 +148,44 @@ describe('getEnvVarName', () => {
     expect(getEnvVarName('user_name')).toBe('RECOSPEC_USER_NAME')
   })
 })
+
+describe('payment card fields', () => {
+  it.each(['cardNumberInput', 'cvvInput', 'cvcInput', 'securityCodeInput', 'expiryInput'])(
+    'treats %s as sensitive',
+    (name) => {
+      expect(isSensitiveField(el({ name }))).toBe(true)
+    },
+  )
+
+  it.each(['cc-number', 'cc-csc', 'cc-exp', 'cc-exp-month', 'cc-exp-year'])(
+    'treats autocomplete=%s as sensitive',
+    (autocomplete) => {
+      expect(isSensitiveField(el({ elementSnapshot: { localName: 'input', autocomplete } }))).toBe(
+        true,
+      )
+    },
+  )
+
+  it.each(['nameOnCardInput', 'fullNameInput', 'postalCodeInput', 'cityInput', 'addressInput'])(
+    'does not flag %s',
+    (name) => {
+      expect(isSensitiveField(el({ name }))).toBe(false)
+    },
+  )
+
+  it('maps card fields to canonical parameter names and env vars', () => {
+    expect(getParameterName(el({ name: 'cardNumberInput' }))).toBe('cardNumber')
+    expect(getParameterName(el({ name: 'cvvInput' }))).toBe('cvv')
+    expect(getParameterName(el({ name: 'securityCodeInput' }))).toBe('cvv')
+    expect(getParameterName(el({ name: 'expiryInput' }))).toBe('cardExpiry')
+    expect(
+      getParameterName(el({ elementSnapshot: { localName: 'input', autocomplete: 'cc-number' } })),
+    ).toBe('cardNumber')
+    expect(
+      getParameterName(el({ elementSnapshot: { localName: 'input', autocomplete: 'cc-csc' } })),
+    ).toBe('cvv')
+    expect(getEnvVarName('cardNumber')).toBe('RECOSPEC_CARD_NUMBER')
+    expect(getEnvVarName('cvv')).toBe('RECOSPEC_CVV')
+    expect(getEnvVarName('cardExpiry')).toBe('RECOSPEC_CARD_EXPIRY')
+  })
+})

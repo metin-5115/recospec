@@ -42,6 +42,9 @@ export function getParameterName(el: IRElement | undefined): string {
   if (autocomplete === 'current-password' || autocomplete === 'new-password') return 'password'
   if (autocomplete === 'email') return 'email'
   if (autocomplete === 'username') return 'username'
+  if (autocomplete === 'cc-number') return 'cardNumber'
+  if (autocomplete === 'cc-csc') return 'cvv'
+  if (autocomplete?.startsWith('cc-exp')) return 'cardExpiry'
 
   if (el.inputType?.toLowerCase() === 'password') return 'password'
 
@@ -56,6 +59,9 @@ export function getParameterName(el: IRElement | undefined): string {
   if (/\botp\b|one[-_]?time[-_]?code/i.test(haystack)) return 'oneTimeCode'
   if (/email/i.test(haystack)) return 'email'
   if (/username/i.test(haystack)) return 'username'
+  if (/card.?number/i.test(haystack)) return 'cardNumber'
+  if (/cvv|cvc|security.?code/i.test(haystack)) return 'cvv'
+  if (/expir/i.test(haystack)) return 'cardExpiry'
 
   // Last resort: derive a camelCase slug from the IR element name.
   const stripped = el.name.replace(

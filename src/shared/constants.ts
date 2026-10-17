@@ -81,6 +81,11 @@ export const SENSITIVE_FIELD_PATTERNS: readonly RegExp[] = [
   /token/i,
   /api[-_]?key/i,
   /email/i,
+  // Payment card data: number, security code and expiry.
+  /card.?number/i,
+  /cvv|cvc/i,
+  /security.?code/i,
+  /expir/i,
 ]
 
 /** Autocomplete attribute values that mark an input as sensitive. */
@@ -90,6 +95,11 @@ export const SENSITIVE_AUTOCOMPLETE_VALUES: readonly string[] = [
   'one-time-code',
   'email',
   'username',
+  'cc-number',
+  'cc-csc',
+  'cc-exp',
+  'cc-exp-month',
+  'cc-exp-year',
 ]
 
 /** Default value substituted for a secret parameter when no env var is set. */
