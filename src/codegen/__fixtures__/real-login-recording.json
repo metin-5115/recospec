@@ -1,0 +1,650 @@
+{
+  "exportedAt": 1760000006000,
+  "formatVersion": 1,
+  "session": {
+    "sessionId": "real-login-fixture",
+    "name": "Login Flow",
+    "state": "stopped",
+    "startUrl": "http://localhost:4173/login",
+    "startedAt": 1760000000000,
+    "tabId": 983295058,
+    "metadata": {
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "timezone": "Europe/Istanbul"
+    },
+    "config": {
+      "captureClicks": true,
+      "captureInputs": true,
+      "captureNavigation": true
+    },
+    "iterationNumber": 1,
+    "flowSignature": "http://localhost:4173/login::click|fill|click::aria-label|aria-label::58307c1e",
+    "stoppedAt": 1760000005000
+  },
+  "actions": [
+    {
+      "actionId": "0cb430f3-2954-4118-b8e8-3fe43df90a43",
+      "sessionId": "real-login-fixture",
+      "sequenceNumber": 0,
+      "type": "click",
+      "timestamp": 1792231141607,
+      "pageUrl": "http://localhost:4173/login",
+      "pageTitle": "Demo App",
+      "target": {
+        "primaryLocator": {
+          "strategy": "aria-label",
+          "selector": "[aria-label=\"Email\"]",
+          "volatile": false,
+          "framework": {
+            "playwright": "page.getByLabel(\"Email\")",
+            "cypress": "cy.get(\"[aria-label=\\\"Email\\\"]\")",
+            "seleniumPy": "driver.find_element(By.CSS_SELECTOR, \"[aria-label=\\\"Email\\\"]\")"
+          },
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "role-name",
+            "selector": "textbox[name=\"Email\"]",
+            "volatile": false,
+            "framework": {
+              "playwright": "page.getByRole('textbox', { name: \"Email\" })",
+              "cypress": "cy.get(\"input\").contains(\"Email\")",
+              "seleniumPy": "driver.find_element(By.XPATH, '//input[contains(normalize-space(), \"Email\")]')"
+            },
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "label",
+            "selector": "Email",
+            "volatile": false,
+            "framework": {
+              "playwright": "page.getByLabel(\"Email\")",
+              "cypress": "cy.get('label').contains(\"Email\").next('input, select, textarea')",
+              "seleniumPy": "driver.find_element(By.XPATH, '//label[normalize-space()=\"Email\"]/following::*[self::input or self::select or self::textarea][1]')"
+            },
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "input",
+          "attributes": {
+            "id": "email",
+            "name": "email",
+            "type": "email",
+            "aria-label": "Email",
+            "autocomplete": "username"
+          },
+          "textContent": ""
+        },
+        "fingerprint": {
+          "tag": "input",
+          "attributes": {
+            "id": "email",
+            "name": "email",
+            "type": "email",
+            "aria-label": "Email",
+            "autocomplete": "username"
+          },
+          "role": null,
+          "accessibleName": "Email",
+          "neighborTexts": ["Email", "Password", "Sign in"],
+          "domPath": "body>main>form>input",
+          "boundingBoxRatio": {
+            "x": 0.5,
+            "y": 0.2275520881017049
+          }
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "input",
+        "attributes": {
+          "id": "email",
+          "name": "email",
+          "type": "email",
+          "aria-label": "Email",
+          "autocomplete": "username"
+        },
+        "textContent": ""
+      }
+    },
+    {
+      "actionId": "c8dc40fa-3f8c-4549-93e9-dd9b517def6e",
+      "sessionId": "real-login-fixture",
+      "sequenceNumber": 1,
+      "type": "fill",
+      "timestamp": 1792231142201,
+      "pageUrl": "http://localhost:4173/login",
+      "pageTitle": "Demo App",
+      "target": {
+        "primaryLocator": {
+          "strategy": "aria-label",
+          "selector": "[aria-label=\"Email\"]",
+          "volatile": false,
+          "framework": {
+            "playwright": "page.getByLabel(\"Email\")",
+            "cypress": "cy.get(\"[aria-label=\\\"Email\\\"]\")",
+            "seleniumPy": "driver.find_element(By.CSS_SELECTOR, \"[aria-label=\\\"Email\\\"]\")"
+          },
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "role-name",
+            "selector": "textbox[name=\"Email\"]",
+            "volatile": false,
+            "framework": {
+              "playwright": "page.getByRole('textbox', { name: \"Email\" })",
+              "cypress": "cy.get(\"input\").contains(\"Email\")",
+              "seleniumPy": "driver.find_element(By.XPATH, '//input[contains(normalize-space(), \"Email\")]')"
+            },
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "label",
+            "selector": "Email",
+            "volatile": false,
+            "framework": {
+              "playwright": "page.getByLabel(\"Email\")",
+              "cypress": "cy.get('label').contains(\"Email\").next('input, select, textarea')",
+              "seleniumPy": "driver.find_element(By.XPATH, '//label[normalize-space()=\"Email\"]/following::*[self::input or self::select or self::textarea][1]')"
+            },
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "input",
+          "attributes": {
+            "id": "email",
+            "name": "email",
+            "type": "email",
+            "aria-label": "Email",
+            "autocomplete": "username"
+          },
+          "textContent": ""
+        },
+        "fingerprint": {
+          "tag": "input",
+          "attributes": {
+            "id": "email",
+            "name": "email",
+            "type": "email",
+            "aria-label": "Email",
+            "autocomplete": "username"
+          },
+          "role": null,
+          "accessibleName": "Email",
+          "neighborTexts": ["Email", "Password", "Sign in"],
+          "domPath": "body>main>form>input",
+          "boundingBoxRatio": {
+            "x": 0.5,
+            "y": 0.2275520881017049
+          }
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "input",
+        "attributes": {
+          "id": "email",
+          "name": "email",
+          "type": "email",
+          "aria-label": "Email",
+          "autocomplete": "username"
+        },
+        "textContent": ""
+      },
+      "payload": {
+        "value": "user@example.com"
+      }
+    },
+    {
+      "actionId": "3a3af484-799d-43c6-be9d-b58f1c2106df",
+      "sessionId": "real-login-fixture",
+      "sequenceNumber": 2,
+      "type": "click",
+      "timestamp": 1792231142201,
+      "pageUrl": "http://localhost:4173/login",
+      "pageTitle": "Demo App",
+      "target": {
+        "primaryLocator": {
+          "strategy": "aria-label",
+          "selector": "[aria-label=\"Password\"]",
+          "volatile": false,
+          "framework": {
+            "playwright": "page.getByLabel(\"Password\")",
+            "cypress": "cy.get(\"[aria-label=\\\"Password\\\"]\")",
+            "seleniumPy": "driver.find_element(By.CSS_SELECTOR, \"[aria-label=\\\"Password\\\"]\")"
+          },
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "label",
+            "selector": "Password",
+            "volatile": false,
+            "framework": {
+              "playwright": "page.getByLabel(\"Password\")",
+              "cypress": "cy.get('label').contains(\"Password\").next('input, select, textarea')",
+              "seleniumPy": "driver.find_element(By.XPATH, '//label[normalize-space()=\"Password\"]/following::*[self::input or self::select or self::textarea][1]')"
+            },
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "id",
+            "selector": "#password",
+            "framework": {
+              "playwright": "page.locator(\"#password\")",
+              "cypress": "cy.get(\"#password\")",
+              "seleniumPy": "driver.find_element(By.ID, \"password\")"
+            },
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "input",
+          "attributes": {
+            "id": "password",
+            "name": "password",
+            "type": "password",
+            "aria-label": "Password",
+            "autocomplete": "current-password"
+          },
+          "textContent": ""
+        },
+        "fingerprint": {
+          "tag": "input",
+          "attributes": {
+            "id": "password",
+            "name": "password",
+            "type": "password",
+            "aria-label": "Password",
+            "autocomplete": "current-password"
+          },
+          "role": null,
+          "accessibleName": "Password",
+          "neighborTexts": ["Password", "Sign in", "Sign in"],
+          "domPath": "body>main>form>input",
+          "boundingBoxRatio": {
+            "x": 0.5,
+            "y": 0.31866320768992107
+          }
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "input",
+        "attributes": {
+          "id": "password",
+          "name": "password",
+          "type": "password",
+          "aria-label": "Password",
+          "autocomplete": "current-password"
+        },
+        "textContent": ""
+      }
+    },
+    {
+      "actionId": "2ac4f41a-149e-4636-b4de-d40f5fb9fcb6",
+      "sessionId": "real-login-fixture",
+      "sequenceNumber": 3,
+      "type": "fill",
+      "timestamp": 1792231142604,
+      "pageUrl": "http://localhost:4173/login",
+      "pageTitle": "Demo App",
+      "target": {
+        "primaryLocator": {
+          "strategy": "aria-label",
+          "selector": "[aria-label=\"Password\"]",
+          "volatile": false,
+          "framework": {
+            "playwright": "page.getByLabel(\"Password\")",
+            "cypress": "cy.get(\"[aria-label=\\\"Password\\\"]\")",
+            "seleniumPy": "driver.find_element(By.CSS_SELECTOR, \"[aria-label=\\\"Password\\\"]\")"
+          },
+          "features": {
+            "attrTier": 2,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": true
+          },
+          "score": 67,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "label",
+            "selector": "Password",
+            "volatile": false,
+            "framework": {
+              "playwright": "page.getByLabel(\"Password\")",
+              "cypress": "cy.get('label').contains(\"Password\").next('input, select, textarea')",
+              "seleniumPy": "driver.find_element(By.XPATH, '//label[normalize-space()=\"Password\"]/following::*[self::input or self::select or self::textarea][1]')"
+            },
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "id",
+            "selector": "#password",
+            "framework": {
+              "playwright": "page.locator(\"#password\")",
+              "cypress": "cy.get(\"#password\")",
+              "seleniumPy": "driver.find_element(By.ID, \"password\")"
+            },
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "input",
+          "attributes": {
+            "id": "password",
+            "name": "password",
+            "type": "password",
+            "aria-label": "Password",
+            "autocomplete": "current-password"
+          },
+          "textContent": ""
+        },
+        "fingerprint": {
+          "tag": "input",
+          "attributes": {
+            "id": "password",
+            "name": "password",
+            "type": "password",
+            "aria-label": "Password",
+            "autocomplete": "current-password"
+          },
+          "role": null,
+          "accessibleName": "Password",
+          "neighborTexts": ["Password", "Sign in", "Sign in"],
+          "domPath": "body>main>form>input",
+          "boundingBoxRatio": {
+            "x": 0.5,
+            "y": 0.31866320768992107
+          }
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "input",
+        "attributes": {
+          "id": "password",
+          "name": "password",
+          "type": "password",
+          "aria-label": "Password",
+          "autocomplete": "current-password"
+        },
+        "textContent": ""
+      },
+      "payload": {
+        "value": "fixture-pass-1"
+      }
+    },
+    {
+      "actionId": "6d73ddf1-5355-470c-8e72-459932ea4d21",
+      "sessionId": "real-login-fixture",
+      "sequenceNumber": 4,
+      "type": "click",
+      "timestamp": 1792231142605,
+      "pageUrl": "http://localhost:4173/login",
+      "pageTitle": "Demo App",
+      "target": {
+        "primaryLocator": {
+          "strategy": "testid",
+          "selector": "sign-in",
+          "framework": {
+            "playwright": "page.getByTestId('sign-in')",
+            "cypress": "cy.get('[data-testid=\"sign-in\"]')",
+            "seleniumPy": "driver.find_element(By.CSS_SELECTOR, '[data-testid=\"sign-in\"]')"
+          },
+          "features": {
+            "attrTier": 3,
+            "textIsData": false,
+            "classEntropy": 0,
+            "depth": 1,
+            "hasPositionalIndex": false,
+            "isComposed": false,
+            "anchorTier": 0,
+            "localeDependent": false
+          },
+          "score": 90,
+          "matchCount": 1
+        },
+        "fallbackLocators": [
+          {
+            "strategy": "role-name",
+            "selector": "button[name=\"Sign in\"]",
+            "volatile": false,
+            "framework": {
+              "playwright": "page.getByRole('button', { name: \"Sign in\" })",
+              "cypress": "cy.get(\"button\").contains(\"Sign in\")",
+              "seleniumPy": "driver.find_element(By.XPATH, '//button[contains(normalize-space(), \"Sign in\")]')"
+            },
+            "features": {
+              "attrTier": 2,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": true
+            },
+            "score": 67,
+            "matchCount": 1
+          },
+          {
+            "strategy": "css",
+            "selector": "button[type=\"submit\"]",
+            "framework": {
+              "playwright": "page.locator(\"button[type=\\\"submit\\\"]\")",
+              "cypress": "cy.get(\"button[type=\\\"submit\\\"]\")",
+              "seleniumPy": "driver.find_element(By.CSS_SELECTOR, \"button[type=\\\"submit\\\"]\")"
+            },
+            "features": {
+              "attrTier": 1,
+              "textIsData": false,
+              "classEntropy": 0,
+              "depth": 1,
+              "hasPositionalIndex": false,
+              "isComposed": false,
+              "anchorTier": 0,
+              "localeDependent": false
+            },
+            "score": 65,
+            "matchCount": 1
+          }
+        ],
+        "elementSnapshot": {
+          "tagName": "button",
+          "attributes": {
+            "type": "submit",
+            "data-testid": "sign-in"
+          },
+          "textContent": "Sign in"
+        },
+        "fingerprint": {
+          "tag": "button",
+          "attributes": {
+            "type": "submit",
+            "data-testid": "sign-in"
+          },
+          "role": null,
+          "accessibleName": "Sign in",
+          "neighborTexts": ["Sign in"],
+          "domPath": "body>main>form>button",
+          "boundingBoxRatio": {
+            "x": 0.3890478521585464,
+            "y": 0.38977431456247963
+          }
+        }
+      },
+      "elementSnapshot": {
+        "tagName": "button",
+        "attributes": {
+          "type": "submit",
+          "data-testid": "sign-in"
+        },
+        "textContent": "Sign in"
+      }
+    },
+    {
+      "actionId": "14799817-1b54-4fb4-a316-f04b734525f0",
+      "sessionId": "real-login-fixture",
+      "sequenceNumber": 5,
+      "type": "network",
+      "timestamp": 1792231142610,
+      "pageUrl": "http://localhost:4173/login",
+      "pageTitle": "Demo App",
+      "payload": {
+        "method": "POST",
+        "url": "/api/login",
+        "status": 200,
+        "contentType": "application/json",
+        "responseBody": "{\"name\":\"Demo User\"}",
+        "durationMs": 3.899999976158142
+      }
+    },
+    {
+      "actionId": "2753673e-f868-498f-8661-6179bf59b008",
+      "sessionId": "real-login-fixture",
+      "sequenceNumber": 6,
+      "type": "wait",
+      "timestamp": 1792231143109,
+      "pageUrl": "http://localhost:4173/dashboard",
+      "pageTitle": "Demo App",
+      "payload": {
+        "wait": {
+          "reason": "networkidle",
+          "timeoutMs": 10000
+        }
+      }
+    }
+  ]
+}

@@ -299,3 +299,54 @@ describe('normalizeActions — richer interactions', () => {
     expect(flatSteps).toHaveLength(0)
   })
 })
+
+describe('normalizeActions — focus clicks before typing', () => {
+  it('drops the click that only focuses the field about to be filled', () => {
+    const { flatSteps } = normalizeActions([
+      makeTargetAction('c1', 'click', 'email', 'input'),
+      makeTargetAction('f1', 'fill', 'email', 'input', { value: 'user@example.com' }),
+    ])
+    expect(flatSteps.map((s) => s.action)).toEqual(['fill'])
+    expect(flatSteps[0].value).toBe('user@example.com')
+  })
+
+  it('drops the click that only opens the select it then changes', () => {
+    const { flatSteps } = normalizeActions([
+      makeTargetAction('c1', 'click', 'country', 'select'),
+      makeTargetAction('s1', 'select', 'country', 'select', { value: 'tr' }),
+    ])
+    expect(flatSteps.map((s) => s.action)).toEqual(['select'])
+  })
+
+  it('keeps a click on a different element than the one filled next', () => {
+    const { flatSteps } = normalizeActions([
+      makeTargetAction('c1', 'click', 'menu', 'button'),
+      makeTargetAction('f1', 'fill', 'search', 'input', { value: 'shoes' }),
+    ])
+    expect(flatSteps.map((s) => s.action)).toEqual(['click', 'fill'])
+  })
+
+  it('keeps the click when another step sits between it and the fill', () => {
+    const { flatSteps } = normalizeActions([
+      makeTargetAction('c1', 'click', 'email', 'input'),
+      makeTargetAction('c2', 'click', 'terms', 'input'),
+      makeTargetAction('f1', 'fill', 'email', 'input', { value: 'user@example.com' }),
+    ])
+    expect(flatSteps.map((s) => s.action)).toEqual(['click', 'click', 'fill'])
+  })
+
+  it('keeps a click that is not followed by typing', () => {
+    const { flatSteps } = normalizeActions([makeTargetAction('c1', 'click', 'email', 'input')])
+    expect(flatSteps.map((s) => s.action)).toEqual(['click'])
+  })
+
+  it('merges consecutive fills of one field into a single step', () => {
+    const { flatSteps } = normalizeActions([
+      makeTargetAction('c1', 'click', 'email', 'input'),
+      makeTargetAction('f1', 'fill', 'email', 'input', { value: 'user@' }),
+      makeTargetAction('f2', 'fill', 'email', 'input', { value: 'user@example.com' }),
+    ])
+    expect(flatSteps).toHaveLength(1)
+    expect(flatSteps[0].value).toBe('user@example.com')
+  })
+})

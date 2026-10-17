@@ -161,6 +161,15 @@ function collapseClicksBeforeDblclick(steps: IRStep[], element: IRElement): void
   }
 }
 
+/** Actions a user starts by clicking the field: focusing an input or opening a select. */
+const CLICK_TO_FOCUS_ACTIONS: ReadonlySet<string> = new Set<ElementActionType>(['fill', 'select'])
+
+/** The click that merely focuses a field right before it is filled adds nothing to a replay. */
+function dropFocusClickBefore(steps: IRStep[], element: IRElement): void {
+  const prev = steps[steps.length - 1]
+  if (prev?.action === 'click' && prev.element?.locatorValue === element.locatorValue) steps.pop()
+}
+
 function isSameFillMerge(prev: IRStep, curr: RecordedAction): boolean {
   return (
     curr.type === 'fill' &&
@@ -216,6 +225,7 @@ export function normalizeActions(actions: RecordedAction[]): NormalizedActions {
       }
 
       if (type === 'dblclick') collapseClicksBeforeDblclick(steps, element)
+      if (CLICK_TO_FOCUS_ACTIONS.has(type)) dropFocusClickBefore(steps, element)
 
       const last = steps[steps.length - 1]
       if (last && isSameFillMerge(last, action) && payload?.value !== undefined) {
