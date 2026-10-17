@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { JsonExportPayload } from '@codegen/export/json-export'
 import {
@@ -11,6 +11,7 @@ import { extractFromServiceWorker, NoStepsRecordedError, waitForExport } from '.
 import { ChromiumMissingError, PlaywrightMissingError } from '../playwright-loader'
 import { PLAYWRIGHT_INSTALL_COMMAND } from '@shared/constants'
 import { resolveWorkspace } from '../workspace-utils'
+import { ensureSessionsDirIgnored } from '../session-files'
 import { getSessionsDir } from '../tree-provider'
 import { applyJsonAtPath } from './apply-json'
 import type { RecospecStatusBar } from '../status-bar'
@@ -186,7 +187,7 @@ export function registerRecordCommand(
  */
 function saveExportToWorkspace(payload: JsonExportPayload, projectDir: string): string {
   const dir = getSessionsDir(projectDir)
-  mkdirSync(dir, { recursive: true })
+  ensureSessionsDirIgnored(dir)
   const slug = (payload.session.name || 'recording')
     .replace(/\s+/g, '_')
     .replace(/[^\w-]/g, '')

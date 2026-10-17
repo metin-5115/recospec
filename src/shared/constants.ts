@@ -170,3 +170,7 @@ export const PLAYWRIGHT_PACKAGE_NAMES = [
 /** One-liner shown when Playwright or its Chromium build is missing for `Recospec: Record Flow`. */
 export const PLAYWRIGHT_INSTALL_COMMAND =
   'npm install -D @playwright/test && npx playwright install chromium' as const
+
+/** Written into `.recospec/sessions/` so recordings (which hold typed values) are never committed. */
+export const SESSIONS_GITIGNORE_CONTENT =
+  '# Recospec recordings contain the values typed during a session. Keep them out of git.\n*\n' as const
