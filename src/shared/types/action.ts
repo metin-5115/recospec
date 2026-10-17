@@ -34,8 +34,6 @@ export interface NetworkPayload {
   contentType?: string
   /** Response body (truncated to NETWORK_BODY_MAX_BYTES). */
   responseBody?: string
-  /** Request body when present and serialisable. */
-  requestBody?: string
   durationMs?: number
 }
 

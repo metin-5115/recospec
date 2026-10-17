@@ -7,7 +7,6 @@ interface CapturedDetail {
   status?: number
   contentType?: string
   responseBody?: string
-  requestBody?: string
   durationMs?: number
 }
 
@@ -63,8 +62,8 @@ describe('network-proxy — fetch', () => {
       status: 201,
       contentType: 'application/json',
       responseBody: '{"ok":true}',
-      requestBody: '{"name":"a"}',
     })
+    expect(events[0]).not.toHaveProperty('requestBody')
     expect(events[0].durationMs).toBeGreaterThanOrEqual(0)
   })
 
@@ -111,10 +110,17 @@ describe('network-proxy — fetch', () => {
     expect(events[0].url).toBe('https://api.test/down')
   })
 
-  it('does not capture a request body it cannot stringify', async () => {
+  it('never captures request bodies — they carry credentials and nothing consumes them', async () => {
     await installProxy()
+    await window.fetch('https://api.test/login', {
+      method: 'POST',
+      body: JSON.stringify({ email: 'user@example.com', password: 'hunter2-test' }),
+    })
     await window.fetch('https://api.test/blob', { method: 'POST', body: new Blob(['x']) })
-    expect(events[0].requestBody).toBeUndefined()
+    for (const event of events) {
+      expect(event).not.toHaveProperty('requestBody')
+      expect(JSON.stringify(event)).not.toContain('hunter2-test')
+    }
   })
 })
 
@@ -142,8 +148,8 @@ describe('network-proxy — XMLHttpRequest', () => {
       status: 200,
       contentType: 'text/plain',
       responseBody: 'pong',
-      requestBody: 'a=1',
     })
+    expect(events[0]).not.toHaveProperty('requestBody')
   })
 
   it('skips extension-internal urls', async () => {

@@ -3,6 +3,9 @@
  * XMLHttpRequest as the page sees them. Captured request/response metadata is
  * relayed to the ISOLATED-world content script via a CustomEvent.
  *
+ * Request bodies are deliberately NOT captured: they routinely carry credentials (a login POST
+ * holds the typed password) and nothing consumes them — mocks only need the response.
+ *
  * No new permissions required — the second content_scripts entry in
  * manifest.json with `"world": "MAIN"` is what gets us here.
  */
@@ -18,7 +21,6 @@ interface NetworkDetail {
   status?: number
   contentType?: string
   responseBody?: string
-  requestBody?: string
   durationMs?: number
 }
 
@@ -36,13 +38,6 @@ function dispatch(detail: NetworkDetail): void {
   } catch {
     // ignore — proxy failures must never break the page
   }
-}
-
-function safeStringify(body: BodyInit | null | undefined): string | undefined {
-  if (body == null) return undefined
-  if (typeof body === 'string') return truncate(body)
-  if (body instanceof URLSearchParams || body instanceof FormData) return body.toString()
-  return undefined
 }
 
 // ---------------------------------------------------------------------------
@@ -70,7 +65,6 @@ window.fetch = async function patchedFetch(
       method,
       url,
       durationMs: performance.now() - startedAt,
-      requestBody: safeStringify(init?.body as BodyInit),
     })
     throw err
   }
@@ -91,7 +85,6 @@ window.fetch = async function patchedFetch(
     status: response.status,
     contentType,
     responseBody,
-    requestBody: safeStringify(init?.body as BodyInit),
     durationMs: performance.now() - startedAt,
   })
   return response
@@ -105,7 +98,6 @@ interface PatchedXhr extends XMLHttpRequest {
   __pf_method?: string
   __pf_url?: string
   __pf_started?: number
-  __pf_requestBody?: string
 }
 
 const originalOpen = XMLHttpRequest.prototype.open
@@ -128,7 +120,6 @@ XMLHttpRequest.prototype.send = function patchedSend(
   body?: Document | XMLHttpRequestBodyInit | null,
 ) {
   this.__pf_started = performance.now()
-  if (typeof body === 'string') this.__pf_requestBody = truncate(body)
 
   this.addEventListener('loadend', () => {
     const url = this.__pf_url ?? ''
@@ -150,7 +141,6 @@ XMLHttpRequest.prototype.send = function patchedSend(
       status: this.status,
       contentType,
       responseBody,
-      requestBody: this.__pf_requestBody,
       durationMs: this.__pf_started ? performance.now() - this.__pf_started : undefined,
     })
   })
