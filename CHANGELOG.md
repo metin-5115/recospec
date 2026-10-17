@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Recording inside iframes** — the recorder content script was never injected into frames (no
+  `all_frames` in the manifest), so typing and clicks inside an iframe were not captured at all, even
+  though codegen and replay support frame chains. It now runs in every frame, including `srcdoc` /
+  `about:blank` ones. Verified by recording a real iframe with the real extension (E2E).
+
 ## [0.8.1] — 2026-10-17
 
 ### Fixed
