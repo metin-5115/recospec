@@ -7,12 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1] — 2026-10-17
+
 ### Fixed
 
 - **Method inference on real recordings** — a real user clicks a field before typing, so every `fill`
   was preceded by its own `click` and `login(email, password)` degraded to `clickEmail`,
   `submitForm(email)`, `submitForm2(password)`. The normalizer now drops the focus click directly
   before a `fill`/`select` on the same element. Covered by a fixture captured with the real extension.
+- **No more `doAction` method for a trailing wait** — a recording that ended with the automatic
+  `networkidle` wait produced a meaningless `doAction`. A wait now belongs to the action it follows,
+  and network steps stay with the action that triggered them.
+- **Recordings stay out of git** — `Record Flow` writes the session JSON (which holds the values typed
+  during the recording) into `.recospec/sessions/`; a `.gitignore` inside that folder now hides it
+  without touching the project's own `.gitignore`.
 - **Request bodies are no longer captured** — the network recorder stored each request body, so a
   login POST put the typed password into IndexedDB and every JSON export a second time. Nothing used
   it (mocks only need the response), so `requestBody` was removed.

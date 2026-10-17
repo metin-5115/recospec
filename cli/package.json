@@ -1,6 +1,6 @@
 {
   "name": "recospec",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Apply Recospec browser recordings to an existing test project and render Claude Code prompts. Playwright, Cypress, Selenium Python and Selenium Java.",
   "type": "module",
   "bin": {

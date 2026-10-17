@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Recospec",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Record browser interactions and generate production-ready test automation code.",
   "minimum_chrome_version": "114",
   "icons": {
