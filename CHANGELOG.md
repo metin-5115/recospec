@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Prompts for long, real flows** — a 36-action checkout recorded with the real extension exposed three
+  problems that short hand-written fixtures hid:
+  - _Single-page apps collapsed into one page object._ A route that changes without a recorded
+    navigate step (`pushState`) now starts a new page object, so `/shop → /cart → /checkout →
+/payment` becomes `ShopPage`, `CartPage`, `CheckoutPage`, `PaymentPage`. Waits and network calls
+    never open a page.
+  - _Meaningless element names._ Controls wrapped in a `<label>` had no aria-label, so they became
+    `inputInput3` and `sMLSelect`. Names now come from the accessible name found in the locator
+    candidates (`fullNameInput`, `expressRadio`, `cartLink`), prefixed with the card they sit in for
+    repeated rows (`trailRunnerSizeSelect`). A select is no longer named from its options, and `CVV`
+    is `cvv`, not `cVV`.
+  - _Payment card data was not redacted._ Card number, CVV/CVC/security code and expiry (and the
+    `cc-*` autocomplete values) are now treated as sensitive and replaced with `[REDACTED:…]`
+    placeholders.
+
 ## [0.8.2] — 2026-10-17
 
 ### Fixed
