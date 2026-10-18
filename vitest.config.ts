@@ -14,6 +14,8 @@ const DOM_TEST_GLOBS = [
   'test-harness/**',
   // Pure module, but its round-trip tests parse real HTML via DOMParser.
   'src/shared/selector-escape.test.ts',
+  // Evaluates generated XPath against a real document.
+  'src/codegen/shared/locator-value.test.ts',
 ]
 
 const toTestGlob = (glob: string): string =>
@@ -27,6 +29,8 @@ const BASE_EXCLUDE = [
   '**/node_modules/**',
   '**/dist/**',
   'tests/e2e/**',
+  // Sibling git worktrees live under .claude/ and carry full copies of the suite.
+  '.claude/**',
   // Slow grid search — opt-in via `pnpm bench:calibrate` (own config).
   'benchmarks/calibrate.test.ts',
 ]
