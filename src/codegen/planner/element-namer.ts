@@ -51,8 +51,49 @@ function stripParenthetical(raw: string): string {
   return raw.replace(/\(.*?\)/g, ' ')
 }
 
-function toCamelCase(raw: string): string {
+/** Letters Unicode decomposition cannot reduce to ASCII; Turkish dotless/dotted i included. */
+const TRANSLITERATIONS: Record<string, string> = {
+  ı: 'i',
+  İ: 'I',
+  ß: 'ss',
+  ø: 'o',
+  Ø: 'O',
+  ł: 'l',
+  Ł: 'L',
+  đ: 'd',
+  Đ: 'D',
+  æ: 'ae',
+  Æ: 'AE',
+  œ: 'oe',
+  Œ: 'OE',
+}
+
+/** `Uçuş ara` → `Ucus ara`, so non-ASCII letters shorten a name instead of splitting it. */
+function toAscii(raw: string): string {
   return raw
+    .replace(/[ıİßøØłŁđĐæÆœŒ]/g, (ch) => TRANSLITERATIONS[ch] ?? ch)
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+}
+
+const CURRENCY_SYMBOLS = /[₺$€£¥]/g
+const PRICE_PATTERN = /\d[.,]\d{3}\b/
+const YEAR_PATTERN = /\b(19|20)\d{2}\b/
+
+/**
+ * A calendar cell or product tile reads like "Nov 25 Wednesday, 2026 6.300 ₺": the date and price
+ * are data, so they must not be frozen into an identifier. Plain digits ("Step 2") are kept.
+ */
+function stripDataValues(raw: string): string {
+  const isDataLike = CURRENCY_SYMBOLS.test(raw) || PRICE_PATTERN.test(raw) || YEAR_PATTERN.test(raw)
+  CURRENCY_SYMBOLS.lastIndex = 0
+  if (!isDataLike) return raw
+  const stripped = raw.replace(CURRENCY_SYMBOLS, ' ').replace(/\S*\d\S*/g, ' ')
+  return /[^\W\d_]/.test(stripped) ? stripped : raw
+}
+
+function toCamelCase(raw: string): string {
+  return toAscii(raw)
     .replace(/[^a-zA-Z0-9\s_-]/g, ' ')
     .trim()
     .split(/[\s_-]+/)
@@ -107,10 +148,10 @@ export function nameElement(
   } else if (locator.strategy === 'testid' && typeof locator.selector === 'string') {
     baseName = toCamelCase(testIdValue(locator.selector))
   } else if (locator.strategy === 'aria-label' && attrs['aria-label']) {
-    baseName = toCamelCase(attrs['aria-label']) + suffix
+    baseName = toCamelCase(stripDataValues(attrs['aria-label'])) + suffix
   } else if (accessibleNameOf([locator, ...nameHints])) {
     const { name, role } = accessibleNameOf([locator, ...nameHints])!
-    const camel = toCamelCase(stripParenthetical(name))
+    const camel = toCamelCase(stripDataValues(stripParenthetical(name)))
     const roleSuffix = (role && ROLE_SUFFIX[role]) ?? suffix
     const withSuffix = camel.toLowerCase().endsWith(roleSuffix.toLowerCase())
       ? camel
@@ -120,7 +161,7 @@ export function nameElement(
       ? toCamelCase(stripParenthetical(anchor)) + capitalize(withSuffix)
       : withSuffix
   } else if (snapshot.textContent?.trim() && !NAMELESS_TEXT_TAGS.has(tag)) {
-    baseName = toCamelCase(snapshot.textContent.trim().slice(0, 40)) + suffix
+    baseName = toCamelCase(stripDataValues(snapshot.textContent.trim().slice(0, 40))) + suffix
   } else if (attrs['placeholder']) {
     baseName = toCamelCase(attrs['placeholder']) + suffix
   } else {

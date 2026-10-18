@@ -168,3 +168,85 @@ describe('nameElement — acronyms in labels', () => {
     expect(nameElement(input, roleName('textbox', label), new Set())).toBe(expected)
   })
 })
+
+describe('nameElement — non-ASCII text', () => {
+  it('transliterates Turkish letters instead of dropping them', () => {
+    const name = nameElement(
+      snapshot('button', { attributes: { 'aria-label': 'Uçuş ara' } }),
+      locator('aria-label', '[aria-label="Uçuş ara"]'),
+      new Set(),
+    )
+    expect(name).toBe('ucusAraButton')
+  })
+
+  it('keeps every word of a long Turkish accessible name', () => {
+    const name = nameElement(
+      snapshot('li'),
+      locator('role-name', 'option[name="Ercan Uluslararası Havalimanı"]'),
+      new Set(),
+    )
+    expect(name).toBe('ercanUluslararasiHavalimani')
+  })
+
+  it('handles the dotted capital İ and the soft g', () => {
+    const name = nameElement(
+      snapshot('button'),
+      locator('role-name', 'button[name="İstanbul Ağrı"]'),
+      new Set(),
+    )
+    expect(name).toBe('istanbulAgriButton')
+  })
+
+  it('strips combining accents from other Latin text', () => {
+    const name = nameElement(
+      snapshot('button'),
+      locator('role-name', 'button[name="Café résumé"]'),
+      new Set(),
+    )
+    expect(name).toBe('cafeResumeButton')
+  })
+})
+
+describe('nameElement — data values in the visible name', () => {
+  it('drops the date and price from a calendar cell name', () => {
+    const name = nameElement(
+      snapshot('button'),
+      locator('role-name', 'button[name="Kasım 25 Çarşamba, 2026 6.300 ₺"]'),
+      new Set(),
+    )
+    expect(name).toBe('kasimCarsambaButton')
+  })
+
+  it('treats a year or a thousands-grouped number as data even without a currency symbol', () => {
+    const date = nameElement(
+      snapshot('button'),
+      locator('role-name', 'button[name="Tuesday, 2026 Day"]'),
+      new Set(),
+    )
+    const price = nameElement(
+      snapshot('button'),
+      locator('role-name', 'button[name="Buy now 1,299"]'),
+      new Set(),
+    )
+    expect(date).toBe('tuesdayDayButton')
+    expect(price).toBe('buyNowButton')
+  })
+
+  it('keeps ordinary digits in names that are not data', () => {
+    const name = nameElement(
+      snapshot('button'),
+      locator('role-name', 'button[name="Step 2"]'),
+      new Set(),
+    )
+    expect(name).toBe('step2Button')
+  })
+
+  it('falls back to the original name when stripping would leave nothing', () => {
+    const name = nameElement(
+      snapshot('button'),
+      locator('role-name', 'button[name="2026 6.300 ₺"]'),
+      new Set(),
+    )
+    expect(name).toBe('20266300Button')
+  })
+})
