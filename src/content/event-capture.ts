@@ -14,6 +14,7 @@ import {
   wasTextMutated,
 } from './text-mutation-tracker'
 import { observeForSpinner } from './spinner-detector'
+import { setPageFlag } from './page-flag'
 import { normalizeClickTarget, ancestorsFromComposedPath } from './normalize-click-target'
 import { sendToBackground } from '@shared/messaging/send'
 import { logger } from '@shared/logger'
@@ -21,6 +22,8 @@ import {
   AUTO_WAIT_DEFAULT_TIMEOUT_MS,
   AUTO_WAIT_NETWORK_DEBOUNCE_MS,
   NETWORK_CAPTURE_EVENT_NAME,
+  NETWORK_CAPTURE_FLAG_KEY,
+  PIERCE_CLOSED_SHADOW_FLAG_KEY,
   SNAPSHOT_TEXT_MAX_LENGTH,
 } from '@shared/constants'
 
@@ -238,6 +241,7 @@ function onNetworkCapture(e: Event): void {
 
 export function startCapture(sessionId: string): void {
   activeSessionId = sessionId
+  setPageFlag(NETWORK_CAPTURE_FLAG_KEY, true)
   startTextMutationTracking()
   document.addEventListener('click', onClickCapture, { capture: true })
   document.addEventListener('change', onChangeCapture, { capture: true })
@@ -248,6 +252,10 @@ export function startCapture(sessionId: string): void {
 
 export function stopCapture(): void {
   activeSessionId = null
+  // Both flags only mean something while recording; a stale one would keep the MAIN-world
+  // proxies active on this origin after the session ended.
+  setPageFlag(NETWORK_CAPTURE_FLAG_KEY, false)
+  setPageFlag(PIERCE_CLOSED_SHADOW_FLAG_KEY, false)
   pendingWaitAbort?.abort()
   pendingWaitAbort = null
   stopTextMutationTracking()

@@ -17,19 +17,11 @@
  */
 import { PIERCE_CLOSED_SHADOW_FLAG_KEY } from '@shared/constants'
 import { installClosedShadowProxy } from './closed-shadow'
+import { isPageFlagSet } from './page-flag'
 
 const PIERCED_ATTR = 'data-recospec-pierced'
 
-function piercingEnabled(): boolean {
-  try {
-    return window.localStorage.getItem(PIERCE_CLOSED_SHADOW_FLAG_KEY) === 'true'
-  } catch {
-    // Some pages sandbox localStorage — fail safe to OFF.
-    return false
-  }
-}
-
-if (piercingEnabled()) {
+if (isPageFlagSet(PIERCE_CLOSED_SHADOW_FLAG_KEY)) {
   const handle = installClosedShadowProxy(Element.prototype, { pierce: true })
 
   // Re-wrap `attachShadow` once more to stamp the host so the ISOLATED-world

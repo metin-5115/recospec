@@ -23,6 +23,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Network proxy no longer breaks streaming pages** — the MAIN-world `fetch` wrapper awaited the whole
+  response body before handing it back, so SSE, ndjson and LLM streams stalled on every site while the
+  extension was installed. It is now inert unless a recording is active, returns the response at once,
+  reads the body clone in the background up to 50,000 **bytes** and skips event streams and binary
+  types. The XHR wrapper is gated the same way, and the recording and closed-shadow page flags are
+  now cleared when a recording stops.
+
 - **Generated classes the locator engine kept trusting** — folder-prefixed CSS Modules
   (`hm__style_dropdown__3tpXH`, `hm__grid_col-12__A_EnK`) were not recognised as generated, so css,
   xpath and composed locators were built on them and broke on the next deploy. They are now detected,

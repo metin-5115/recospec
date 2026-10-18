@@ -5,6 +5,7 @@ import { startProbe, stopProbe } from './element-probe'
 import { highlightLocator, validateTargets } from './locator-validator'
 import { executeReplayStep } from './replay-runner'
 import { mountBadge, unmountBadge } from './recording-badge'
+import { setPageFlag } from './page-flag'
 import { logger } from '@shared/logger'
 import { PIERCE_CLOSED_SHADOW_FLAG_KEY } from '@shared/constants'
 
@@ -15,15 +16,7 @@ onContentMessage((message) => {
     // Mirror the closed-shadow opt-in to a page-origin flag the MAIN-world
     // proxy reads at document_start on the NEXT navigation (it cannot reach
     // chrome.storage). Writing it now covers SPA-attached roots immediately.
-    try {
-      if (message.config.pierceClosedShadow) {
-        window.localStorage.setItem(PIERCE_CLOSED_SHADOW_FLAG_KEY, 'true')
-      } else {
-        window.localStorage.removeItem(PIERCE_CLOSED_SHADOW_FLAG_KEY)
-      }
-    } catch {
-      /* sandboxed localStorage — piercing simply stays off */
-    }
+    setPageFlag(PIERCE_CLOSED_SHADOW_FLAG_KEY, message.config.pierceClosedShadow === true)
     startCapture(message.sessionId)
     mountBadge()
   } else if (message.type === 'STOP_CAPTURE') {
