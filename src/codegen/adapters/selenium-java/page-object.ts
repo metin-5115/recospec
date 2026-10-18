@@ -313,6 +313,15 @@ function renderStepInMethod(step: IRStep, indent: string): string {
     }
     return `${indent}// assert: ${step.annotation ?? ''}`
   }
+  if (step.action === 'wait' && step.wait && step.element) {
+    const field = toJavaFieldName(step.element.name)
+    if (step.wait.reason === 'spinner' || step.wait.reason === 'element-hidden') {
+      return `${indent}wait.until(ExpectedConditions.invisibilityOf(${field}));`
+    }
+    if (step.wait.reason === 'element-visible') {
+      return `${indent}wait.until(ExpectedConditions.visibilityOf(${field}));`
+    }
+  }
   // network mocking is not supported in core Selenium
   return ''
 }

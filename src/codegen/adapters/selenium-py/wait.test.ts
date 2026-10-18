@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { renderScenario } from './scenario'
+import { renderPageObject } from './page-object'
+import { inferMethods } from '../../planner/method-inferer'
 import type { IRElement, IRPage, IRScenario, IRStep } from '../../ir/types'
 
 const spinnerEl: IRElement = {
@@ -78,5 +80,47 @@ describe('selenium-py wait rendering', () => {
       ],
     }
     expect(renderScenario(scenario)).toMatchSnapshot()
+  })
+})
+
+describe('selenium-py wait rendering — page object methods', () => {
+  const button: IRElement = {
+    name: 'saveButton',
+    locatorStrategy: 'testid',
+    locatorValue: 'save',
+    tagName: 'button',
+  }
+
+  function methodPage(wait: IRStep): IRPage {
+    const steps: IRStep[] = [{ id: 'c1', action: 'click', element: button }, wait]
+    return { ...pageWith(steps, [button, spinnerEl]), inferredMethods: inferMethods(steps) }
+  }
+
+  it('waits for a spinner to disappear after the click that starts it', () => {
+    const out = renderPageObject(
+      methodPage({
+        id: 'w1',
+        action: 'wait',
+        element: spinnerEl,
+        wait: { reason: 'spinner', timeoutMs: 7000 },
+      }),
+    )
+    const wait =
+      'WebDriverWait(self.driver, 7).until(EC.invisibility_of_element_located(self.LOADING_SPINNER))'
+    expect(out.indexOf(wait)).toBeGreaterThan(out.indexOf('EC.element_to_be_clickable'))
+  })
+
+  it('waits for an element to become visible', () => {
+    const out = renderPageObject(
+      methodPage({
+        id: 'w1',
+        action: 'wait',
+        element: spinnerEl,
+        wait: { reason: 'element-visible', timeoutMs: 7000 },
+      }),
+    )
+    expect(out).toContain(
+      'WebDriverWait(self.driver, 7).until(EC.visibility_of_element_located(self.LOADING_SPINNER))',
+    )
   })
 })

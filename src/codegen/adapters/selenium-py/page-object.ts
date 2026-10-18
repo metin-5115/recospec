@@ -168,6 +168,16 @@ function renderStepInMethod(step: IRStep, indent: string): string {
     }
     return `${indent}# assert: ${step.annotation ?? ''}`
   }
+  if (step.action === 'wait' && step.wait && step.element) {
+    const seconds = Math.max(1, Math.round(step.wait.timeoutMs / 1000))
+    const ref = `self.${toConstName(step.element.name)}`
+    if (step.wait.reason === 'spinner' || step.wait.reason === 'element-hidden') {
+      return `${indent}WebDriverWait(self.driver, ${seconds}).until(EC.invisibility_of_element_located(${ref}))`
+    }
+    if (step.wait.reason === 'element-visible') {
+      return `${indent}WebDriverWait(self.driver, ${seconds}).until(EC.visibility_of_element_located(${ref}))`
+    }
+  }
   // network mocking is not supported in Selenium core
   return ''
 }
