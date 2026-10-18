@@ -81,7 +81,7 @@ export async function runPrompt(opts: PromptCmdOptions): Promise<void> {
   console.log(`[recospec] done — ${outcome}`)
 }
 
-function loadJson(jsonPath: string): JsonExportPayload {
+export function loadJson(jsonPath: string): JsonExportPayload {
   const abs = resolve(process.cwd(), jsonPath)
   if (!existsSync(abs)) {
     throw new Error(`JSON export not found at ${abs}`)
@@ -99,8 +99,8 @@ function loadJson(jsonPath: string): JsonExportPayload {
   return payload
 }
 
-function resolveFramework(
-  opts: PromptCmdOptions,
+export function resolveFramework(
+  opts: Pick<PromptCmdOptions, 'framework' | 'projectDir'>,
   rcFramework: FrameworkId | undefined,
 ): FrameworkId | undefined {
   if (opts.framework) return opts.framework

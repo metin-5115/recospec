@@ -4,8 +4,9 @@ import { resolve } from 'node:path'
 import { runAdd } from './commands/add'
 import { runInit } from './commands/init'
 import { runPrompt } from './commands/prompt'
+import { runContext } from './commands/context'
 import type { PromptMode } from '@codegen/export/prompt-export'
-import type { FrameworkId } from '@shared/types/generated'
+import type { FrameworkId, LlmContextFormat, LlmContextTask } from '@shared/types/generated'
 
 /** Injected by `vite.config.cli.ts` from `cli/package.json`; absent under Vitest. */
 declare const __CLI_VERSION__: string | undefined
@@ -20,6 +21,18 @@ function validatePromptMode(value: string): PromptMode {
     process.exit(2)
   }
   return value as PromptMode
+}
+
+const CONTEXT_FORMATS: LlmContextFormat[] = ['compact', 'json']
+const CONTEXT_TASKS: LlmContextTask[] = ['codegen', 'heal', 'both']
+
+function validateChoice<T extends string>(flag: string, value: string, choices: readonly T[]): T {
+  if (!choices.includes(value as T)) {
+    // eslint-disable-next-line no-console
+    console.error(`[recospec] invalid --${flag} ${value}. Choose one of: ${choices.join(', ')}.`)
+    process.exit(2)
+  }
+  return value as T
 }
 
 const FRAMEWORKS: FrameworkId[] = ['playwright-ts', 'cypress', 'selenium-py', 'selenium-java']
@@ -168,6 +181,49 @@ program
         // commander turns `--no-redact` into `redact: false`; the default
         // (`redact === true`) is implicit when the flag is omitted.
         redact: options.redact !== false,
+        force: Boolean(options.force),
+        dryRun: Boolean(options.dryRun),
+        output: options.output as string | undefined,
+      })
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error(`[recospec] ${(err as Error).message}`)
+      process.exit(1)
+    }
+  })
+
+program
+  .command('context')
+  .description(
+    'Render a compact, low-token context for a local LLM from a Recospec JSON export.\n' +
+      '  Elements are listed once and steps refer to them by id. Default output:\n' +
+      '  .recospec/context/<slug>.llm.txt (or .llm.json). --dry-run prints a pipe-ready document.',
+  )
+  .argument('<json>', 'Path to a Recospec JSON export (.json)')
+  .argument('[projectDir]', 'Target project directory', '.')
+  .option('--format <format>', `Serialisation: ${CONTEXT_FORMATS.join(' | ')}`, 'compact')
+  .option('-t, --task <task>', `Purpose: ${CONTEXT_TASKS.join(' | ')}`, 'both')
+  .option('-n, --slug <slug>', 'Override the flow slug (defaults to slugified session name)')
+  .option('-f, --framework <id>', 'Target framework named in the task line')
+  .option('--no-redact', 'Embed sensitive values literally — leak guard is bypassed')
+  .option('--no-instructions', 'Emit only the recorded data (no rules or task line)')
+  .option('-o, --output <path>', 'Write to this exact path instead of the default location')
+  .option('--force', 'Overwrite an existing output file without prompting')
+  .option('--dry-run', 'Print to stdout; do not write to disk')
+  .action(async (json: string, projectDir: string, options: Record<string, unknown>) => {
+    const format = validateChoice('format', options.format as string, CONTEXT_FORMATS)
+    const task = validateChoice('task', options.task as string, CONTEXT_TASKS)
+    const framework = options.framework ? validateFramework(options.framework as string) : undefined
+    try {
+      await runContext({
+        json,
+        projectDir: resolve(process.cwd(), projectDir),
+        format,
+        task,
+        slug: options.slug as string | undefined,
+        framework,
+        redact: options.redact !== false,
+        noInstructions: options.instructions === false,
         force: Boolean(options.force),
         dryRun: Boolean(options.dryRun),
         output: options.output as string | undefined,
