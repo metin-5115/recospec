@@ -9,6 +9,7 @@ import './adapters/selenium-java'
 import { syntaxErrors } from './ts-syntax.test-util'
 import { typeErrors } from './ts-typecheck.test-util'
 import { validatePythonSource } from './adapters/selenium-py/python-validate'
+import { toSnakeCase } from './adapters/selenium-py/scenario'
 import { validateJavaSource } from './adapters/selenium-java/java-validate'
 import type { JsonExportPayload } from './export/json-export'
 import { resolveOutputPath } from './export/output-path'
@@ -272,6 +273,69 @@ describe.each(Object.entries(RECORDINGS))('real %s recording', (_label, recordin
       const result = validatePythonSource(f.content)
       expect(result.ok, `${f.filename}: ${result.error ?? ''}`).toBe(true)
     }
+  })
+
+  describe('Selenium Python scenario', () => {
+    const rendered = render(recording, 'selenium-py')
+    const files = () => rendered
+    const spec = () => rendered.find((f) => f.filename === 'test_scenario.py') as GeneratedFile
+    const pageFiles = () => rendered.filter((f) => f !== spec())
+
+    it('uses snake_case for every method and parameter', () => {
+      const names: string[] = []
+      for (const file of pageFiles()) {
+        for (const m of file.content.matchAll(/^ {4}def (\w+)\(self(?:, ([^)]*))?\)/gm)) {
+          names.push(m[1] as string)
+          for (const param of topLevelArgs(m[2] ?? '')) names.push(param.split(':')[0] as string)
+        }
+      }
+      expect(names.length).toBeGreaterThan(0)
+      for (const name of names) expect(name, name).toMatch(/^_{0,2}[a-z][a-z0-9_]*_{0,2}$/)
+    })
+
+    it('imports os in every file that reads the environment', () => {
+      for (const file of files()) {
+        if (file.content.includes('os.environ')) {
+          expect(file.content, file.filename).toMatch(/^import os$/m)
+        }
+      }
+      // The recordings mask secrets, so at least one file must read the environment.
+      expect(source(files())).toContain('os.environ')
+    })
+
+    it('uses the page objects instead of touching them for linters', () => {
+      expect(spec().content).not.toMatch(/^\s*_ = \w+\s+# noqa/m)
+      expectCallsMatchDeclarations(
+        files(),
+        spec(),
+        /^ {4}def (\w+)\(self(?:, ([^)]*))?\)/gm,
+        (className) => toSnakeCase(className),
+        classNameIn,
+      )
+      expect(spec().content).toMatch(/^ {4}\w+_page = \w+Page\(driver\)$/m)
+    })
+
+    it('imports page objects from modules that exist in the project layout', () => {
+      const layout = projectLayout(files(), 'selenium-py')
+      const imports = [...spec().content.matchAll(/^from (pages\.\w+) import/gm)].map((m) => m[1])
+      expect(imports.length).toBeGreaterThan(0)
+      for (const module of imports)
+        expect(layout).toHaveProperty([`${module?.replace('.', '/')}.py`])
+    })
+
+    it('opens the recorded start URL first', () => {
+      const body = spec().content.split(/^def test_\w+\(driver\):$/m)[1] as string
+      const first = body.split('\n').find((l) => /^ {4}[a-z_]/.test(l) && !l.includes('"""'))
+      expect(first?.trim()).toBe(`driver.get('${startUrlOf(recording)}')`)
+    })
+
+    it('points each page object at the absolute URL of its route', () => {
+      const origin = new URL(startUrlOf(recording)).origin
+      const gotos = pageFiles().map(
+        (f) => f.content.match(/def goto\(self\):\s*self\.driver\.get\('([^']*)'\)/)?.[1],
+      )
+      expect(gotos).toEqual(recordedRoutes(recording).map((route) => `${origin}${route}`))
+    })
   })
 
   it('Selenium Java locators carry the accessible name and are well-formed', () => {

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { renderScenario, toSnakeCase } from './scenario'
+import { inferMethods } from '../../planner/method-inferer'
 import type { IRPage, IRScenario, IRElement } from '../../ir/types'
 
 // Non-sensitive field name keeps these scenario tests focused on rendering;
@@ -30,6 +31,8 @@ const loginPage: IRPage = {
   ],
 }
 
+const pageWithMethods: IRPage = { ...loginPage, inferredMethods: inferMethods(loginPage.steps) }
+
 describe('selenium-py renderScenario', () => {
   it('matches snapshot', () => {
     const scenario: IRScenario = { name: 'Login flow', pages: [loginPage] }
@@ -54,8 +57,53 @@ describe('selenium-py renderScenario', () => {
   })
 
   it('imports page objects from snake_case modules', () => {
-    const scenario: IRScenario = { name: 'Login flow', pages: [loginPage] }
+    const scenario: IRScenario = { name: 'Login flow', pages: [pageWithMethods] }
     expect(renderScenario(scenario)).toContain('from pages.login_page import LoginPage')
+  })
+
+  it('creates the page object and calls its method with the recorded value', () => {
+    const scenario: IRScenario = { name: 'Login flow', pages: [pageWithMethods] }
+    const out = renderScenario(scenario)
+    expect(out).toContain('    login_page = LoginPage(driver)')
+    expect(out).toContain("    login_page.submit_form('foo@bar.com')")
+    expect(out).not.toContain('# noqa')
+    expect(out).not.toContain('WebDriverWait')
+  })
+
+  it('opens the start URL before the first call', () => {
+    const steps = loginPage.steps.slice(1)
+    const scenario: IRScenario = {
+      name: 'Login flow',
+      startUrl: 'http://localhost:4500/login',
+      pages: [{ ...loginPage, steps, inferredMethods: inferMethods(steps) }],
+    }
+    const out = renderScenario(scenario)
+    expect(out.indexOf("driver.get('http://localhost:4500/login')")).toBeGreaterThan(-1)
+    expect(out.indexOf('driver.get(')).toBeLessThan(out.indexOf('login_page.'))
+  })
+
+  it('imports os whenever a call reads a secret from the environment', () => {
+    const passwordEl: IRElement = {
+      name: 'passwordInput',
+      locatorStrategy: 'testid',
+      locatorValue: 'pw',
+      tagName: 'input',
+      inputType: 'password',
+    }
+    const steps = [
+      { id: 'p1', action: 'fill' as const, element: passwordEl, value: 'hunter2' },
+      { id: 'p2', action: 'click' as const, element: submitEl },
+    ]
+    const page: IRPage = {
+      ...loginPage,
+      elements: [passwordEl, submitEl],
+      steps,
+      inferredMethods: inferMethods(steps),
+    }
+    const out = renderScenario({ name: 'Secret flow', pages: [page] })
+    expect(out).toContain("os.environ.get('RECOSPEC_PASSWORD', 'change-me')")
+    expect(out).toMatch(/^import os$/m)
+    expect(out).not.toContain('hunter2')
   })
 })
 

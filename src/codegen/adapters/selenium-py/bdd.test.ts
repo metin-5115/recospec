@@ -115,6 +115,21 @@ describe('renderStepsFile (Selenium-py BDD)', () => {
     expect(content).not.toMatch(/\bawait\b/)
   })
 
+  it('calls multi-word methods by the snake_case name the page object defines', () => {
+    const renamed: IRScenario = {
+      name: 'User can log in',
+      pages: [
+        {
+          ...loginPage,
+          inferredMethods: loginPage.inferredMethods?.map((m) => ({ ...m, name: 'submitForm' })),
+        },
+      ],
+    }
+    const content = renderStepsFile(renamed)
+    expect(content).toContain('login_page.submit_form(arg1, arg2)')
+    expect(content).not.toContain('submitForm')
+  })
+
   it('navigate step calls .goto() on the page object', () => {
     const content = renderStepsFile(scenario)
     expect(content).toContain('login_page.goto()')

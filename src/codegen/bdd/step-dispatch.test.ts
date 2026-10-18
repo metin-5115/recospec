@@ -123,9 +123,9 @@ describe('step definitions dispatch to the right method', () => {
 
   it('selenium-py (valid Python)', () => {
     const out = pySteps(scenario)
-    expect(out).toContain('shop_page.verifyTotal()')
-    expect(out).toContain('shop_page.verifyCount()')
-    expect(out).toContain('shop_page.acceptAndSubmit(True)')
+    expect(out).toContain('shop_page.verify_total()')
+    expect(out).toContain('shop_page.verify_count()')
+    expect(out).toContain('shop_page.accept_and_submit(True)')
     expect(validatePythonSource(out).ok).toBe(true)
   })
 

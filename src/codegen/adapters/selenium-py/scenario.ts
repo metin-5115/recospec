@@ -2,7 +2,12 @@ import type { IRScenario, IRStep, IRElement, TestDataConfig } from '../../ir/typ
 import { renderLocatorTuple, pyStr } from './locator'
 import { renderPyInteraction, pyInteractionImports } from './interaction'
 import { renderPyAssertion } from './assertion'
-import { newContextState, wrapStepContext, renderTestContextHelpers } from './context'
+import {
+  newContextState,
+  wrapStepContext,
+  renderTestContextHelpers,
+  type PyContextState,
+} from './context'
 import { renderNetworkNote } from './network-note'
 import {
   renderScreenshotHelper,
@@ -10,6 +15,14 @@ import {
   screenshotThirdPartyImports,
 } from './screenshot'
 import { resolveTestData } from '../../planner/test-data-resolver'
+import {
+  buildScenarioFlow,
+  initialUrl,
+  pagesUsed,
+  type FlowArg,
+  type FlowItem,
+} from '../../shared/scenario-flow'
+import { toPyIdentifier, toSnakeCase } from './naming'
 
 let TEST_DATA: TestDataConfig | undefined
 export function setSeleniumPyTestData(value: TestDataConfig | undefined): void {
@@ -22,14 +35,7 @@ function renderFillValueExpr(el: IRElement | undefined, recordedValue: string): 
   return `os.environ.get(${pyStr(r.envVarName)}, ${pyStr(r.defaultValue)})`
 }
 
-/** Snake-case for module file names: LoginPage → login_page. */
-export function toSnakeCase(name: string): string {
-  return name
-    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
-    .replace(/[^A-Za-z0-9]+/g, '_')
-    .toLowerCase()
-    .replace(/^_+|_+$/g, '')
-}
+export { toSnakeCase }
 
 function renderWait(step: IRStep, indent: string): string {
   if (!step.wait) return ''
@@ -116,62 +122,99 @@ function docstringSafe(value: string): string {
   return value.replace(/"""/g, '\\"\\"\\"')
 }
 
+function renderArg(arg: FlowArg): string {
+  if (arg.fromFill && resolveTestData(arg.element, arg.value, TEST_DATA).useEnvVar) {
+    return renderFillValueExpr(arg.element, arg.value)
+  }
+  switch (arg.type) {
+    case 'boolean':
+      return arg.value === 'true' ? 'True' : 'False'
+    case 'number':
+      return String(Number.isFinite(Number(arg.value)) ? Number(arg.value) : 0)
+    default:
+      // A date arrives as the label the page rendered (see the template accessor in the page object).
+      return pyStr(arg.value)
+  }
+}
+
+function renderItem(item: FlowItem, indent: string, contextState: PyContextState): string[] {
+  switch (item.kind) {
+    case 'visit':
+      return [`${indent}driver.get(${pyStr(item.url)})`]
+    case 'call': {
+      const args = item.args.map(renderArg).join(', ')
+      const receiver = toSnakeCase(item.page.className)
+      return [`${indent}${receiver}.${toPyIdentifier(item.method.name)}(${args})`]
+    }
+    case 'inline':
+      return item.page.steps
+        .map((step) =>
+          wrapStepContext(step, renderStepInTest(step, indent), indent, contextState, 'test'),
+        )
+        .filter(Boolean)
+  }
+}
+
 export function renderScenario(scenario: IRScenario): string {
-  const pageImports = scenario.pages
+  const flow = buildScenarioFlow(scenario)
+  const used = pagesUsed(flow)
+  const inlineSteps = flow.flatMap((item) => (item.kind === 'inline' ? item.page.steps : []))
+  const hasInline = flow.some((item) => item.kind === 'inline')
+
+  const pageImports = used
     .map((p) => `from pages.${toSnakeCase(p.className)} import ${p.className}`)
     .join('\n')
 
+  const indent = '    '
+  const start = initialUrl(scenario, flow)
+  const opening = start ? [`${indent}driver.get(${pyStr(start)})`] : []
+  const pageObjects = used.map(
+    (p) => `${indent}${toSnakeCase(p.className)} = ${p.className}(driver)`,
+  )
   const contextState = newContextState()
-  const body = scenario.pages
-    .flatMap((page) =>
-      page.steps
-        .map((step) =>
-          wrapStepContext(step, renderStepInTest(step, '    '), '    ', contextState, 'test'),
-        )
-        .filter(Boolean),
-    )
-    .join('\n')
-  const allSteps = scenario.pages.flatMap((p) => p.steps)
-  const helpers = [renderTestContextHelpers(allSteps), renderScreenshotHelper(allSteps)]
+  const body = [
+    ...opening,
+    ...pageObjects,
+    ...flow.flatMap((item) => renderItem(item, indent, contextState)),
+  ].join('\n')
+
+  const helpers = [renderTestContextHelpers(inlineSteps), renderScreenshotHelper(inlineSteps)]
     .filter(Boolean)
     .join('\n\n\n')
   const helpersBlock = helpers ? `${helpers}\n\n\n` : ''
 
   const networkNote = renderNetworkNote(
     scenario.pages.flatMap((p) => p.steps),
-    '    ',
+    indent,
   )
   const safeBody = (networkNote + body).trimEnd() || '    pass'
   const slug = testNameSlug(scenario.name)
   const docstring = `    """${docstringSafe(scenario.name || 'Recorded scenario')}."""`
 
-  // Touch the imports so unused-import linters stay quiet — generated tests
-  // typically refactor toward Page Object calls; this keeps the imports live
-  // until that refactor lands.
-  const pomReferences = scenario.pages.map((p) => `    _ = ${p.className}  # noqa: F841`).join('\n')
-  const pomBlock = pomReferences ? `${pomReferences}\n` : ''
-
-  const interactionImports = pyInteractionImports(scenario.pages.flatMap((p) => p.steps))
-  const needsOsImport = (TEST_DATA?.params ?? []).some((p) => p.useEnvVar)
-  const needsReImport = scenario.pages.some((p) =>
-    p.steps.some((s) => s.assertionDetail?.type === 'matches'),
-  )
+  const needsOsImport = /\bos\.environ\b/.test(body)
+  const needsReImport = inlineSteps.some((s) => s.assertionDetail?.type === 'matches')
   const stdlibImports = [
     needsReImport ? 'import re' : '',
     needsOsImport ? 'import os' : '',
-    ...screenshotStdlibImports(scenario.pages.flatMap((p) => p.steps)),
+    ...screenshotStdlibImports(inlineSteps),
   ].filter(Boolean)
-  const osImportLine = stdlibImports.length ? stdlibImports.join('\n') + '\n' : ''
-
-  return `${osImportLine}from selenium.webdriver.common.by import By
+  const stdlibBlock = stdlibImports.length ? stdlibImports.join('\n') + '\n' : ''
+  // Inline steps drive the browser themselves; a spec that only calls page objects needs none of these.
+  const seleniumImports = hasInline
+    ? `from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-${interactionImports}${screenshotThirdPartyImports(scenario.pages.flatMap((p) => p.steps))}${pageImports}
+${pyInteractionImports(inlineSteps)}${screenshotThirdPartyImports(inlineSteps)}`
+    : ''
+
+  const imports = `${stdlibBlock}${seleniumImports}${pageImports}`.trimEnd()
+
+  return `${imports}
 
 
 ${helpersBlock}def test_${slug}(driver):
 ${docstring}
-${pomBlock}${safeBody}
+${safeBody}
 `
 }

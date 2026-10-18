@@ -3,7 +3,7 @@ import type { IRScenario, IRPage } from '../../ir/types'
 import { mapScenarioToGherkin, literalArgsFor, type GherkinStep } from '../../bdd/gherkin-mapper'
 
 export { renderFeatureFile } from '../../bdd/feature-file'
-import { toSnakeCase } from './scenario'
+import { toPyIdentifier, toSnakeCase } from './naming'
 
 // ---------------------------------------------------------------------------
 // Cucumber pattern → pytest-bdd `parse` / `cfparse` pattern
@@ -74,7 +74,7 @@ function renderStepBody(step: GherkinStep, argNames: string[]): string {
     const args = [...argNames, ...literalArgsFor(step, argNames.length, 'python')].join(', ')
     return [
       `    ${pomName} = ${page.className}(driver)`,
-      `    ${pomName}.${method.name}(${args})`,
+      `    ${pomName}.${toPyIdentifier(method.name)}(${args})`,
     ].join('\n')
   }
 

@@ -5,12 +5,10 @@ exports[`selenium-py wait rendering > matches snapshot for combined wait reasons
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from pages.home_page import HomePage
 
 
 def test_wait_flow(driver):
     """wait flow."""
-    _ = HomePage  # noqa: F841
     driver.get('/')
     # networkidle has no direct Selenium equivalent — wait until DOM is settled.
     WebDriverWait(driver, 8).until(

@@ -16,6 +16,8 @@ import {
   screenshotThirdPartyImports,
 } from './screenshot'
 import { resolveTestData } from '../../planner/test-data-resolver'
+import { absoluteUrl } from '../../shared/scenario-flow'
+import { toPyIdentifier } from './naming'
 
 let TEST_DATA: TestDataConfig | undefined
 export function setSeleniumPyPageObjectTestData(value: TestDataConfig | undefined): void {
@@ -43,9 +45,10 @@ export function toConstName(name: string): string {
 
 const PARAM_SUFFIX_REGEX = /Input$|Button$|Btn$|Link$|Select$|Field$|Box$|Toggle$|Checkbox$|Radio$/
 
+/** Name of the method parameter an element feeds, in the same snake_case the signature uses. */
 function paramSlugFromElement(name: string): string {
   const stripped = name.replace(PARAM_SUFFIX_REGEX, '')
-  return stripped.charAt(0).toLowerCase() + stripped.slice(1)
+  return toPyIdentifier(stripped.charAt(0).toLowerCase() + stripped.slice(1))
 }
 
 function pyType(t: IRParamType | undefined): string {
@@ -178,7 +181,12 @@ function visibleElementExpr(el: IRElement): string {
 // Inferred methods
 // ---------------------------------------------------------------------------
 
-function renderInferredMethod(method: InferredMethod): string {
+function renderInferredMethod(inferred: InferredMethod): string {
+  const method: InferredMethod = {
+    ...inferred,
+    name: toPyIdentifier(inferred.name),
+    params: inferred.params.map(toPyIdentifier),
+  }
   const types = method.paramTypes ?? method.params.map(() => 'string' as IRParamType)
   const params = method.params.map((p, i) => `${p}: ${pyType(types[i])}`).join(', ')
   const signature = params ? `, ${params}` : ''
@@ -245,7 +253,8 @@ export function renderPageObject(page: IRPage): string {
   const constants = page.elements.map(renderLocatorConstant).join('\n\n')
 
   const gotoStep = page.steps.find((s) => s.action === 'navigate')
-  const gotoUrl = gotoStep?.url ?? '/'
+  // Selenium has no base URL, so the route is completed with the origin the session ran on.
+  const gotoUrl = absoluteUrl(page.baseUrl, gotoStep?.url ?? page.normalizedUrl)
 
   const templateAccessors = page.elements
     .filter(
@@ -284,7 +293,7 @@ export function renderPageObject(page: IRPage): string {
     ...(page.inferredMethods ?? []).flatMap((m) => m.steps),
   ])
 
-  const needsOsImport = (TEST_DATA?.params ?? []).some((p) => p.useEnvVar)
+  const needsOsImport = /\bos\.environ\b/.test(`${methodsBlock}${accessorsBlock}`)
   const allSteps = [...page.steps, ...(page.inferredMethods ?? []).flatMap((m) => m.steps)]
   const needsReImport = allSteps.some((s) => s.assertionDetail?.type === 'matches')
   const stdlibImports = [
