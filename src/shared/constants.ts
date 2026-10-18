@@ -111,6 +111,9 @@ export const ENV_VAR_PREFIX = 'RECOSPEC_' as const
 /** How long a "Copied!" confirmation stays visible in the side panel. */
 export const COPY_FEEDBACK_MS = 2_000 as const
 
+/** Words kept when an element name is derived from a label, so a sentence stays a usable identifier. */
+export const ELEMENT_NAME_MAX_WORDS = 5 as const
+
 /** Max characters of an element's text content echoed into the exported prompt. */
 export const PROMPT_ELEMENT_TEXT_PREVIEW_MAX = 80 as const
 

@@ -247,6 +247,67 @@ describe('nameElement — data values in the visible name', () => {
       locator('role-name', 'button[name="2026 6.300 ₺"]'),
       new Set(),
     )
-    expect(name).toBe('20266300Button')
+    expect(name).toBe('button20266300Button')
+  })
+})
+
+describe('nameElement — valid, bounded identifiers', () => {
+  it('never starts a name with a digit', () => {
+    const name = nameElement(
+      snapshot('div', { textContent: '15 kg' }),
+      locator('id', '#ef_checked_baggage'),
+      new Set(),
+    )
+    expect(name).toBe('div15Kg')
+    expect(name).toMatch(/^[A-Za-z_]/)
+  })
+
+  it('prefixes a digit-led accessible name with the tag too', () => {
+    const name = nameElement(
+      snapshot('button'),
+      locator('role-name', 'button[name="3D view"]'),
+      new Set(),
+    )
+    expect(name).toMatch(/^[A-Za-z_]/)
+    expect(name.toLowerCase()).toContain('3dview')
+  })
+
+  it('treats a decimal price with a currency code as data', () => {
+    const name = nameElement(
+      snapshot('button'),
+      locator('role-name', 'button[name="EcoFly - 6569.61 TRY Ücret paketini seç"]'),
+      new Set(),
+    )
+    expect(name).toBe('ecoFlyUcretPaketiniSecButton')
+  })
+
+  it('keeps a currency code that is not next to a number', () => {
+    const name = nameElement(
+      snapshot('button'),
+      locator('role-name', 'button[name="Pay in USD"]'),
+      new Set(),
+    )
+    expect(name).toBe('payInUsdButton')
+  })
+
+  it('limits a sentence-long accessible name to five words', () => {
+    const name = nameElement(
+      snapshot('div'),
+      locator(
+        'role-name',
+        'button[name="Economy kabini için en uygun ücret: 6569.61 TRY. Ücret paketi ayrıntılarını görüntüleyip seçin."]',
+      ),
+      new Set(),
+    )
+    expect(name).toBe('economyKabiniIcinEnUygunButton')
+  })
+
+  it('does not shorten testid names', () => {
+    const name = nameElement(
+      snapshot('div'),
+      locator('testid', 'one-two-three-four-five-six-seven'),
+      new Set(),
+    )
+    expect(name).toBe('oneTwoThreeFourFiveSixSeven')
   })
 })

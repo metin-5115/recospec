@@ -1,5 +1,6 @@
 import type { ElementSnapshot } from '@shared/types/action'
 import type { Locator } from '@shared/types/locator'
+import { ELEMENT_NAME_MAX_WORDS } from '@shared/constants'
 
 const TAG_SUFFIX: Record<string, string> = {
   input: 'Input',
@@ -76,28 +77,43 @@ function toAscii(raw: string): string {
     .replace(/[̀-ͯ]/g, '')
 }
 
-const CURRENCY_SYMBOLS = /[₺$€£¥]/g
+const CURRENCY_SYMBOLS = /[₺$€£¥]/
+const CURRENCY_CODES = /\b(TRY|TL|USD|EUR|GBP|JPY|RUB|CHF)\b/g
 const PRICE_PATTERN = /\d[.,]\d{3}\b/
 const YEAR_PATTERN = /\b(19|20)\d{2}\b/
 
 /**
- * A calendar cell or product tile reads like "Nov 25 Wednesday, 2026 6.300 ₺": the date and price
- * are data, so they must not be frozen into an identifier. Plain digits ("Step 2") are kept.
+ * A calendar cell or product tile reads like "Nov 25 Wednesday, 2026 6.300 ₺" or "Plan - 65.61
+ * TRY": the date and price are data, so they must not be frozen into an identifier. A currency
+ * code counts only next to a number ("Pay in USD" is a plain label), and plain digits ("Step 2")
+ * are kept.
  */
 function stripDataValues(raw: string): string {
-  const isDataLike = CURRENCY_SYMBOLS.test(raw) || PRICE_PATTERN.test(raw) || YEAR_PATTERN.test(raw)
-  CURRENCY_SYMBOLS.lastIndex = 0
+  const hasDigit = /\d/.test(raw)
+  const isDataLike =
+    CURRENCY_SYMBOLS.test(raw) ||
+    (hasDigit && new RegExp(CURRENCY_CODES.source).test(raw)) ||
+    PRICE_PATTERN.test(raw) ||
+    YEAR_PATTERN.test(raw)
   if (!isDataLike) return raw
-  const stripped = raw.replace(CURRENCY_SYMBOLS, ' ').replace(/\S*\d\S*/g, ' ')
+  const stripped = raw
+    .replace(new RegExp(CURRENCY_SYMBOLS.source, 'g'), ' ')
+    .replace(CURRENCY_CODES, ' ')
+    .replace(/\S*\d\S*/g, ' ')
   return /[^\W\d_]/.test(stripped) ? stripped : raw
 }
 
-function toCamelCase(raw: string): string {
+/**
+ * @param maxWords keep only the first N words; a sentence-long accessible name would otherwise
+ *   become an identifier of 80+ characters. Omit it to keep every word (testids, for instance).
+ */
+function toCamelCase(raw: string, maxWords?: number): string {
   return toAscii(raw)
     .replace(/[^a-zA-Z0-9\s_-]/g, ' ')
     .trim()
     .split(/[\s_-]+/)
     .filter(Boolean)
+    .slice(0, maxWords)
     .map((word, i) => {
       // An all-caps word is an acronym ("CVV", "ZIP"), not camel-case humps.
       const w = /^[A-Z0-9]{2,}$/.test(word) ? word.toLowerCase() : word
@@ -116,6 +132,13 @@ function testIdValue(selector: string): string {
 
 function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
+/** An identifier cannot start with a digit ("15 kg" → `15Kg`); lead with the element's tag. */
+function startWithLetter(name: string, tag: string): string {
+  if (!/^[0-9]/.test(name)) return name
+  const prefix = tag.replace(/[^a-z0-9]/g, '') || 'el'
+  return `${/^[0-9]/.test(prefix) ? 'el' : prefix}${capitalize(name)}`
 }
 
 function uniquify(base: string, usedNames: Set<string>): string {
@@ -148,27 +171,32 @@ export function nameElement(
   } else if (locator.strategy === 'testid' && typeof locator.selector === 'string') {
     baseName = toCamelCase(testIdValue(locator.selector))
   } else if (locator.strategy === 'aria-label' && attrs['aria-label']) {
-    baseName = toCamelCase(stripDataValues(attrs['aria-label'])) + suffix
+    baseName = toCamelCase(stripDataValues(attrs['aria-label']), ELEMENT_NAME_MAX_WORDS) + suffix
   } else if (accessibleNameOf([locator, ...nameHints])) {
     const { name, role } = accessibleNameOf([locator, ...nameHints])!
-    const camel = toCamelCase(stripDataValues(stripParenthetical(name)))
+    const camel = toCamelCase(stripDataValues(stripParenthetical(name)), ELEMENT_NAME_MAX_WORDS)
     const roleSuffix = (role && ROLE_SUFFIX[role]) ?? suffix
     const withSuffix = camel.toLowerCase().endsWith(roleSuffix.toLowerCase())
       ? camel
       : camel + roleSuffix
     const anchor = locator.composed?.anchor.filterText
     baseName = anchor
-      ? toCamelCase(stripParenthetical(anchor)) + capitalize(withSuffix)
+      ? toCamelCase(stripParenthetical(anchor), ELEMENT_NAME_MAX_WORDS) + capitalize(withSuffix)
       : withSuffix
   } else if (snapshot.textContent?.trim() && !NAMELESS_TEXT_TAGS.has(tag)) {
-    baseName = toCamelCase(stripDataValues(snapshot.textContent.trim().slice(0, 40))) + suffix
+    baseName =
+      toCamelCase(
+        stripDataValues(snapshot.textContent.trim().slice(0, 40)),
+        ELEMENT_NAME_MAX_WORDS,
+      ) + suffix
   } else if (attrs['placeholder']) {
-    baseName = toCamelCase(attrs['placeholder']) + suffix
+    baseName = toCamelCase(attrs['placeholder'], ELEMENT_NAME_MAX_WORDS) + suffix
   } else {
     baseName = tag + suffix || 'element'
   }
 
   if (!baseName) baseName = 'element'
+  baseName = startWithLetter(baseName, tag)
 
   return uniquify(baseName, usedNames)
 }
