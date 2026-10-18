@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { renderScenario } from './scenario'
+import { renderPageObject } from './page-object'
+import { inferMethods } from '../../planner/method-inferer'
 import type { IRElement, IRPage, IRScenario, IRStep } from '../../ir/types'
 
 const spinnerEl: IRElement = {
@@ -77,5 +79,52 @@ describe('cypress wait rendering', () => {
       ],
     }
     expect(renderScenario(scenario)).toMatchSnapshot()
+  })
+})
+
+describe('cypress wait rendering — page object methods', () => {
+  const button: IRElement = {
+    name: 'saveButton',
+    locatorStrategy: 'testid',
+    locatorValue: 'save',
+    tagName: 'button',
+  }
+
+  function methodPage(wait: IRStep): IRPage {
+    const steps: IRStep[] = [{ id: 'c1', action: 'click', element: button }, wait]
+    return { ...pageWith(steps, [button, spinnerEl]), inferredMethods: inferMethods(steps) }
+  }
+
+  it('waits for a spinner to disappear after the click that starts it', () => {
+    const out = renderPageObject(
+      methodPage({
+        id: 'w1',
+        action: 'wait',
+        element: spinnerEl,
+        wait: { reason: 'spinner', timeoutMs: 6000 },
+      }),
+    )
+    expect(out.indexOf("this.loadingSpinner().should('not.exist');")).toBeGreaterThan(
+      out.indexOf('this.saveButton().click();'),
+    )
+  })
+
+  it('waits for an element to become visible', () => {
+    const out = renderPageObject(
+      methodPage({
+        id: 'w1',
+        action: 'wait',
+        element: spinnerEl,
+        wait: { reason: 'element-visible', timeoutMs: 6000 },
+      }),
+    )
+    expect(out).toContain("this.loadingSpinner().should('be.visible');")
+  })
+
+  it('has no idle-network wait to render (Cypress retries assertions on its own)', () => {
+    const out = renderPageObject(
+      methodPage({ id: 'w1', action: 'wait', wait: { reason: 'networkidle', timeoutMs: 6000 } }),
+    )
+    expect(out).not.toContain('cy.wait')
   })
 })

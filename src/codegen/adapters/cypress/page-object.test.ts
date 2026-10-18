@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { renderPageObject } from './page-object'
-import type { IRPage, IRElement, InferredMethod } from '../../ir/types'
+import { inferMethods } from '../../planner/method-inferer'
+import type { IRPage, IRElement, InferredMethod, IRStep } from '../../ir/types'
 
 const emailEl: IRElement = {
   name: 'emailInput',
@@ -217,5 +218,51 @@ describe('assertion codegen — dynamic value modes', () => {
     expect(renderPageObject(dynPage)).toContain(
       `.invoke('text').should('match', new RegExp(${JSON.stringify(pattern)}));`,
     )
+  })
+})
+
+describe('cypress renderPageObject — parameters and navigation', () => {
+  const nameField: IRElement = {
+    name: 'nameField',
+    locatorStrategy: 'testid',
+    locatorValue: 'name',
+    tagName: 'input',
+  }
+  const noteBox: IRElement = {
+    name: 'noteBox',
+    locatorStrategy: 'testid',
+    locatorValue: 'note',
+    tagName: 'input',
+  }
+  const saveEl: IRElement = {
+    name: 'saveButton',
+    locatorStrategy: 'testid',
+    locatorValue: 'save',
+    tagName: 'button',
+  }
+
+  it('feeds the parameter into a fill whose element name ends in Field or Box', () => {
+    const steps: IRStep[] = [
+      { id: 'f1', action: 'fill', element: nameField, value: 'Ada' },
+      { id: 'f2', action: 'fill', element: noteBox, value: 'hello' },
+      { id: 'c1', action: 'click', element: saveEl },
+    ]
+    const page: IRPage = {
+      name: 'Profile',
+      className: 'ProfilePage',
+      normalizedUrl: '/profile',
+      elements: [nameField, noteBox, saveEl],
+      steps,
+      inferredMethods: inferMethods(steps),
+    }
+    const out = renderPageObject(page)
+    expect(out).toContain('submitForm(name, note)')
+    expect(out).toContain('this.nameField().clear().type(name);')
+    expect(out).toContain('this.noteBox().clear().type(note);')
+  })
+
+  it('visits the recorded route when the page has no navigate step', () => {
+    const page: IRPage = { ...loginPage, steps: loginPage.steps.slice(1) }
+    expect(renderPageObject(page)).toContain('cy.visit("/login");')
   })
 })

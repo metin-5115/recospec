@@ -162,6 +162,31 @@ function expectCallsMatchDeclarations(
   expect(called, 'the spec calls page-object methods').toBeGreaterThan(0)
 }
 
+/** A parameter nothing reads means the recorded value never reaches the page. */
+function expectParametersUsed(
+  files: GeneratedFile[],
+  spec: GeneratedFile,
+  signature: RegExp,
+  paramName: (declaration: string) => string = (d) => d.split(':')[0]?.trim() ?? d,
+): void {
+  for (const file of files) {
+    if (file === spec) continue
+    const matches = [...file.content.matchAll(signature)]
+    matches.forEach((m, i) => {
+      const body = file.content.slice(
+        m.index + m[0].length,
+        matches[i + 1]?.index ?? file.content.length,
+      )
+      for (const declaration of topLevelArgs(m[2] ?? '')) {
+        const name = paramName(declaration)
+        expect(body, `${file.filename} ${m[1]}(${name}) never uses ${name}`).toMatch(
+          new RegExp(`\\b${name}\\b`),
+        )
+      }
+    })
+  }
+}
+
 function classNameIn(file: GeneratedFile): string | undefined {
   return file.content.match(/class (\w+)/)?.[1]
 }
@@ -260,6 +285,42 @@ describe.each(Object.entries(RECORDINGS))('real %s recording', (_label, recordin
       expect(code).not.toContain(`cy.get(${JSON.stringify(name)})`)
     }
     for (const f of files) expect(syntaxErrors(f.content, f.filename)).toEqual([])
+  })
+
+  describe('Cypress scenario', () => {
+    const rendered = render(recording, 'cypress')
+    const spec = rendered.find((f) => f.filename === 'scenario.cy.js') as GeneratedFile
+    const signature = /^ {2}(\w+)\(([^)]*)\) \{/gm
+
+    it('imports page objects that sit where the project layout puts them', () => {
+      const layout = projectLayout(rendered, 'cypress')
+      const imports = [...spec.content.matchAll(/from '(\.\.\/pages\/\w+)'/g)].map((m) => m[1])
+      expect(imports.length).toBeGreaterThan(0)
+      for (const path of imports) expect(layout).toHaveProperty([`cypress/${path?.slice(3)}.js`])
+    })
+
+    it('drives the flow through page-object methods instead of inline commands', () => {
+      expect(spec.content).not.toMatch(/\bcy\.(get|find\w*|contains)\(/)
+      expectCallsMatchDeclarations(rendered, spec, signature, lowerFirst, classNameIn)
+      expect(spec.content).toMatch(/const \w+Page = new \w+Page\(\);/)
+    })
+
+    it('opens the recorded start URL first', () => {
+      const body = spec.content.split("it('full flow'")[1] as string
+      const first = body.split('\n').find((l) => l.includes('cy.'))
+      expect(first?.trim()).toBe(`cy.visit(${JSON.stringify(startUrlOf(recording))});`)
+    })
+
+    it('points each page object at the route it was recorded on', () => {
+      const routes = rendered
+        .filter((f) => f !== spec)
+        .map((f) => f.content.match(/visit\(\) \{\s*cy\.visit\(("[^"]*")\)/)?.[1])
+      expect(routes.map((r) => r && JSON.parse(r))).toEqual(recordedRoutes(recording))
+    })
+
+    it('uses every parameter a method declares', () => {
+      expectParametersUsed(rendered, spec, signature)
+    })
   })
 
   it('Selenium Python locators carry the accessible name and parse', () => {

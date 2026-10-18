@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { renderScenario } from './scenario'
+import { inferMethods } from '../../planner/method-inferer'
 import type { IRPage, IRScenario, IRElement } from '../../ir/types'
 
 // Note: deliberately uses a non-sensitive field name (`usernameInput`) so
@@ -31,6 +32,8 @@ const loginPage: IRPage = {
   ],
 }
 
+const pageWithMethods: IRPage = { ...loginPage, inferredMethods: inferMethods(loginPage.steps) }
+
 describe('cypress renderScenario', () => {
   it('matches snapshot', () => {
     const scenario: IRScenario = { name: 'Login flow', pages: [loginPage] }
@@ -56,10 +59,53 @@ describe('cypress renderScenario', () => {
     expect(out).toContain(`.clear().type("foo@bar.com")`)
   })
 
-  it('imports page objects from ../pages/', () => {
-    const scenario: IRScenario = { name: 'Login flow', pages: [loginPage] }
+  it('imports page objects from ../pages/ and calls their methods', () => {
+    const scenario: IRScenario = { name: 'Login flow', pages: [pageWithMethods] }
     const out = renderScenario(scenario)
     expect(out).toContain(`import { LoginPage } from '../pages/LoginPage';`)
+    expect(out).toContain('const loginPage = new LoginPage();')
+    expect(out).toContain('loginPage.submitForm("foo@bar.com");')
+    expect(out).not.toContain('cy.get(')
+  })
+
+  it('opens the start URL before the first call', () => {
+    const steps = loginPage.steps.slice(1)
+    const scenario: IRScenario = {
+      name: 'Login flow',
+      startUrl: 'http://localhost:4500/login',
+      pages: [{ ...loginPage, steps, inferredMethods: inferMethods(steps) }],
+    }
+    const out = renderScenario(scenario)
+    expect(out.indexOf('cy.visit("http://localhost:4500/login");')).toBeGreaterThan(-1)
+    expect(out.indexOf('cy.visit(')).toBeLessThan(out.indexOf('loginPage.'))
+  })
+
+  it('does not import a page whose steps are written inline', () => {
+    const scenario: IRScenario = { name: 'Login flow', pages: [loginPage] }
+    expect(renderScenario(scenario)).not.toContain('import { LoginPage }')
+  })
+
+  it('passes a secret as a Cypress.env lookup, never the recorded value', () => {
+    const passwordEl: IRElement = {
+      name: 'passwordInput',
+      locatorStrategy: 'testid',
+      locatorValue: 'pw',
+      tagName: 'input',
+      inputType: 'password',
+    }
+    const steps = [
+      { id: 'p1', action: 'fill' as const, element: passwordEl, value: 'hunter2' },
+      { id: 'p2', action: 'click' as const, element: submitEl },
+    ]
+    const page: IRPage = {
+      ...loginPage,
+      elements: [passwordEl, submitEl],
+      steps,
+      inferredMethods: inferMethods(steps),
+    }
+    const out = renderScenario({ name: 'Secret flow', pages: [page] })
+    expect(out).toContain('Cypress.env(')
+    expect(out).not.toContain('hunter2')
   })
 
   it('falls back to comment when assert step has no detail', () => {

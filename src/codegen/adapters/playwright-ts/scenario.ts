@@ -6,6 +6,7 @@ import {
   type FlowArg,
   type FlowItem,
 } from '../../shared/scenario-flow'
+import { dateCtorFromIso } from '../../shared/date-literal'
 import { resolveTestData } from '../../planner/test-data-resolver'
 import { renderStepInSpec } from './step'
 import { getTestData, renderFillValueExpr } from './state'
@@ -14,12 +15,6 @@ const INDENT = '    '
 
 function toVarName(className: string): string {
   return className.charAt(0).toLowerCase() + className.slice(1)
-}
-
-/** Timezone-safe `new Date(y, m, d)` source for an ISO calendar date. */
-function dateCtorFromIso(iso: string): string {
-  const [y, m, d] = iso.split('-').map(Number)
-  return `new Date(${y}, ${(m ?? 1) - 1}, ${d ?? 1})`
 }
 
 function renderArg(arg: FlowArg): string {

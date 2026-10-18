@@ -57,7 +57,7 @@ describe('cypress adapter — network mocks', () => {
 
   it('renders a method + pathname matcher with a status and JSON body', () => {
     cypressAdapter.applyOptions?.({ includeMocks: true })
-    const out = renderScenario({ name: 'Login', pages: [page(steps)] })
+    const out = renderPageObject(page(steps))
     expect(out).toContain(`method: 'POST'`)
     expect(out).toContain(`pathname: '/api/login'`)
     expect(out).toContain(`query: { remember: '1' }`)
@@ -66,11 +66,19 @@ describe('cypress adapter — network mocks', () => {
     expect(out).toContain('body: {"token":"abc","user":{"id":1}}')
   })
 
-  it('registers the mock BEFORE the steps that trigger the request', () => {
+  it('registers the mock BEFORE the inline steps that trigger the request', () => {
     cypressAdapter.applyOptions?.({ includeMocks: true })
-    const out = renderScenario({ name: 'Login', pages: [page(steps)] })
+    const inline: IRPage = { ...page(steps), inferredMethods: undefined }
+    const out = renderScenario({ name: 'Login', pages: [inline] })
     expect(out.indexOf('cy.intercept')).toBeGreaterThan(-1)
     expect(out.indexOf('cy.intercept')).toBeLessThan(out.indexOf('.click()'))
+  })
+
+  it('leaves the mock to the page-object method the spec calls', () => {
+    cypressAdapter.applyOptions?.({ includeMocks: true })
+    const out = renderScenario({ name: 'Login', pages: [page(steps)] })
+    expect(out).toMatch(/loginPage\.submitForm\(.+\);/)
+    expect(out).not.toContain('cy.intercept')
   })
 
   it('registers the mock first inside the page-object method as well', () => {
@@ -93,7 +101,7 @@ describe('cypress adapter — network mocks', () => {
         responseBody: 'ok "fine"',
       },
     }
-    const out = renderScenario({ name: 'S', pages: [page([text])] })
+    const out = renderPageObject(page([text]))
     expect(out).toContain('body: "ok \\"fine\\""')
   })
 
@@ -110,7 +118,7 @@ describe('cypress adapter — network mocks', () => {
         responseBody: '{"items":[1,2,',
       },
     }
-    const out = renderScenario({ name: 'S', pages: [page([truncated])] })
+    const out = renderPageObject(page([truncated]))
     expect(out).toContain('body: "{\\"items\\":[1,2,"')
   })
 
@@ -120,7 +128,7 @@ describe('cypress adapter — network mocks', () => {
       { id: 'a', action: 'network', network: loginNetwork },
       { id: 'b', action: 'network', network: loginNetwork },
     ]
-    const out = renderScenario({ name: 'S', pages: [page(dup)] })
+    const out = renderPageObject(page(dup))
     expect(out.match(/cy\.intercept/g)).toHaveLength(1)
   })
 
@@ -131,7 +139,7 @@ describe('cypress adapter — network mocks', () => {
       action: 'network',
       network: { method: 'GET', url: 'not a url', status: 200 },
     }
-    const out = renderScenario({ name: 'S', pages: [page([bad])] })
+    const out = renderPageObject(page([bad]))
     expect(out).not.toContain('cy.intercept')
   })
 })

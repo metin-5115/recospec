@@ -11,6 +11,7 @@ import { renderAssertion } from './assertion'
 import { renderInteraction, renderToggleByParam } from './interaction'
 import { renderCypressMocks } from './mock'
 import { resolveTestData } from '../../planner/test-data-resolver'
+import { dateCtorFromIso } from '../../shared/date-literal'
 import { dateFnsLocaleImportName } from '@shared/date-template'
 
 let TEST_DATA: TestDataConfig | undefined
@@ -97,12 +98,6 @@ function renderTemplateAccessor(el: IRElement): string {
   return `${meta}\n  ${el.name}(value) {\n    return ${cyTemplateExpr(el, 'value')};\n  }`
 }
 
-/** Timezone-safe `new Date(y, m, d)` constructor source for an ISO calendar date. */
-function dateCtorFromIso(iso: string): string {
-  const [y, m, d] = iso.split('-').map(Number)
-  return `new Date(${y}, ${(m ?? 1) - 1}, ${d ?? 1})`
-}
-
 /** Call expression for a template element when no method parameter is in scope. */
 function templateCallExpr(el: IRElement): string {
   const t = el.template
@@ -167,6 +162,15 @@ function renderStepInMethod(step: IRStep, indent: string): string {
     }
     return `${indent}// assert: ${step.annotation ?? ''}`
   }
+  if (step.action === 'wait' && step.wait && step.element) {
+    // Cypress retries assertions, so an element wait is just the assertion. An idle-network
+    // wait has no element and nothing real to wait for, so it renders nothing.
+    const target = templateCallExpr(step.element)
+    if (step.wait.reason === 'spinner' || step.wait.reason === 'element-hidden') {
+      return `${indent}${target}.should('not.exist');`
+    }
+    if (step.wait.reason === 'element-visible') return `${indent}${target}.should('be.visible');`
+  }
   return ''
 }
 
@@ -195,9 +199,7 @@ function renderInferredMethod(method: InferredMethod): string {
         }
       }
       if (s.action === 'fill' && s.element) {
-        const baseName = s.element.name.replace(/Input$|Button$|Link$|Select$/, '')
-        const param = baseName.charAt(0).toLowerCase() + baseName.slice(1)
-        const paramIdx = method.params.indexOf(param)
+        const paramIdx = method.params.indexOf(paramSlug(s.element.name))
         if (paramIdx !== -1) {
           return `    this.${s.element.name}().clear().type(${method.params[paramIdx]});`
         }
@@ -257,7 +259,7 @@ export function renderPageObject(page: IRPage): string {
   const elementGetters = page.elements.map(renderElementGetter).join('\n\n')
 
   const gotoStep = page.steps.find((s) => s.action === 'navigate')
-  const gotoUrl = gotoStep?.url ?? '/'
+  const gotoUrl = gotoStep?.url ?? page.normalizedUrl
 
   let methodsBlock = ''
   if (page.inferredMethods?.length) {
