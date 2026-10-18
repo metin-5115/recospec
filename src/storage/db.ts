@@ -54,7 +54,7 @@ export class RecospecDB extends Dexie {
 
     // v2 — add version-tree columns and a compound index so we can find
     // siblings quickly via `where('[parentSessionId+flowSignature]')`.
-    this.version(DB_VERSION)
+    this.version(2)
       .stores({
         sessions:
           'sessionId, startedAt, state, name, parentSessionId, flowSignature, [parentSessionId+flowSignature]',
@@ -78,6 +78,18 @@ export class RecospecDB extends Dexie {
             // all roots of their own (single-node) version trees.
           })
       })
+
+    // v3 — compound [sessionId+sequenceNumber] index on actions. Serves the
+    // ordered per-session reads, the paged read, and the O(log n) "last
+    // sequence number" lookup used to number new actions. Dexie builds the
+    // index for existing rows during the upgrade; no data rewrite is needed.
+    this.version(DB_VERSION).stores({
+      sessions:
+        'sessionId, startedAt, state, name, parentSessionId, flowSignature, [parentSessionId+flowSignature]',
+      actions: 'actionId, sessionId, sequenceNumber, timestamp, [sessionId+sequenceNumber]',
+      generations: 'generationId, sessionId, framework, createdAt',
+      settings: 'key',
+    })
   }
 }
 
