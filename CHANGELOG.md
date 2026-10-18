@@ -7,7 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Local LLM context export** — a low-token alternative to the XML Claude prompt for small local
+  models. Elements are listed once and steps reference them by id; secrets become `$RECOSPEC_*`
+  references. Tasks `codegen` / `heal` / `both` (healing adds fallback locators and a recorded-element
+  fingerprint), formats `compact` lines or single-line `json`. Available as `recospec context` (stdout
+  is pipe-clean with `--dry-run`) and a **Local LLM context** card in the side panel with a token
+  estimate. On the bundled fixtures the compact output is 24–43% of the XML prompt's size.
+
+### Changed
+
+- Redaction helpers shared by the prompt and LLM-context exports moved into `prompt-contract.ts`
+  (no behaviour change).
+
 ### Fixed
+
+- **Generated classes the locator engine kept trusting** — folder-prefixed CSS Modules
+  (`hm__style_dropdown__3tpXH`, `hm__grid_col-12__A_EnK`) were not recognised as generated, so css,
+  xpath and composed locators were built on them and broke on the next deploy. They are now detected,
+  as are pointer-state modifiers (`tile--hover`, `item--focused`) that exist only while the pointer is
+  on the element at record time. Hand-written BEM chains (`react-calendar__month-view__days__day`,
+  `card__title--active`) are still trusted.
+- **Element names for non-ASCII text** — Turkish and other accented letters were dropped, splitting a
+  name into fragments (`Uçuş ara` became `uUAraButton`, `Ücrete göre artan` became `creteGReArtan`).
+  Letters are now transliterated (`ucusAraButton`, `ucreteGoreArtanButton`).
+- **Element names no longer freeze dates and prices** — a calendar cell whose name was
+  `Kasım 25 Çarşamba, 2026 6.300 ₺` produced `kasM25ArAmba20266300Button`; digit-bearing tokens are
+  now dropped when the name contains a price, a currency symbol or a year (`kasimCarsambaButton`).
+  Plain digits (`Step 2`) stay.
 
 - **Prompts for long, real flows** — a 36-action checkout recorded with the real extension exposed three
   problems that short hand-written fixtures hid:

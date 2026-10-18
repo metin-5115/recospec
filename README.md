@@ -83,6 +83,48 @@ locations (`features/` for Playwright TS, `cypress/e2e/` for Cypress,
 `features/` for Selenium Py, `src/test/resources/features/` for Selenium
 Java).
 
+## Local LLM context (low-token export)
+
+`recospec prompt` targets large models. For a small local model (Ollama,
+llama.cpp, LM Studio) `recospec context` renders the same recording in far
+fewer tokens: every element is listed once and the steps refer to it by id,
+with no XML tags, indentation or repeated names. On the bundled fixtures the
+compact output is 24–43% of the XML prompt's size.
+
+```bash
+# Pipe straight into a local model (status lines go to stderr):
+npx recospec context login_v1.json --dry-run | ollama run qwen2.5-coder
+
+# Write .recospec/context/<flow>.llm.txt (or .llm.json with --format json):
+npx recospec context login_v1.json --task both
+```
+
+- `--task codegen` — page objects + steps + methods, to write test code.
+- `--task heal` — adds up to 2 fallback locators and a fingerprint (`@fp`:
+  DOM path, neighbouring text, position, stable attributes) per element, to
+  repair a broken locator. Recordings made before fingerprints existed
+  simply have no `@fp` section.
+- `--task both` (default) — everything.
+- `--format compact|json` — line-oriented text, or single-line JSON with short
+  keys. `--no-instructions` emits only the data so you can supply your own
+  system prompt.
+
+The output is filtered for noise a small model cannot use:
+
+- `@net` lists only same-origin calls with a status (repeats folded as `×3`,
+  matrix parameters dropped) and appears only when the flow has an assertion
+  that could need a mock. Trackers and beacons never show up.
+- Fallbacks built on generated CSS-module classes, transient state classes
+  (`--hover`) or longer than 120 characters are dropped; a primary locator
+  that relies on one is flagged with `!`.
+- `@fp` omits masked (`«dynamic»`) values, UI-state attributes such as
+  `aria-expanded`, and ancestor paths that only contain `div`/`span`.
+
+Secret values never appear: filled credentials become `$RECOSPEC_*`
+references and the same leak guard as `recospec prompt` runs on the output.
+The side panel has a matching **Local LLM context** card with a token
+estimate.
+
 ## VS Code extension (v0.8.2)
 
 Recospec ships a companion VS Code extension that brings the **record →
