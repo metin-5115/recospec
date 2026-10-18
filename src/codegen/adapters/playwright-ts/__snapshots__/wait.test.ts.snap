@@ -2,12 +2,10 @@
 
 exports[`playwright-ts wait rendering — scenario > matches snapshot for combined wait reasons 1`] = `
 "import { test, expect } from '@playwright/test';
-import { HomePage } from './HomePage';
 
 test.describe('wait flow', () => {
   test('full flow', async ({ page }) => {
     await page.goto("/");
-    await page.waitForLoadState('networkidle');
     await page.locator(".spinner").waitFor({ state: 'hidden', timeout: 6000 });
   });
 });

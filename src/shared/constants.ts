@@ -234,3 +234,6 @@ export const PLAYWRIGHT_INSTALL_COMMAND =
 /** Written into `.recospec/sessions/` so recordings (which hold typed values) are never committed. */
 export const SESSIONS_GITIGNORE_CONTENT =
   '# Recospec recordings contain the values typed during a session. Keep them out of git.\n*\n' as const
+
+/** Start URLs a generated test can open; about:blank and chrome: pages are not worth navigating to. */
+export const NAVIGABLE_URL_PATTERN = /^(https?|file):/i

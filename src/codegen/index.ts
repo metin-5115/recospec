@@ -90,6 +90,7 @@ export async function generate(
 
   const scenario: IRScenario = {
     name: session?.name ?? 'Recorded Scenario',
+    startUrl: session?.startUrl,
     pages,
   }
 

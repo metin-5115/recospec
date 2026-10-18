@@ -52,14 +52,26 @@ export function renderStepInMethod(step: IRStep, indent: string): string {
   return ''
 }
 
+/**
+ * Playwright auto-waits for actionability before every action and retries web-first assertions,
+ * and its docs discourage `networkidle`, so a blanket idle wait is not generated. When the
+ * recording shows which route the action ended on, waiting for that URL is a real condition.
+ */
+function renderRouteWait(step: IRStep, pageRef: string, indent: string): string {
+  const route = step.pageUrl
+  if (!route || route === '/' || route.includes(':')) return ''
+  const escaped = route.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')
+  return `${indent}await ${pageRef}.waitForURL(/${escaped}(?:[?#]|$)/);`
+}
+
 function renderWaitInSpec(step: IRStep, indent: string): string {
   if (!step.wait) return ''
   const timeout = step.wait.timeoutMs
   if (step.wait.reason === 'networkidle') {
-    return `${indent}await page.waitForLoadState('networkidle');`
+    return renderRouteWait(step, 'page', indent)
   }
   if (step.wait.reason === 'spinner' || step.wait.reason === 'element-hidden') {
-    if (!step.element) return `${indent}await page.waitForLoadState('networkidle');`
+    if (!step.element) return renderRouteWait(step, 'page', indent)
     return `${indent}await ${renderLocator(step.element)}.waitFor({ state: 'hidden', timeout: ${timeout} });`
   }
   if (step.wait.reason === 'element-visible' && step.element) {
@@ -72,10 +84,10 @@ function renderWaitInMethod(step: IRStep, indent: string): string {
   if (!step.wait) return ''
   const timeout = step.wait.timeoutMs
   if (step.wait.reason === 'networkidle') {
-    return `${indent}await this.page.waitForLoadState('networkidle');`
+    return renderRouteWait(step, 'this.page', indent)
   }
   if (step.wait.reason === 'spinner' || step.wait.reason === 'element-hidden') {
-    if (!step.element) return `${indent}await this.page.waitForLoadState('networkidle');`
+    if (!step.element) return renderRouteWait(step, 'this.page', indent)
     // Page-object getters expose locators via `this.<name>`, so we don't need
     // to re-render the full chain — the named getter is canonical.
     return `${indent}await this.${step.element.name}.waitFor({ state: 'hidden', timeout: ${timeout} });`

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { runAdd } from './add'
@@ -118,6 +118,15 @@ describe('runAdd output selection', () => {
     const files = listFiles(tmp)
     expect(files.some((f) => f.includes('.spec.ts'))).toBe(true)
     expect(files.some((f) => f.startsWith('/pages/'))).toBe(false)
+  })
+
+  it('writes a spec that opens the start URL and imports the page object it was written next to', async () => {
+    await runAdd({ json: jsonPath, projectDir: tmp, framework: 'playwright-ts' }, failingReporter)
+    const spec = readFileSync(join(tmp, 'tests', 'scenario.spec.ts'), 'utf8')
+    expect(spec).toContain('await page.goto("https://example.com/login");')
+    const imported = spec.match(/from '(\.\.\/pages\/\w+)'/)?.[1]
+    expect(imported).toBeDefined()
+    expect(existsSync(join(tmp, 'tests', `${imported}.ts`))).toBe(true)
   })
 
   it('default selection writes both page object and spec but no scaffold', async () => {

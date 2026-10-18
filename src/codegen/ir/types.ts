@@ -208,6 +208,8 @@ export interface IRPage {
   className: string
   normalizedUrl: string
   pageTitle?: string
+  /** Origin the session was recorded on (http/https only). Drivers without a base URL need it for `goto()`. */
+  baseUrl?: string
   collisionWarning?: boolean
   steps: IRStep[]
   elements: IRElement[]
@@ -216,6 +218,8 @@ export interface IRPage {
 
 export interface IRScenario {
   name: string
+  /** URL the recording started on — the first thing a generated test opens. */
+  startUrl?: string
   pages: IRPage[]
 }
 

@@ -143,4 +143,15 @@ describe('groupIntoPages — single-page app route changes', () => {
     const pages = groupIntoPages(steps, 'https://example.com/shop')
     expect(pages.map((p) => p.className)).toEqual(['ShopPage', 'CartPage', 'ShopPage2'])
   })
+
+  it('records the origin the session started on for every page', () => {
+    const steps: IRStep[] = [clickStep('a', 'a'), navStep('/dashboard'), clickStep('b', 'b')]
+    const pages = groupIntoPages(steps, 'http://localhost:4500/shop?x=1')
+    expect(pages.map((p) => p.baseUrl)).toEqual(['http://localhost:4500', 'http://localhost:4500'])
+  })
+
+  it('leaves the origin out for non-http start URLs', () => {
+    const pages = groupIntoPages([clickStep('a', 'a')], 'file:///tmp/fixture.html')
+    expect(pages[0]?.baseUrl).toBeUndefined()
+  })
 })

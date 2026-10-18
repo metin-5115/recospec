@@ -96,7 +96,7 @@ export async function runAdd(opts: AddOptions, reporter?: ConflictReporter): Pro
   applyTemplateModes(flatSteps, opts.templateModes)
   applyComposedModes(flatSteps, opts.composedModes)
   const pages = groupIntoPages(flatSteps, payload.session.startUrl)
-  const scenario = { name: payload.session.name, pages }
+  const scenario = { name: payload.session.name, startUrl: payload.session.startUrl, pages }
 
   const adapter = getAdapter(framework)
   if (bdd && selection.test) {

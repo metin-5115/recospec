@@ -21,3 +21,17 @@ export class LoginPage {
 }
 "
 `;
+
+exports[`renderScenario > matches snapshot 1`] = `
+"import { test, expect } from '@playwright/test';
+import { LoginPage } from '../pages/LoginPage';
+
+test.describe('Login flow', () => {
+  test('full flow', async ({ page }) => {
+    const loginPage = new LoginPage(page);
+    await page.goto("/login");
+    await loginPage.submitForm("admin");
+  });
+});
+"
+`;

@@ -20,7 +20,7 @@ function pageWith(steps: IRStep[], elements: IRElement[] = []): IRPage {
 }
 
 describe('playwright-ts wait rendering — scenario', () => {
-  it('renders networkidle as page.waitForLoadState', () => {
+  it('never generates a networkidle wait', () => {
     const scenario: IRScenario = {
       name: 'flow',
       pages: [
@@ -30,8 +30,42 @@ describe('playwright-ts wait rendering — scenario', () => {
         ]),
       ],
     }
-    const out = renderScenario(scenario)
-    expect(out).toContain(`await page.waitForLoadState('networkidle')`)
+    expect(renderScenario(scenario)).not.toContain('waitForLoadState')
+  })
+
+  it('turns a networkidle wait into waitForURL when the route it ended on is known', () => {
+    const scenario: IRScenario = {
+      name: 'flow',
+      pages: [
+        pageWith([
+          { id: 'n1', action: 'navigate', url: '/' },
+          {
+            id: 'w1',
+            action: 'wait',
+            pageUrl: '/dashboard',
+            wait: { reason: 'networkidle', timeoutMs: 10_000 },
+          },
+        ]),
+      ],
+    }
+    expect(renderScenario(scenario)).toContain('await page.waitForURL(/\\/dashboard(?:[?#]|$)/);')
+  })
+
+  it('skips the route wait for parameterised routes', () => {
+    const scenario: IRScenario = {
+      name: 'flow',
+      pages: [
+        pageWith([
+          {
+            id: 'w1',
+            action: 'wait',
+            pageUrl: '/users/:id',
+            wait: { reason: 'networkidle', timeoutMs: 10_000 },
+          },
+        ]),
+      ],
+    }
+    expect(renderScenario(scenario)).not.toContain('waitForURL')
   })
 
   it('renders spinner waits as locator.waitFor({ state: "hidden" })', () => {
@@ -100,15 +134,23 @@ describe('playwright-ts wait rendering — page object', () => {
     expect(out).toContain(`await this.loadingSpinner.waitFor({ state: 'hidden', timeout: 7000 });`)
   })
 
-  it('falls back to this.page.waitForLoadState for networkidle in page object', () => {
+  it('waits for the route a networkidle wait ended on, not for network idle', () => {
     const page: IRPage = {
       name: 'Home',
       className: 'HomePage',
       normalizedUrl: '/',
       elements: [],
-      steps: [{ id: 'w1', action: 'wait', wait: { reason: 'networkidle', timeoutMs: 10_000 } }],
+      steps: [
+        {
+          id: 'w1',
+          action: 'wait',
+          pageUrl: '/dashboard',
+          wait: { reason: 'networkidle', timeoutMs: 10_000 },
+        },
+      ],
     }
     const out = renderPageObject(page)
-    expect(out).toContain(`await this.page.waitForLoadState('networkidle')`)
+    expect(out).toContain('await this.page.waitForURL(/\\/dashboard(?:[?#]|$)/);')
+    expect(out).not.toContain('networkidle')
   })
 })

@@ -93,7 +93,7 @@ describe('playwright adapter — select / check / hover / dblclick', () => {
     expect(out).toContain('this.countrySelect.selectOption(country)')
   })
 
-  it('renders the new actions in spec scope', () => {
+  it('calls the page-object methods for the new actions in spec scope', () => {
     const page = pageWith(
       [
         { id: 's1', action: 'select', element: country, value: 'tr' },
@@ -105,9 +105,10 @@ describe('playwright adapter — select / check / hover / dblclick', () => {
     )
     const scenario: IRScenario = { name: 'Checkout flow', pages: [page] }
     const spec = renderScenario(scenario)
-    expect(spec).toMatch(/selectOption\(("tr"|'tr')\)/)
-    expect(spec).toContain('.check()')
-    expect(spec).toContain('.hover()')
-    expect(spec).toContain('.dblclick()')
+    expect(spec).toContain('await checkoutPage.selectCountry("tr");')
+    expect(spec).toContain('await checkoutPage.checkTerms();')
+    expect(spec).toContain('await checkoutPage.hoverAccountMenu();')
+    expect(spec).toContain('await checkoutPage.doubleClickRowItem();')
+    expect(spec).not.toContain('getByTestId')
   })
 })

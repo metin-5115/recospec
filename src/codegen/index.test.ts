@@ -67,6 +67,14 @@ describe('generate() output selection', () => {
     expect(names.some(isScaffold)).toBe(true)
   })
 
+  it('opens the session start URL in the generated test', async () => {
+    const code = await generate(SESSION_ID, 'playwright-ts', {
+      selection: { pageObjects: false, test: true, scaffold: false },
+    })
+    const spec = code.files.find((f) => f.filename.endsWith('.spec.ts'))
+    expect(spec?.content).toContain('await page.goto("https://example.com/login");')
+  })
+
   it('page-objects-only emits no test and no scaffold', async () => {
     const code = await generate(SESSION_ID, 'playwright-ts', {
       selection: { pageObjects: true, test: false, scaffold: false },
