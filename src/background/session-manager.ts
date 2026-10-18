@@ -13,8 +13,9 @@ import { SESSION_NAME_PREFIX } from '@shared/constants'
 
 let activeSessionId: string | null = null
 let activeTabId: number | null = null
+let restored: Promise<void> | null = null
 
-export async function restoreActiveSession(): Promise<void> {
+async function loadActiveSession(): Promise<void> {
   const recording = await listSessionsByState('recording')
   if (recording.length > 0) {
     activeSessionId = recording[0].sessionId
@@ -23,11 +24,31 @@ export async function restoreActiveSession(): Promise<void> {
   }
 }
 
+/**
+ * Re-hydrates the active session from Dexie. The module-level ids are only a cache: a
+ * message that wakes a suspended service worker can reach a handler before this finishes,
+ * so every handler awaits {@link whenSessionRestored} first.
+ */
+export function restoreActiveSession(): Promise<void> {
+  restored = loadActiveSession()
+  return restored
+}
+
+/**
+ * Resolves once the active session has been read back from Dexie, starting the restore if
+ * nothing has yet. Never rejects: if the restore fails, handlers proceed with no active
+ * session (the failure itself is reported by whoever called {@link restoreActiveSession}).
+ */
+export async function whenSessionRestored(): Promise<void> {
+  await (restored ?? restoreActiveSession()).catch(() => undefined)
+}
+
 export async function startSession(
   tabId: number,
   metadata: SessionMeta,
   config: CaptureConfig,
 ): Promise<void> {
+  await whenSessionRestored()
   if (activeSessionId) {
     // Service worker may have restored a stale 'recording' session from DB after
     // being terminated. Archive it so the user can start fresh without reloading.
@@ -83,6 +104,7 @@ export async function startSession(
 }
 
 export async function stopSession(sessionId: string): Promise<void> {
+  await whenSessionRestored()
   if (activeSessionId !== sessionId) {
     logger.warn('[BG] Stop requested for unknown session', sessionId)
     return
@@ -112,6 +134,7 @@ export async function stopSession(sessionId: string): Promise<void> {
 }
 
 export async function pauseSession(sessionId: string): Promise<void> {
+  await whenSessionRestored()
   if (activeSessionId !== sessionId) {
     logger.warn('[BG] Pause requested for unknown session', sessionId)
     return
@@ -135,6 +158,7 @@ export async function pauseSession(sessionId: string): Promise<void> {
 }
 
 export async function resumeSession(sessionId: string): Promise<void> {
+  await whenSessionRestored()
   if (activeSessionId !== sessionId) {
     logger.warn('[BG] Resume requested for unknown session', sessionId)
     return
@@ -163,6 +187,7 @@ export async function resumeSession(sessionId: string): Promise<void> {
 }
 
 export async function deleteSessionById(sessionId: string): Promise<void> {
+  await whenSessionRestored()
   if (activeSessionId === sessionId) {
     if (activeTabId !== null) {
       await sendToTab(activeTabId, { type: 'STOP_CAPTURE', sessionId }).catch(() => undefined)
@@ -197,6 +222,7 @@ export async function renameSessionById(sessionId: string, name: string): Promis
  * learn that a recording is in progress.
  */
 export async function resumeCaptureOnReady(tabId: number): Promise<void> {
+  await whenSessionRestored()
   if (!activeSessionId || activeTabId !== tabId) return
 
   const session = await getSession(activeSessionId)

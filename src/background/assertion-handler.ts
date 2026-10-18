@@ -1,6 +1,6 @@
 import type { AssertionSuggestion, ElementSnapshot, RecordedAction } from '@shared/types/action'
 import type { LocatorBundle } from '@shared/types/locator'
-import { getActiveTabId } from './session-manager'
+import { getActiveTabId, whenSessionRestored } from './session-manager'
 import { sendToTab, broadcastToUI } from '@shared/messaging/send'
 import { appendAction, getActionsBySession } from '@storage/action-repo'
 import { db } from '@storage/db'
@@ -17,6 +17,7 @@ async function captureVisibleTabSafe(): Promise<string | undefined> {
 }
 
 export async function handleAssertionProbeStart(sessionId: string): Promise<void> {
+  await whenSessionRestored()
   const tabId = getActiveTabId()
   if (tabId === null) {
     logger.warn('[BG] No active tab for assertion probe start')
@@ -26,6 +27,7 @@ export async function handleAssertionProbeStart(sessionId: string): Promise<void
 }
 
 export async function handleAssertionProbeStop(sessionId: string): Promise<void> {
+  await whenSessionRestored()
   const tabId = getActiveTabId()
   if (tabId === null) return
   await sendToTab(tabId, { type: 'STOP_ASSERTION_PROBE', sessionId })
