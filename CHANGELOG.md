@@ -36,6 +36,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Kasım 25 Çarşamba, 2026 6.300 ₺` produced `kasM25ArAmba20266300Button`; digit-bearing tokens are
   now dropped when the name contains a price, a currency symbol or a year (`kasimCarsambaButton`).
   Plain digits (`Step 2`) stay.
+- **Invalid and oversized element names** — a name derived from `15 kg` was `15Kg`, which is not a
+  valid identifier and ended up as a method parameter; it now leads with the tag (`div15Kg`). Decimal
+  prices next to a currency code (`6569.61 TRY`) are treated as data, and a sentence-long accessible
+  name is cut to its first five words instead of producing an 80-character identifier.
+- **Locale in page class names** — `/tr-tr/ucak-bileti/rezervasyon` produced `TrTrUcakBiletiRezervasyonPage`;
+  a leading language-region segment (`tr-tr`, `en-US`, `pt_BR`) is now ignored, so it is
+  `UcakBiletiRezervasyonPage` and `/tr-tr` is `HomePage`. Only listed language codes match, so routes
+  such as `/to-do` are untouched.
 
 - **Prompts for long, real flows** — a 36-action checkout recorded with the real extension exposed three
   problems that short hand-written fixtures hid:

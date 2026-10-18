@@ -118,7 +118,8 @@ The output is filtered for noise a small model cannot use:
   (`--hover`) or longer than 120 characters are dropped; a primary locator
   that relies on one is flagged with `!`.
 - `@fp` omits masked (`«dynamic»`) values, UI-state attributes such as
-  `aria-expanded`, and ancestor paths that only contain `div`/`span`.
+  `aria-expanded`, ancestor paths that only contain `div`/`span`, and attributes
+  whose value the element's label or locators already state.
 
 Secret values never appear: filled credentials become `$RECOSPEC_*`
 references and the same leak guard as `recospec prompt` runs on the output.
