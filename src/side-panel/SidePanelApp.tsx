@@ -30,6 +30,7 @@ import { AssertionBuilder } from './components/AssertionBuilder'
 import { FrameworkPicker } from './components/FrameworkPicker'
 import { MethodPreview } from './components/MethodPreview'
 import { PromptPreview } from './components/PromptPreview'
+import { LlmContextPreview } from './components/LlmContextPreview'
 import { TestDataPanel } from './components/TestDataPanel'
 import { LocatorValidationPanel } from './components/LocatorValidationPanel'
 import { SessionDiffModal } from './components/SessionDiffModal'
@@ -473,6 +474,13 @@ export function SidePanelApp() {
           </div>
           {activeSession && (
             <PromptPreview session={activeSession} steps={steps} framework={selectedFramework} />
+          )}
+          {activeSession && (
+            <LlmContextPreview
+              session={activeSession}
+              steps={steps}
+              framework={selectedFramework}
+            />
           )}
           {codeGenError && (
             <p className="flex items-start gap-1.5 rounded-lg bg-danger-soft px-3 py-2 text-xs text-danger">
