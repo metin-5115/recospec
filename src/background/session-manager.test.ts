@@ -83,3 +83,116 @@ describe('resumeCaptureOnReady (recording survives navigation)', () => {
     expect(tabMessages).toHaveLength(0)
   })
 })
+
+describe('service-worker wake-up race', () => {
+  // A message that wakes the worker reaches its handler while the module-level
+  // active session is still being restored from Dexie. Each test uses a fresh
+  // module (null active session) and holds the restore open on a deferred
+  // promise to reproduce that window.
+  type Manager = typeof import('./session-manager')
+  type Repo = typeof import('@storage/session-repo')
+
+  let manager: Manager
+  let repo: Repo
+  let releaseRestore: (sessions: Session[]) => void
+
+  beforeEach(async () => {
+    installChrome()
+    vi.clearAllMocks()
+    vi.resetModules()
+    manager = await import('./session-manager')
+    repo = await import('@storage/session-repo')
+    vi.mocked(repo.listSessionsByState).mockImplementation(
+      () =>
+        new Promise<Session[]>((resolve) => {
+          releaseRestore = resolve
+        }),
+    )
+  })
+
+  it('stopSession waits for the restore instead of ignoring the request', async () => {
+    vi.mocked(repo.getSession).mockResolvedValue(session('stopped'))
+    void manager.restoreActiveSession()
+
+    const stopping = manager.stopSession('s1')
+    releaseRestore([session('recording')])
+    await stopping
+
+    expect(repo.updateSession).toHaveBeenCalledWith(
+      's1',
+      expect.objectContaining({ state: 'stopped' }),
+    )
+    expect(tabMessages).toContainEqual({
+      tabId: 7,
+      msg: { type: 'STOP_CAPTURE', sessionId: 's1' },
+    })
+    expect(manager.getActiveSessionId()).toBeNull()
+  })
+
+  it('pauseSession waits for the restore instead of ignoring the request', async () => {
+    vi.mocked(repo.getSession).mockResolvedValue(session('paused'))
+    void manager.restoreActiveSession()
+
+    const pausing = manager.pauseSession('s1')
+    releaseRestore([session('recording')])
+    await pausing
+
+    expect(repo.updateSession).toHaveBeenCalledWith('s1', { state: 'paused' })
+  })
+
+  it('resumeSession waits for the restore instead of ignoring the request', async () => {
+    vi.mocked(repo.getSession).mockResolvedValue(session('paused'))
+    void manager.restoreActiveSession()
+
+    const resuming = manager.resumeSession('s1')
+    releaseRestore([session('paused')])
+    await resuming
+
+    expect(repo.updateSession).toHaveBeenCalledWith('s1', { state: 'recording' })
+    expect(tabMessages).toContainEqual(
+      expect.objectContaining({
+        tabId: 7,
+        msg: expect.objectContaining({ type: 'START_CAPTURE' }),
+      }),
+    )
+  })
+
+  it('resumeCaptureOnReady waits for the restore so a navigation keeps recording', async () => {
+    vi.mocked(repo.getSession).mockResolvedValue(session('recording'))
+    void manager.restoreActiveSession()
+
+    const resuming = manager.resumeCaptureOnReady(7)
+    releaseRestore([session('recording')])
+    await resuming
+
+    expect(tabMessages).toHaveLength(1)
+    expect(tabMessages[0]).toMatchObject({ tabId: 7, msg: { type: 'START_CAPTURE' } })
+  })
+
+  it('starts the restore itself when no one has kicked it off yet', async () => {
+    vi.mocked(repo.getSession).mockResolvedValue(session('paused'))
+
+    const pausing = manager.pauseSession('s1')
+    await vi.waitFor(() => expect(repo.listSessionsByState).toHaveBeenCalledTimes(1))
+    releaseRestore([session('recording')])
+    await pausing
+
+    expect(repo.updateSession).toHaveBeenCalledWith('s1', { state: 'paused' })
+  })
+
+  it('still handles requests when the restore itself fails', async () => {
+    vi.mocked(repo.listSessionsByState).mockRejectedValue(new Error('idb unavailable'))
+
+    await expect(manager.pauseSession('s1')).resolves.toBeUndefined()
+    expect(repo.updateSession).not.toHaveBeenCalled()
+  })
+
+  it('whenSessionRestored resolves only once the active tab is known', async () => {
+    void manager.restoreActiveSession()
+
+    const tab = manager.whenSessionRestored().then(() => manager.getActiveTabId())
+    releaseRestore([session('recording', 11)])
+
+    await expect(tab).resolves.toBe(11)
+  })
+})

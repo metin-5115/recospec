@@ -63,6 +63,33 @@ describe('aggregateEvent', () => {
     expect(recorded[0]).toMatchObject({ sessionId: 's1' })
   })
 
+  it('gives every event of a concurrent burst a unique, contiguous sequence number', async () => {
+    await createSession(makeSession())
+
+    await Promise.all(Array.from({ length: 20 }, (_, i) => aggregateEvent('s1', clickEvent(i))))
+
+    const actions = await getActionsBySession('s1')
+    expect(actions.map((a) => a.sequenceNumber)).toEqual(Array.from({ length: 20 }, (_, i) => i))
+    const recorded = broadcasts.filter((m) => m.type === 'STEP_RECORDED')
+    expect(
+      new Set(recorded.map((m) => (m.step as { sequenceNumber: number }).sequenceNumber)).size,
+    ).toBe(20)
+  })
+
+  it('does not read back the whole session for every captured event', async () => {
+    await createSession(makeSession())
+    await aggregateEvent('s1', clickEvent(0))
+    const toArray = vi.spyOn(Object.getPrototypeOf(db.actions.toCollection()) as never, 'toArray')
+    const sortBy = vi.spyOn(Object.getPrototypeOf(db.actions.toCollection()) as never, 'sortBy')
+
+    await aggregateEvent('s1', clickEvent(1))
+
+    expect(toArray).not.toHaveBeenCalled()
+    expect(sortBy).not.toHaveBeenCalled()
+    toArray.mockRestore()
+    sortBy.mockRestore()
+  })
+
   it('turns an empty page title into undefined', async () => {
     await createSession(makeSession())
     await aggregateEvent('s1', clickEvent(10))

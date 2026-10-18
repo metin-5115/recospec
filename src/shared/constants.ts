@@ -2,7 +2,7 @@ import type { LocatorStrategyName } from './types/locator'
 
 export const DB_NAME = 'RecospecDB' as const
 /** Latest schema version. Bumping triggers Dexie upgrade callbacks. */
-export const DB_VERSION = 2 as const
+export const DB_VERSION = 3 as const
 /**
  * Number of recorded steps the background waits for before computing the
  * flow signature and probing the DB for prior matching sessions. Three

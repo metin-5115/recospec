@@ -1,3 +1,4 @@
+import { Dexie } from 'dexie'
 import { db } from './db'
 import type { RecordedAction } from '@shared/types/action'
 import type { StepPatch } from '@shared/types/messages'
@@ -21,8 +22,38 @@ export async function appendAction(action: RecordedAction): Promise<void> {
   await withQuotaGuard(() => db.actions.add(action))
 }
 
+/** Every action of a session, in sequenceNumber order (read straight off the compound index). */
+function sessionRange(sessionId: string) {
+  return db.actions
+    .where('[sessionId+sequenceNumber]')
+    .between([sessionId, Dexie.minKey], [sessionId, Dexie.maxKey])
+}
+
+/**
+ * Appends an action, assigning its sequenceNumber atomically.
+ *
+ * The next number is read (one index lookup, no row loads) and the row written inside a
+ * single readwrite transaction. IndexedDB serialises overlapping readwrite transactions on
+ * the same store, so a burst of concurrent events can never be handed the same number.
+ */
+export async function appendNextAction(
+  draft: Omit<RecordedAction, 'sequenceNumber'>,
+): Promise<RecordedAction> {
+  return withQuotaGuard(() =>
+    db.transaction('rw', db.actions, async () => {
+      // Dexie types the index key loosely; for this compound index it is [sessionId, sequenceNumber].
+      const lastKey = (await sessionRange(draft.sessionId).lastKey()) as unknown as
+        [string, number] | undefined
+      const sequenceNumber = lastKey ? lastKey[1] + 1 : 0
+      const action: RecordedAction = { ...draft, sequenceNumber }
+      await db.actions.add(action)
+      return action
+    }),
+  )
+}
+
 export async function getActionsBySession(sessionId: string): Promise<RecordedAction[]> {
-  return db.actions.where('sessionId').equals(sessionId).sortBy('sequenceNumber')
+  return sessionRange(sessionId).toArray()
 }
 
 export async function deleteActionsBySession(sessionId: string): Promise<void> {
@@ -35,11 +66,7 @@ export async function getActionsBySessionPage(
   offset: number,
   limit: number,
 ): Promise<RecordedAction[]> {
-  return db.actions
-    .where('sessionId')
-    .equals(sessionId)
-    .sortBy('sequenceNumber')
-    .then((all) => all.slice(offset, offset + limit))
+  return sessionRange(sessionId).offset(offset).limit(limit).toArray()
 }
 
 /**
@@ -68,10 +95,14 @@ export async function reorderActions(
       throw new Error('reorderActions: duplicate actionId in ordering')
     }
 
-    for (let i = 0; i < orderedActionIds.length; i++) {
-      await db.actions.update(orderedActionIds[i], { sequenceNumber: i })
-    }
-    return db.actions.where('sessionId').equals(sessionId).sortBy('sequenceNumber')
+    await db.actions.bulkUpdate(
+      orderedActionIds.map((key, sequenceNumber) => ({ key, changes: { sequenceNumber } })),
+    )
+    const byId = new Map(existing.map((a) => [a.actionId, a]))
+    return orderedActionIds.map((id, sequenceNumber) => ({
+      ...(byId.get(id) as RecordedAction),
+      sequenceNumber,
+    }))
   })
 }
 
@@ -97,13 +128,14 @@ export async function getAction(actionId: string): Promise<RecordedAction | unde
 export async function deleteAction(sessionId: string, actionId: string): Promise<RecordedAction[]> {
   return db.transaction('rw', db.actions, async () => {
     await db.actions.delete(actionId)
-    const remaining = await db.actions.where('sessionId').equals(sessionId).sortBy('sequenceNumber')
-    for (let i = 0; i < remaining.length; i++) {
-      if (remaining[i].sequenceNumber !== i) {
-        await db.actions.update(remaining[i].actionId, { sequenceNumber: i })
-        remaining[i].sequenceNumber = i
-      }
-    }
+    const remaining = await sessionRange(sessionId).toArray()
+    const stale: { key: string; changes: { sequenceNumber: number } }[] = []
+    remaining.forEach((action, i) => {
+      if (action.sequenceNumber === i) return
+      stale.push({ key: action.actionId, changes: { sequenceNumber: i } })
+      action.sequenceNumber = i
+    })
+    if (stale.length > 0) await db.actions.bulkUpdate(stale)
     return remaining
   })
 }
