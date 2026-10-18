@@ -1,5 +1,6 @@
 import type { ElementFingerprint } from '@shared/types/locator'
 import { isDynamicValue } from '@shared/dynamic-value'
+import { DYNAMIC_VALUE_MASK as MASK } from '@shared/constants'
 import { computeAccessibleName } from '../strategies/accessible-name'
 
 /**
@@ -9,7 +10,6 @@ import { computeAccessibleName } from '../strategies/accessible-name'
  * are masked so the fingerprint itself does not rot with the data.
  */
 
-const MASK = '«dynamic»'
 const NEIGHBOR_TEXT_MAX = 60
 
 /** Attributes whose values are noise for identity matching. */

@@ -49,3 +49,9 @@ export function isEmptySelection(selection: OutputSelection): boolean {
  * codegen prompt-export module.
  */
 export type PromptMode = 'slash' | 'claude-md' | 'prompt'
+
+/** Serialisation of the compact LLM context export. */
+export type LlmContextFormat = 'compact' | 'json'
+
+/** What the LLM context is for: writing test code, repairing locators, or both. */
+export type LlmContextTask = 'codegen' | 'heal' | 'both'

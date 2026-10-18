@@ -1,0 +1,193 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`renderLlmContextCompact > matches the snapshot for each task > checkout both 1`] = `
+"#recospec-ctx v1 flow=checkout-flow fw=playwright-ts base=http://localhost:4500 task=both
+#el: id page name tag[:type] role "label" locator [~ fallback]... [!=fragile locator] [*=secret]
+#step: n action [el] [arg]
+@pages
+P1 ShopPage /shop
+P2 CartPage /cart
+P3 CheckoutPage /checkout
+P4 PaymentPage /payment
+@el
+e1 P1 trailRunnerSizeSelect select - - cmp:article hasText="Trail Runner" >> select ~ xpath://section[contains(concat(' ', normalize-space(@class), ' '), " grid ")]/article[1]/label[1]/select
+e2 P1 trailRunnerQuantityInput input:number - - cmp:article hasText="Trail Runner" >> input ~ xpath://section[contains(concat(' ', normalize-space(@class), ' '), " grid ")]/article[1]/label[2]/input
+e3 P1 trailRunnerAddToCartButton button - "Add to cart" cmp:article hasText="Trail Runner" >> button[name="Add to cart"] ~ xpath://section[contains(concat(' ', normalize-space(@class), ' '), " grid ")]/article[1]/button
+e4 P1 canvasToteAddToCartButton button - "Add to cart" cmp:article hasText="Canvas Tote" >> button[name="Add to cart"] ~ xpath://section[contains(concat(' ', normalize-space(@class), ' '), " grid ")]/article[2]/button
+e5 P1 cartLink a - "Cart (3)" id:#cart-link ~ href:a[href="/cart"] ~ css:a[href="/cart"]
+e6 P2 promoCodeInput input:text - - role:textbox[name="Promo code"] ~ label:Promo code ~ id:#promo
+e7 P2 applyButton button - "Apply" role:button[name="Apply"] ~ id:#apply ~ text:Apply
+e8 P2 checkout button - "Checkout" tid:checkout ~ role:button[name="Checkout"] ~ text:Checkout
+e9 P3 fullNameInput input:text - - role:textbox[name="Full name"] ~ label:Full name ~ name:input[name="name"]
+e10 P3 emailInput input:email - - role:textbox[name="Email"] ~ label:Email ~ name:input[name="email"] *
+e11 P3 addressInput input:text - - role:textbox[name="Address"] ~ label:Address ~ name:input[name="line"]
+e12 P3 cityInput input:text - - role:textbox[name="City"] ~ label:City ~ name:input[name="city"]
+e13 P3 postalCodeInput input:text - - role:textbox[name="Postal code"] ~ label:Postal code ~ name:input[name="postal"]
+e14 P3 countrySelect select - - role:combobox[name="Country"] ~ label:Country ~ name:select[name="country"]
+e15 P3 expressRadio input:radio - - role:radio[name="Express (+$12)"] ~ label:Express (+$12)
+e16 P3 giftWrapCheckbox input:checkbox - - role:checkbox[name="Gift wrap"] ~ label:Gift wrap ~ name:input[name="gift"]
+e17 P3 deliveryNotesInput textarea - - role:textbox[name="Delivery notes"] ~ label:Delivery notes ~ name:textarea[name="notes"]
+e18 P3 continueToPaymentButton button - "Continue to payment" role:button[name="Continue to payment"] ~ css:button[type="submit"] ~ xpath://*[@id="f"]/button
+e19 P4 cardNumberInput input:text - - role:textbox[name="Card number"] ~ label:Card number ~ name:input[name="num"] *
+e20 P4 nameOnCardInput input:text - - role:textbox[name="Name on card"] ~ label:Name on card ~ name:input[name="holder"]
+e21 P4 expiryInput input:text - - role:textbox[name="Expiry (MM/YY)"] ~ label:Expiry (MM/YY) ~ name:input[name="exp"] *
+e22 P4 cvvInput input:text - - role:textbox[name="CVV"] ~ label:CVV ~ name:input[name="cvv"] *
+e23 P4 iAcceptTheTermsCheckbox input:checkbox - - role:checkbox[name="I accept the terms"] ~ label:I accept the terms ~ name:input[name="terms"]
+e24 P4 placeOrderButton button - "Place order" role:button[name="Place order"] ~ css:button[type="submit"] ~ xpath://*[@id="p"]/button
+@steps
+1 select e1 "M"
+2 fill e2 "2"
+3 click e3
+4 click e4
+5 click e5
+6 fill e6 "SAVE10"
+7 click e7
+8 click e8
+9 fill e9 "Ada Lovelace"
+10 fill e10 $RECOSPEC_EMAIL
+11 fill e11 "12 Analytical Way"
+12 fill e12 "Istanbul"
+13 fill e13 "34000"
+14 select e14 "TR"
+15 check e15
+16 check e16
+17 fill e17 "Leave at the door"
+18 click e18
+19 fill e19 $RECOSPEC_CARD_NUMBER
+20 fill e20 "Ada Lovelace"
+21 fill e21 $RECOSPEC_EXPIRY
+22 fill e22 "123"
+23 check e23
+24 click e24
+@methods
+P1.selectTrailRunnerSize(trailRunnerSize:s) steps=1
+P1.submitForm(trailRunnerQuantity:n) steps=2-3
+P1.clickCanvasToteAddToCart() steps=4
+P1.clickCart() steps=5
+P2.submitForm(promoCode:s) steps=6-7
+P2.clickCheckout() steps=8
+P3.fillForm(fullName:s,email*:s,address:s,city:s,postalCode:s) steps=9-13
+P3.selectCountry(country:s) steps=14
+P3.checkExpress() steps=15
+P3.checkGiftWrap() steps=16
+P3.submitForm(deliveryNotes:s) steps=17-18
+P4.fillForm(cardNumber*:s,nameOnCard:s,expiry*:s,cvv*:s) steps=19-22
+P4.acceptAndSubmit(iAcceptTheTerms:b) steps=23-24
+@rules
+- Use only the listed locators; never invent selectors.
+- One page object per P-id; one scenario that replays @steps in order.
+- Each @methods entry becomes a page-object method with exactly those params.
+- Implement every assert step as an assertion on its element.
+- A missing section means the recording produced no data for it; do not fabricate any.
+- A * marks a secret. Read it through its $ENV name; never inline a value.
+- For a negative flow (error asserted), derive the invalid value from the env value plus "-wrong"; never reuse the valid one.
+- Page objects are TypeScript classes taking \`page: Page\`; expose locators as getters.
+- Use \`getByLabel\`/\`getByRole\`/\`getByTestId\` for the matching strategies; raw \`page.locator\` only for css/xpath.
+- Use web-first assertions (\`await expect(locator).toBeVisible()\`); never \`waitForTimeout\`.
+- When a locator fails, try its ~ fallbacks in rank order, then match @fp (role, label, near, path, a=) against the page.
+- Return a replacement only when it resolves to a single element; otherwise report the element as unrecoverable.
+@task
+Write Playwright (TypeScript) tests (P1=pages/ShopPage.ts, P2=pages/CartPage.ts, P3=pages/CheckoutPage.ts, P4=pages/PaymentPage.ts, scenario=tests/checkout-flow.spec.ts). Run npx playwright test until green. For a failing element id, answer {"el":"eN","loc":"strategy:value"} with the best replacement.
+"
+`;
+
+exports[`renderLlmContextCompact > matches the snapshot for each task > login both 1`] = `
+"#recospec-ctx v1 flow=login-flow fw=playwright-ts base=http://localhost:4173 task=both
+#el: id page name tag[:type] role "label" locator [~ fallback]... [!=fragile locator] [*=secret]
+#step: n action [el] [arg]
+@pages
+P1 LoginPage /login
+@el
+e1 P1 emailInput input:email - "Email" aria:[aria-label="Email"] ~ role:textbox[name="Email"] ~ label:Email *
+e2 P1 passwordInput input:password - "Password" aria:[aria-label="Password"] ~ label:Password ~ id:#password *
+e3 P1 signIn button - "Sign in" tid:sign-in ~ role:button[name="Sign in"] ~ css:button[type="submit"]
+@fp
+e1 path=main>form>input near=Password|Sign in box=.50,.23 a=id:email,name:email,type:email,autocomplete:username
+e2 path=main>form>input near=Sign in box=.50,.32 a=id:password,name:password,type:password,autocomplete:current-password
+e3 path=main>form>button box=.39,.39 a=type:submit,data-testid:sign-in
+@steps
+1 fill e1 $RECOSPEC_EMAIL
+2 fill e2 $RECOSPEC_PASSWORD
+3 click e3
+4 wait networkidle 10000
+@methods
+P1.login(email*:s,password*:s) steps=1-4
+@rules
+- Use only the listed locators; never invent selectors.
+- One page object per P-id; one scenario that replays @steps in order.
+- Each @methods entry becomes a page-object method with exactly those params.
+- Implement every assert step as an assertion on its element.
+- A missing section means the recording produced no data for it; do not fabricate any.
+- A * marks a secret. Read it through its $ENV name; never inline a value.
+- For a negative flow (error asserted), derive the invalid value from the env value plus "-wrong"; never reuse the valid one.
+- Page objects are TypeScript classes taking \`page: Page\`; expose locators as getters.
+- Use \`getByLabel\`/\`getByRole\`/\`getByTestId\` for the matching strategies; raw \`page.locator\` only for css/xpath.
+- Use web-first assertions (\`await expect(locator).toBeVisible()\`); never \`waitForTimeout\`.
+- When a locator fails, try its ~ fallbacks in rank order, then match @fp (role, label, near, path, a=) against the page.
+- Return a replacement only when it resolves to a single element; otherwise report the element as unrecoverable.
+@task
+Write Playwright (TypeScript) tests (P1=pages/LoginPage.ts, scenario=tests/login-flow.spec.ts). Run npx playwright test until green. For a failing element id, answer {"el":"eN","loc":"strategy:value"} with the best replacement.
+"
+`;
+
+exports[`renderLlmContextCompact > matches the snapshot for each task > login codegen 1`] = `
+"#recospec-ctx v1 flow=login-flow fw=playwright-ts base=http://localhost:4173 task=codegen
+#el: id page name tag[:type] role "label" locator [~ fallback]... [!=fragile locator] [*=secret]
+#step: n action [el] [arg]
+@pages
+P1 LoginPage /login
+@el
+e1 P1 emailInput input:email - "Email" aria:[aria-label="Email"] *
+e2 P1 passwordInput input:password - "Password" aria:[aria-label="Password"] *
+e3 P1 signIn button - "Sign in" tid:sign-in
+@steps
+1 fill e1 $RECOSPEC_EMAIL
+2 fill e2 $RECOSPEC_PASSWORD
+3 click e3
+4 wait networkidle 10000
+@methods
+P1.login(email*:s,password*:s) steps=1-4
+@rules
+- Use only the listed locators; never invent selectors.
+- One page object per P-id; one scenario that replays @steps in order.
+- Each @methods entry becomes a page-object method with exactly those params.
+- Implement every assert step as an assertion on its element.
+- A missing section means the recording produced no data for it; do not fabricate any.
+- A * marks a secret. Read it through its $ENV name; never inline a value.
+- For a negative flow (error asserted), derive the invalid value from the env value plus "-wrong"; never reuse the valid one.
+- Page objects are TypeScript classes taking \`page: Page\`; expose locators as getters.
+- Use \`getByLabel\`/\`getByRole\`/\`getByTestId\` for the matching strategies; raw \`page.locator\` only for css/xpath.
+- Use web-first assertions (\`await expect(locator).toBeVisible()\`); never \`waitForTimeout\`.
+@task
+Write Playwright (TypeScript) tests (P1=pages/LoginPage.ts, scenario=tests/login-flow.spec.ts). Run npx playwright test until green.
+"
+`;
+
+exports[`renderLlmContextCompact > matches the snapshot for each task > login heal 1`] = `
+"#recospec-ctx v1 flow=login-flow fw=playwright-ts base=http://localhost:4173 task=heal
+#el: id page name tag[:type] role "label" locator [~ fallback]... [!=fragile locator] [*=secret]
+#step: n action [el] [arg]
+@pages
+P1 LoginPage /login
+@el
+e1 P1 emailInput input:email - "Email" aria:[aria-label="Email"] ~ role:textbox[name="Email"] ~ label:Email *
+e2 P1 passwordInput input:password - "Password" aria:[aria-label="Password"] ~ label:Password ~ id:#password *
+e3 P1 signIn button - "Sign in" tid:sign-in ~ role:button[name="Sign in"] ~ css:button[type="submit"]
+@fp
+e1 path=main>form>input near=Password|Sign in box=.50,.23 a=id:email,name:email,type:email,autocomplete:username
+e2 path=main>form>input near=Sign in box=.50,.32 a=id:password,name:password,type:password,autocomplete:current-password
+e3 path=main>form>button box=.39,.39 a=type:submit,data-testid:sign-in
+@steps
+1 fill e1 $RECOSPEC_EMAIL
+2 fill e2 $RECOSPEC_PASSWORD
+3 click e3
+4 wait networkidle 10000
+@methods
+P1.login(email*:s,password*:s) steps=1-4
+@rules
+- When a locator fails, try its ~ fallbacks in rank order, then match @fp (role, label, near, path, a=) against the page.
+- Return a replacement only when it resolves to a single element; otherwise report the element as unrecoverable.
+@task
+For a failing element id, answer {"el":"eN","loc":"strategy:value"} with the best replacement.
+"
+`;

@@ -22,7 +22,7 @@ export interface NormalizedActions {
   flatSteps: IRStep[]
 }
 
-function rawSelector(locator: Locator): string {
+export function rawSelector(locator: Locator): string {
   return typeof locator.selector === 'string' ? locator.selector : JSON.stringify(locator.selector)
 }
 

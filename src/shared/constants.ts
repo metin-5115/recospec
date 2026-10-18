@@ -117,6 +117,33 @@ export const PROMPT_ELEMENT_TEXT_PREVIEW_MAX = 80 as const
 /** Headers the exported prompt tells Claude to strip from mocked fixtures. */
 export const PROMPT_STRIPPED_HEADERS = 'Authorization, Cookie, Set-Cookie' as const
 
+/** Max characters of an element's visible text echoed into the LLM context. */
+export const LLM_CONTEXT_TEXT_MAX = 40 as const
+
+/** Fallback locators kept per element in the LLM context. */
+export const LLM_CONTEXT_MAX_FALLBACKS = 2 as const
+
+/** Neighbour texts kept per element fingerprint in the LLM context. */
+export const LLM_CONTEXT_MAX_NEIGHBORS = 3 as const
+
+/** Max characters of each neighbour text in the LLM context. */
+export const LLM_CONTEXT_NEIGHBOR_TEXT_MAX = 24 as const
+
+/** Trailing DOM-path segments kept per element fingerprint in the LLM context. */
+export const LLM_CONTEXT_DOM_PATH_SEGMENTS = 4 as const
+
+/** Fallback locators longer than this are dropped from the LLM context (truncating would break them). */
+export const LLM_CONTEXT_LOCATOR_MAX = 120 as const
+
+/** Max distinct same-origin requests listed in the LLM context's network section. */
+export const LLM_CONTEXT_MAX_REQUESTS = 25 as const
+
+/** Placeholder the fingerprint capture writes in place of a value classified as dynamic data. */
+export const DYNAMIC_VALUE_MASK = '«dynamic»' as const
+
+/** Rough characters-per-token ratio used for LLM context size estimates. */
+export const CHARS_PER_TOKEN_ESTIMATE = 4 as const
+
 /** Maximum number of locators evaluated in a single live "Test on Page" run. */
 export const LOCATOR_VALIDATION_MAX_TARGETS = 100 as const
 
