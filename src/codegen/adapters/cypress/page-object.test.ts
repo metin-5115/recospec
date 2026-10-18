@@ -64,7 +64,7 @@ describe('cypress renderPageObject', () => {
 
   it('emits cy.findByRole for role-name strategy', () => {
     const out = renderPageObject(loginPage)
-    expect(out).toContain("cy.findByRole('button', { name: 'Sign In' })")
+    expect(out).toContain('cy.findByRole("button", { name: "Sign In" })')
   })
 
   it('emits visit() helper using cy.visit', () => {
@@ -111,7 +111,7 @@ describe('cypress renderPageObject — fallback comments', () => {
     }
     const output = renderPageObject(page)
     expect(output).toContain(
-      `// Fallbacks: cy.findByLabelText("Email"), cy.findByRole('textbox', { name: 'Email' })`,
+      `// Fallbacks: cy.findByLabelText("Email"), cy.findByRole("textbox", { name: "Email" })`,
     )
   })
 })

@@ -70,7 +70,9 @@ describe('selenium-py renderPageObject', () => {
 
   it('emits By.XPATH tuple for role-name strategy', () => {
     const out = renderPageObject(loginPage)
-    expect(out).toContain(`SIGN_IN_BUTTON = (By.XPATH, "//button[normalize-space()='Sign In']")`)
+    expect(out).toContain(
+      `SIGN_IN_BUTTON = (By.XPATH, "//button[normalize-space(.)='Sign In' or @value='Sign In' or @aria-label='Sign In']")`,
+    )
   })
 
   it('emits __init__ with WebDriverWait', () => {
@@ -115,7 +117,7 @@ describe('selenium-py renderPageObject — fallback comments', () => {
     }
     const out = renderPageObject(page)
     expect(out).toContain(
-      `# Fallbacks: (By.CSS_SELECTOR, '[aria-label="Email"]'), (By.XPATH, "//*[normalize-space()='Email']")`,
+      `# Fallbacks: (By.CSS_SELECTOR, '[aria-label="Email"]'), (By.XPATH, "//*[@role='textbox' or self::input or self::textarea][@id=//label[normalize-space(.)='Email']/@for or ancestor::label[normalize-space(.)='Email'] or @aria-label='Email' or @placeholder='Email']")`,
     )
   })
 })

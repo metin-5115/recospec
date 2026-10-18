@@ -12,7 +12,7 @@ class LoginPage:
 
     PASSWORD_INPUT = (By.CSS_SELECTOR, '[data-testid="login-password"]')
 
-    SIGN_IN_BUTTON = (By.XPATH, "//button[normalize-space()='Sign In']")
+    SIGN_IN_BUTTON = (By.XPATH, "//button[normalize-space(.)='Sign In' or @value='Sign In' or @aria-label='Sign In']")
 
     def __init__(self, driver):
         self.driver = driver

@@ -23,6 +23,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Role and label locators from real recordings** — the engine stores role locators as
+  `button[name="Apply"]`, but the adapters expected `'button', { name: 'Apply' }`, so real recordings
+  produced `page.getByRole(button[name="Apply"])` (Playwright and Cypress) and `//input` (Selenium, the
+  first input on the page). Label fallbacks became `locator("Promo code")`. Every adapter now renders
+  `getByRole("button", { name: "Apply" })`, `getByLabel(…)`, `cy.findByRole(…)` / `cy.findByLabelText(…)`
+  and, for Selenium, an XPath matching the control's label, aria-label, placeholder or text. Real
+  recordings now run through all four adapters in the test suite, and Playwright output is type-checked
+  against `@playwright/test`.
 - **Generated classes the locator engine kept trusting** — folder-prefixed CSS Modules
   (`hm__style_dropdown__3tpXH`, `hm__grid_col-12__A_EnK`) were not recognised as generated, so css,
   xpath and composed locators were built on them and broke on the next deploy. They are now detected,

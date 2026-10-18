@@ -37,7 +37,7 @@ describe('selenium-java renderFindByAnnotation', () => {
       tagName: 'button',
     }
     expect(renderFindByAnnotation(el)).toBe(
-      `@FindBy(xpath = "//button[normalize-space()='Sign In']")`,
+      `@FindBy(xpath = "//button[normalize-space(.)='Sign In' or @value='Sign In' or @aria-label='Sign In']")`,
     )
   })
 
@@ -107,7 +107,9 @@ describe('selenium-java renderFallbackAnnotation', () => {
         strategy: 'role-name',
         locatorValue: `'textbox', { name: 'Email' }`,
       }),
-    ).toBe(`@FindBy(xpath = "//*[normalize-space()='Email']")`)
+    ).toBe(
+      `@FindBy(xpath = "//*[@role='textbox' or self::input or self::textarea][@id=//label[normalize-space(.)='Email']/@for or ancestor::label[normalize-space(.)='Email'] or @aria-label='Email' or @placeholder='Email']")`,
+    )
   })
 })
 
@@ -129,7 +131,9 @@ describe('selenium-java renderByExpression', () => {
       locatorValue: `'button', { name: 'Sign In' }`,
       tagName: 'button',
     }
-    expect(renderByExpression(el)).toBe(`By.xpath("//button[normalize-space()='Sign In']")`)
+    expect(renderByExpression(el)).toBe(
+      `By.xpath("//button[normalize-space(.)='Sign In' or @value='Sign In' or @aria-label='Sign In']")`,
+    )
   })
 
   it('emits By.id for id strategy', () => {

@@ -1,4 +1,18 @@
 import type { IRElement } from '../../ir/types'
+import { parseRoleName } from '@codegen/shared/locator-value'
+
+/**
+ * testing-library `findByRole(role, { name })` call (no subject) for a
+ * role-name locatorValue, or a raw `get()` if unparseable.
+ */
+export function roleQuery(value: string): string {
+  const parsed = parseRoleName(value)
+  if (!parsed) return `get(${JSON.stringify(value)})`
+  const role = JSON.stringify(parsed.role)
+  return parsed.name === undefined
+    ? `findByRole(${role})`
+    : `findByRole(${role}, { name: ${JSON.stringify(parsed.name)} })`
+}
 
 /**
  * Render the inner Cypress chainable expression for an element.
@@ -45,10 +59,8 @@ function renderInnerLocator(el: IRElement): string {
     const label = val.replace(/^\[aria-label="(.+)"\]$/, '$1')
     return `cy.findByLabelText(${JSON.stringify(label)})`
   }
-  if (strategy === 'role-name') {
-    // val looks like: 'button', { name: 'Sign In' }
-    return `cy.findByRole(${val})`
-  }
+  if (strategy === 'role-name') return `cy.${roleQuery(val)}`
+  if (strategy === 'label') return `cy.findByLabelText(${JSON.stringify(val)})`
   if (strategy === 'text') {
     return `cy.contains(${JSON.stringify(val)})`
   }
@@ -103,6 +115,10 @@ export function renderLocator(el: IRElement): string {
     for (const host of rest) {
       chain += `.find(${JSON.stringify(host)}).shadow()`
     }
+    // testing-library queries search within the shadow root subject.
+    if (el.locatorStrategy === 'role-name') return `${chain}.${roleQuery(el.locatorValue)}`
+    if (el.locatorStrategy === 'label')
+      return `${chain}.findByLabelText(${JSON.stringify(el.locatorValue)})`
     return `${chain}.find(${JSON.stringify(el.locatorValue)})`
   }
 

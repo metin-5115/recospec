@@ -30,7 +30,9 @@ describe('selenium-py renderLocatorTuple', () => {
       locatorValue: `'button', { name: 'Sign In' }`,
       tagName: 'button',
     }
-    expect(renderLocatorTuple(el)).toBe(`(By.XPATH, "//button[normalize-space()='Sign In']")`)
+    expect(renderLocatorTuple(el)).toBe(
+      `(By.XPATH, "//button[normalize-space(.)='Sign In' or @value='Sign In' or @aria-label='Sign In']")`,
+    )
   })
 
   it('emits By.XPATH for text strategy', () => {
@@ -97,6 +99,8 @@ describe('selenium-py renderFallbackTuple', () => {
         strategy: 'role-name',
         locatorValue: `'textbox', { name: 'Email' }`,
       }),
-    ).toBe(`(By.XPATH, "//*[normalize-space()='Email']")`)
+    ).toBe(
+      `(By.XPATH, "//*[@role='textbox' or self::input or self::textarea][@id=//label[normalize-space(.)='Email']/@for or ancestor::label[normalize-space(.)='Email'] or @aria-label='Email' or @placeholder='Email']")`,
+    )
   })
 })

@@ -6,7 +6,7 @@ import type {
   InferredMethod,
   TestDataConfig,
 } from '../../ir/types'
-import { renderLocator } from './locator'
+import { renderLocator, roleQuery } from './locator'
 import { renderAssertion } from './assertion'
 import { renderInteraction, renderToggleByParam } from './interaction'
 import { renderCypressMocks } from './mock'
@@ -40,7 +40,9 @@ function renderFallbackExpr(f: IRFallback): string {
       return `cy.findByLabelText(${JSON.stringify(label)})`
     }
     case 'role-name':
-      return `cy.findByRole(${val})`
+      return `cy.${roleQuery(val)}`
+    case 'label':
+      return `cy.findByLabelText(${JSON.stringify(val)})`
     case 'text':
       return `cy.contains(${JSON.stringify(val)})`
     default:

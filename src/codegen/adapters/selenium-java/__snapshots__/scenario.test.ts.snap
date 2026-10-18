@@ -40,7 +40,7 @@ public class TestLoginFlow {
         WebElement _el = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("[data-testid=\\"login-email\\"]")));
         _el.clear();
         _el.sendKeys("foo@bar.com");
-        wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//button[normalize-space()='Submit']"))).click();
+        wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//button[normalize-space(.)='Submit' or @value='Submit' or @aria-label='Submit']"))).click();
     }
 
     @AfterMethod

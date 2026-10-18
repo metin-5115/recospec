@@ -7,7 +7,7 @@ describe('Login flow', () => {
   it('full flow', () => {
     cy.visit("/login");
     cy.get("[data-testid=\\"login-email\\"]").clear().type("foo@bar.com");
-    cy.findByRole('button', { name: 'Submit' }).click();
+    cy.findByRole("button", { name: "Submit" }).click();
   });
 });
 "

@@ -1,27 +1,14 @@
 import type { IRElement, IRFallback } from '../../ir/types'
+import {
+  labelXPath,
+  parseRoleName,
+  roleNameXPath,
+  xpathLiteral,
+} from '@codegen/shared/locator-value'
 
 /** Escape a Java double-quoted string literal. */
 export function javaStr(value: string): string {
   return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t')}"`
-}
-
-interface ParsedRoleName {
-  role: string
-  name: string
-}
-
-function parseRoleName(value: string): ParsedRoleName | null {
-  const match = value.match(/^['"]([^'"]+)['"]\s*,\s*\{\s*name:\s*['"]([^'"]+)['"]\s*\}\s*$/)
-  if (!match) return null
-  return { role: match[1], name: match[2] }
-}
-
-/** XPath-safe quoting for a value that may contain both ' and ". */
-function xpathLiteral(value: string): string {
-  if (!value.includes("'")) return `'${value}'`
-  if (!value.includes('"')) return `"${value}"`
-  const parts = value.split("'").map((p) => `'${p}'`)
-  return `concat(${parts.join(`, "'", `)})`
 }
 
 export type FindByLocatorType = 'css' | 'xpath' | 'id' | 'name' | 'className'
@@ -53,11 +40,11 @@ export function renderFindByLocator(el: {
   if (strategy === 'role-name') {
     const parsed = parseRoleName(val)
     const tag = el.tagName?.toLowerCase() || '*'
-    if (parsed) {
-      const lit = xpathLiteral(parsed.name)
-      return { type: 'xpath', value: `//${tag}[normalize-space()=${lit}]` }
-    }
+    if (parsed) return { type: 'xpath', value: roleNameXPath(parsed.role, parsed.name, tag) }
     return { type: 'xpath', value: `//${tag}` }
+  }
+  if (strategy === 'label') {
+    return { type: 'xpath', value: labelXPath(val, el.tagName?.toLowerCase() || '*') }
   }
   if (strategy === 'text') {
     const lit = xpathLiteral(val)
@@ -79,7 +66,7 @@ export function renderFindByLocator(el: {
     // (param mode) is rendered separately by the page-object renderer.
     return { type: 'xpath', value: el.template?.xpath ?? val }
   }
-  // css, label, default
+  // css, default
   return { type: 'css', value: val }
 }
 

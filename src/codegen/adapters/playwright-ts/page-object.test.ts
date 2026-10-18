@@ -87,7 +87,7 @@ describe('renderPageObject — fallback comments', () => {
     }
     const output = renderPageObject(page)
     expect(output).toContain(
-      `// Fallbacks: getByLabel("Email"), getByRole('textbox', { name: 'Email' })`,
+      `// Fallbacks: getByLabel("Email"), getByRole("textbox", { name: "Email" })`,
     )
   })
 

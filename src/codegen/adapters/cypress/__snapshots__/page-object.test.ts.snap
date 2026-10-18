@@ -6,7 +6,7 @@ exports[`cypress renderPageObject > matches snapshot for LoginPage with login() 
 
   passwordInput() { return cy.get("[data-testid=\\"login-password\\"]"); }
 
-  signInButton() { return cy.findByRole('button', { name: 'Sign In' }); }
+  signInButton() { return cy.findByRole("button", { name: "Sign In" }); }
 
   visit() {
     cy.visit("/login");

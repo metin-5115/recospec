@@ -1,4 +1,10 @@
 import type { IRElement, IRFallback } from '../../ir/types'
+import {
+  labelXPath,
+  parseRoleName,
+  roleNameXPath,
+  xpathLiteral,
+} from '@codegen/shared/locator-value'
 
 /** Escape a single-quoted Python string literal. */
 function pyStr(value: string): string {
@@ -8,27 +14,6 @@ function pyStr(value: string): string {
 /** Escape a double-quoted Python string literal — used for XPath expressions that themselves contain single quotes. */
 function pyDoubleStr(value: string): string {
   return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
-}
-
-interface ParsedRoleName {
-  role: string
-  name: string
-}
-
-/** Parse the IR's role-name locatorValue (e.g. `'button', { name: 'Sign In' }`). */
-function parseRoleName(value: string): ParsedRoleName | null {
-  const match = value.match(/^['"]([^'"]+)['"]\s*,\s*\{\s*name:\s*['"]([^'"]+)['"]\s*\}\s*$/)
-  if (!match) return null
-  return { role: match[1], name: match[2] }
-}
-
-/** XPath-safe quoting for a value that may contain both ' and ". */
-function xpathLiteral(value: string): string {
-  if (!value.includes("'")) return `'${value}'`
-  if (!value.includes('"')) return `"${value}"`
-  // mixed: split on ' and use concat()
-  const parts = value.split("'").map((p) => `'${p}'`)
-  return `concat(${parts.join(`, "'", `)})`
 }
 
 interface ByTuple {
@@ -52,11 +37,11 @@ export function renderByTuple(el: IRElement): ByTuple {
   if (strategy === 'role-name') {
     const parsed = parseRoleName(val)
     const tag = el.tagName?.toLowerCase() || '*'
-    if (parsed) {
-      const lit = xpathLiteral(parsed.name)
-      return { by: 'XPATH', value: `//${tag}[normalize-space()=${lit}]` }
-    }
+    if (parsed) return { by: 'XPATH', value: roleNameXPath(parsed.role, parsed.name, tag) }
     return { by: 'XPATH', value: `//${tag}` }
+  }
+  if (strategy === 'label') {
+    return { by: 'XPATH', value: labelXPath(val, el.tagName?.toLowerCase() || '*') }
   }
   if (strategy === 'text') {
     const lit = xpathLiteral(val)
@@ -79,7 +64,7 @@ export function renderByTuple(el: IRElement): ByTuple {
     // (param mode) is rendered separately by the page-object renderer.
     return { by: 'XPATH', value: el.template?.xpath ?? val }
   }
-  // css, label (which is a CSS selector chain), default fallback
+  // css, default fallback
   return { by: 'CSS_SELECTOR', value: val }
 }
 

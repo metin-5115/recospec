@@ -74,7 +74,9 @@ describe('selenium-java renderPageObject', () => {
 
   it('emits @FindBy(xpath = ...) for role-name strategy', () => {
     const out = renderPageObject(loginPage)
-    expect(out).toContain(`@FindBy(xpath = "//button[normalize-space()='Sign In']")`)
+    expect(out).toContain(
+      `@FindBy(xpath = "//button[normalize-space(.)='Sign In' or @value='Sign In' or @aria-label='Sign In']")`,
+    )
     expect(out).toContain('private WebElement signInButton;')
   })
 
@@ -120,7 +122,7 @@ describe('selenium-java renderPageObject — fallback comments', () => {
     }
     const out = renderPageObject(page)
     expect(out).toContain(
-      `// Fallbacks: @FindBy(css = "[aria-label=\\"Email\\"]"), @FindBy(xpath = "//*[normalize-space()='Email']")`,
+      `// Fallbacks: @FindBy(css = "[aria-label=\\"Email\\"]"), @FindBy(xpath = "//*[@role='textbox' or self::input or self::textarea][@id=//label[normalize-space(.)='Email']/@for or ancestor::label[normalize-space(.)='Email'] or @aria-label='Email' or @placeholder='Email']")`,
     )
   })
 })

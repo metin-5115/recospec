@@ -23,7 +23,7 @@ public class LoginPage {
     @FindBy(css = "[data-testid=\\"login-password\\"]")
     private WebElement passwordInput;
 
-    @FindBy(xpath = "//button[normalize-space()='Sign In']")
+    @FindBy(xpath = "//button[normalize-space(.)='Sign In' or @value='Sign In' or @aria-label='Sign In']")
     private WebElement signInButton;
 
     public LoginPage(WebDriver driver) {

@@ -1,5 +1,16 @@
 import type { IRElement, IRFallback } from '../../ir/types'
 import { dateFnsLocaleImportName } from '@shared/date-template'
+import { parseRoleName } from '@codegen/shared/locator-value'
+
+/** `getByRole(role, { name })` call for a role-name locatorValue, or a raw `locator()` if unparseable. */
+function roleQuery(value: string): string {
+  const parsed = parseRoleName(value)
+  if (!parsed) return `locator(${JSON.stringify(value)})`
+  const role = JSON.stringify(parsed.role)
+  return parsed.name === undefined
+    ? `getByRole(${role})`
+    : `getByRole(${role}, { name: ${JSON.stringify(parsed.name)} })`
+}
 
 /**
  * Render a composed (anchor + target) chain relative to its root.
@@ -104,7 +115,8 @@ function renderInnerLocator(el: IRElement, root: string): string {
     return `${root}.getByTestId(${JSON.stringify(val.replace(/^\[data-testid="(.+)"\]$/, '$1'))})`
   if (strategy === 'aria-label')
     return `${root}.getByLabel(${JSON.stringify(val.replace(/^\[aria-label="(.+)"\]$/, '$1'))})`
-  if (strategy === 'role-name') return `${root}.getByRole(${val})`
+  if (strategy === 'role-name') return `${root}.${roleQuery(val)}`
+  if (strategy === 'label') return `${root}.getByLabel(${JSON.stringify(val)})`
   if (strategy === 'text') return `${root}.getByText(${JSON.stringify(val)})`
   if (strategy === 'placeholder')
     return `${root}.getByPlaceholder(${JSON.stringify(attrValueOf(val, 'placeholder'))})`
@@ -134,6 +146,10 @@ export function renderLocator(el: IRElement): string {
     const hostChain = el.shadowContext.hostChain
       .map((h) => `locator(${JSON.stringify(h)})`)
       .join('.')
+    // Role and label queries pierce open shadow roots; a CSS locator would
+    // read the stored `role[name="…"]` / label text as a literal selector.
+    if (el.locatorStrategy === 'role-name' || el.locatorStrategy === 'label')
+      return renderInnerLocator(el, `${root}.${hostChain}`)
     return `${root}.${hostChain}.locator(${JSON.stringify(el.locatorValue)})`
   }
 
@@ -148,7 +164,9 @@ function renderFallbackExpr(f: IRFallback): string {
     case 'aria-label':
       return `getByLabel(${JSON.stringify(val.replace(/^\[aria-label="(.+)"\]$/, '$1'))})`
     case 'role-name':
-      return `getByRole(${val})`
+      return roleQuery(val)
+    case 'label':
+      return `getByLabel(${JSON.stringify(val)})`
     case 'text':
       return `getByText(${JSON.stringify(val)})`
     default:
