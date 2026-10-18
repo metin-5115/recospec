@@ -15,7 +15,7 @@
     "pretest": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:ci": "vitest run --coverage",
+    "test:ci": "vitest run --coverage --project node --project dom",
     "test:e2e": "playwright test",
     "bench": "vitest run benchmarks/survival.test.ts",
     "bench:calibrate": "vitest run --config vitest.calibrate.config.ts",
