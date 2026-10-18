@@ -31,7 +31,6 @@ export class HomePage {
 
 exports[`assertion codegen — renderScenario > matches snapshot 1`] = `
 "import { test, expect } from '@playwright/test';
-import { HomePage } from './HomePage';
 
 test.describe('Assertion flow', () => {
   test('full flow', async ({ page }) => {

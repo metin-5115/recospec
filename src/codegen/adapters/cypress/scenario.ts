@@ -4,6 +4,14 @@ import { renderAssertion } from './assertion'
 import { renderInteraction } from './interaction'
 import { renderCypressMocks } from './mock'
 import { resolveTestData } from '../../planner/test-data-resolver'
+import { dateCtorFromIso } from '../../shared/date-literal'
+import {
+  buildScenarioFlow,
+  initialUrl,
+  pagesUsed,
+  type FlowArg,
+  type FlowItem,
+} from '../../shared/scenario-flow'
 
 let TEST_DATA: TestDataConfig | undefined
 export function setCypressTestData(value: TestDataConfig | undefined): void {
@@ -72,24 +80,63 @@ function renderStepInSpec(step: IRStep, indent: string): string {
   return ''
 }
 
+const INDENT = '    '
+
+function toVarName(className: string): string {
+  return className.charAt(0).toLowerCase() + className.slice(1)
+}
+
+function renderArg(arg: FlowArg): string {
+  if (arg.fromFill && resolveTestData(arg.element, arg.value, TEST_DATA).useEnvVar) {
+    return renderFillValueExpr(arg.element, arg.value)
+  }
+  switch (arg.type) {
+    case 'boolean':
+      return arg.value
+    case 'number':
+      return String(Number.isFinite(Number(arg.value)) ? Number(arg.value) : 0)
+    case 'date':
+      return arg.isoDate ? dateCtorFromIso(arg.isoDate) : 'new Date()'
+    default:
+      return JSON.stringify(arg.value)
+  }
+}
+
+function renderItem(item: FlowItem): string[] {
+  switch (item.kind) {
+    case 'visit':
+      return [`${INDENT}cy.visit(${JSON.stringify(item.url)});`]
+    case 'call': {
+      const args = item.args.map(renderArg).join(', ')
+      return [`${INDENT}${toVarName(item.page.className)}.${item.method.name}(${args});`]
+    }
+    case 'inline':
+      return item.page.steps.map((step) => renderStepInSpec(step, INDENT)).filter(Boolean)
+  }
+}
+
 export function renderScenario(scenario: IRScenario): string {
-  const imports = scenario.pages
-    .map((p) => `import { ${p.className} } from '../pages/${p.className}';`)
-    .join('\n')
+  const flow = buildScenarioFlow(scenario)
+  const used = pagesUsed(flow)
 
-  // Mocks first: an intercept registered after the click would miss the request.
-  const mocks = renderCypressMocks(
-    scenario.pages.flatMap((page) => page.steps),
-    '    ',
+  // Spec in cypress/e2e/, page objects in cypress/pages/ (see resolveOutputPath).
+  const imports = used.map((p) => `import { ${p.className} } from '../pages/${p.className}';`)
+  const header = imports.length > 0 ? `${imports.join('\n')}\n\n` : ''
+
+  // Page-object methods register their own mocks; only inline pages need them here, and
+  // before any step: an intercept registered after the click would miss the request.
+  const inlineSteps = flow.flatMap((item) => (item.kind === 'inline' ? item.page.steps : []))
+  const mocks = renderCypressMocks(inlineSteps, INDENT)
+  const start = initialUrl(scenario, flow)
+  const opening = start ? [`${INDENT}cy.visit(${JSON.stringify(start)});`] : []
+  const pageObjects = used.map(
+    (p) => `${INDENT}const ${toVarName(p.className)} = new ${p.className}();`,
   )
-  const stepLines = scenario.pages
-    .flatMap((page) => page.steps.map((step) => renderStepInSpec(step, '    ')).filter(Boolean))
+  const testBody = [mocks, ...opening, ...pageObjects, ...flow.flatMap(renderItem)]
+    .filter(Boolean)
     .join('\n')
-  const testBody = [mocks, stepLines].filter(Boolean).join('\n')
 
-  return `${imports}
-
-describe('${scenario.name}', () => {
+  return `${header}describe('${scenario.name}', () => {
   it('full flow', () => {
 ${testBody}
   });

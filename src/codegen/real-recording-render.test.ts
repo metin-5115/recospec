@@ -9,8 +9,10 @@ import './adapters/selenium-java'
 import { syntaxErrors } from './ts-syntax.test-util'
 import { typeErrors } from './ts-typecheck.test-util'
 import { validatePythonSource } from './adapters/selenium-py/python-validate'
+import { toSnakeCase } from './adapters/selenium-py/scenario'
 import { validateJavaSource } from './adapters/selenium-java/java-validate'
 import type { JsonExportPayload } from './export/json-export'
+import { resolveOutputPath } from './export/output-path'
 import type { FrameworkId, GeneratedFile } from '@shared/types/generated'
 import checkoutRecording from './__fixtures__/real-checkout-recording.json'
 import loginRecording from './__fixtures__/real-login-recording.json'
@@ -34,12 +36,163 @@ function render(recording: unknown, framework: FrameworkId): GeneratedFile[] {
   const adapter = getAdapter(framework)
   return [
     ...pages.map((page) => adapter.renderPageObject(page)),
-    adapter.renderScenario({ name: payload.session.name, pages }),
+    adapter.renderScenario({
+      name: payload.session.name,
+      startUrl: payload.session.startUrl,
+      pages,
+    }),
   ]
 }
 
 function source(files: GeneratedFile[]): string {
   return files.map((f) => f.content).join('\n')
+}
+
+/** Generated files keyed by the path they get in a project (same table the ZIP and the CLI use). */
+function projectLayout(files: GeneratedFile[], framework: FrameworkId): Record<string, string> {
+  return Object.fromEntries(files.map((f) => [resolveOutputPath(f.filename, framework), f.content]))
+}
+
+function startUrlOf(recording: unknown): string {
+  return (JSON.parse(JSON.stringify(recording)) as JsonExportPayload).session.startUrl
+}
+
+/** Routes the user actually interacted on, in order. Waits and network calls only report where the page ended up. */
+function recordedRoutes(recording: unknown): string[] {
+  const payload = JSON.parse(JSON.stringify(recording)) as JsonExportPayload
+  const routes: string[] = []
+  for (const action of payload.actions) {
+    if (action.type === 'wait' || action.type === 'network') continue
+    const route = new URL(action.pageUrl).pathname
+    if (!routes.includes(route)) routes.push(route)
+  }
+  return routes
+}
+
+/** Splits `a, "b, c", f(d, e)` on its top-level commas. */
+function topLevelArgs(text: string): string[] {
+  const args: string[] = []
+  let depth = 0
+  let quote = ''
+  let current = ''
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i] as string
+    if (quote) {
+      current += ch
+      if (ch === '\\') current += text[++i] ?? ''
+      else if (ch === quote) quote = ''
+      continue
+    }
+    if (ch === '"' || ch === "'") quote = ch
+    if ('([{'.includes(ch)) depth++
+    if (')]}'.includes(ch)) depth--
+    if (ch === ',' && depth === 0) {
+      args.push(current.trim())
+      current = ''
+      continue
+    }
+    current += ch
+  }
+  if (current.trim()) args.push(current.trim())
+  return args
+}
+
+/** Every `receiver.method(args)` call, with the argument count. Strings may contain parentheses. */
+function callsOn(code: string, receiver: string): { method: string; argCount: number }[] {
+  const calls: { method: string; argCount: number }[] = []
+  const opener = new RegExp(`\\b${receiver}\\.(\\w+)\\(`, 'g')
+  for (let m = opener.exec(code); m; m = opener.exec(code)) {
+    let depth = 1
+    let quote = ''
+    let i = opener.lastIndex
+    const start = i
+    for (; i < code.length && depth > 0; i++) {
+      const ch = code[i] as string
+      if (quote) {
+        if (ch === '\\') i++
+        else if (ch === quote) quote = ''
+        continue
+      }
+      if (ch === '"' || ch === "'") quote = ch
+      else if (ch === '(') depth++
+      else if (ch === ')') depth--
+    }
+    calls.push({
+      method: m[1] as string,
+      argCount: topLevelArgs(code.slice(start, i - 1)).length,
+    })
+  }
+  return calls
+}
+
+/** Parameter counts of the methods a generated page-object class declares. */
+function declaredMethods(content: string, signature: RegExp): Map<string, number> {
+  const methods = new Map<string, number>()
+  for (const m of content.matchAll(signature)) {
+    methods.set(m[1] as string, topLevelArgs(m[2] ?? '').length)
+  }
+  return methods
+}
+
+/**
+ * The spec must call page-object methods that exist, with as many arguments as they take.
+ * `variable(className)` is how the adapter names the page-object instance in the spec.
+ */
+function expectCallsMatchDeclarations(
+  files: GeneratedFile[],
+  spec: GeneratedFile,
+  signature: RegExp,
+  variable: (className: string, filename: string) => string,
+  classOf: (file: GeneratedFile) => string | undefined,
+): void {
+  let called = 0
+  for (const file of files) {
+    if (file === spec) continue
+    const className = classOf(file)
+    if (!className) continue
+    const declared = declaredMethods(file.content, signature)
+    for (const call of callsOn(spec.content, variable(className, file.filename))) {
+      called++
+      expect(declared.has(call.method), `${className}.${call.method} is not declared`).toBe(true)
+      expect(call.argCount, `${className}.${call.method} argument count`).toBe(
+        declared.get(call.method),
+      )
+    }
+  }
+  expect(called, 'the spec calls page-object methods').toBeGreaterThan(0)
+}
+
+/** A parameter nothing reads means the recorded value never reaches the page. */
+function expectParametersUsed(
+  files: GeneratedFile[],
+  spec: GeneratedFile,
+  signature: RegExp,
+  paramName: (declaration: string) => string = (d) => d.split(':')[0]?.trim() ?? d,
+): void {
+  for (const file of files) {
+    if (file === spec) continue
+    const matches = [...file.content.matchAll(signature)]
+    matches.forEach((m, i) => {
+      const body = file.content.slice(
+        m.index + m[0].length,
+        matches[i + 1]?.index ?? file.content.length,
+      )
+      for (const declaration of topLevelArgs(m[2] ?? '')) {
+        const name = paramName(declaration)
+        expect(body, `${file.filename} ${m[1]}(${name}) never uses ${name}`).toMatch(
+          new RegExp(`\\b${name}\\b`),
+        )
+      }
+    })
+  }
+}
+
+function classNameIn(file: GeneratedFile): string | undefined {
+  return file.content.match(/class (\w+)/)?.[1]
+}
+
+function lowerFirst(name: string): string {
+  return name.charAt(0).toLowerCase() + name.slice(1)
 }
 
 /** Every recorded role-name / label value, so each test can check its name survives. */
@@ -64,12 +217,58 @@ describe.each(Object.entries(RECORDINGS))('real %s recording', (_label, recordin
     expect(recordedNames(recording).length).toBeGreaterThan(0)
   })
 
-  it('Playwright output type-checks against @playwright/test', () => {
+  it('Playwright output type-checks against @playwright/test in the project layout', () => {
     const files = render(recording, 'playwright-ts')
     expect(source(files)).not.toMatch(/getByRole\((?!["'])/)
-    const virtual = Object.fromEntries(files.map((f) => [f.filename, f.content]))
-    expect(typeErrors(virtual)).toEqual([])
+    const layout = projectLayout(files, 'playwright-ts')
+    expect(Object.keys(layout)).toContain('tests/scenario.spec.ts')
+    expect(typeErrors(layout)).toEqual([])
   }, 30_000)
+
+  describe('Playwright scenario', () => {
+    const files = () => render(recording, 'playwright-ts')
+    const spec = () => files().find((f) => f.filename === 'scenario.spec.ts') as GeneratedFile
+
+    it('imports page objects from where the project layout puts them', () => {
+      const imports = [...spec().content.matchAll(/from '([^']+)'/g)].map((m) => m[1])
+      const pageImports = imports.filter((i) => i !== '@playwright/test')
+      expect(pageImports.length).toBeGreaterThan(0)
+      for (const path of pageImports) expect(path).toMatch(/^\.\.\/pages\/\w+Page$/)
+    })
+
+    it('drives the flow through page-object methods instead of inline locators', () => {
+      const all = files()
+      const code = spec().content
+      expect(code).not.toMatch(/\bpage\.(getBy|locator)\w*\(/)
+      expectCallsMatchDeclarations(
+        all,
+        spec(),
+        /^ {2}async (\w+)\(([^)]*)\)/gm,
+        (className) => lowerFirst(className),
+        classNameIn,
+      )
+      expect(code).toMatch(/const \w+Page = new \w+Page\(page\);/)
+    })
+
+    it('opens the recorded start URL first', () => {
+      const body = spec().content.split("test('full flow'")[1] as string
+      const firstStatement = body.split('\n').find((l) => l.includes('await '))
+      expect(firstStatement?.trim()).toBe(
+        `await page.goto(${JSON.stringify(startUrlOf(recording))});`,
+      )
+    })
+
+    it('points each page object at the route it was recorded on', () => {
+      const gotos = files()
+        .filter((f) => f.filename !== 'scenario.spec.ts')
+        .map((f) => f.content.match(/async goto\(\) \{\s*await this\.page\.goto\(("[^"]*")\)/)?.[1])
+      expect(gotos.map((g) => g && JSON.parse(g))).toEqual(recordedRoutes(recording))
+    })
+
+    it('leaves waiting to Playwright auto-wait instead of networkidle', () => {
+      expect(source(files())).not.toContain('networkidle')
+    })
+  })
 
   it('Playwright output queries role-name and label locators by role and label', () => {
     const code = source(render(recording, 'playwright-ts'))
@@ -88,6 +287,42 @@ describe.each(Object.entries(RECORDINGS))('real %s recording', (_label, recordin
     for (const f of files) expect(syntaxErrors(f.content, f.filename)).toEqual([])
   })
 
+  describe('Cypress scenario', () => {
+    const rendered = render(recording, 'cypress')
+    const spec = rendered.find((f) => f.filename === 'scenario.cy.js') as GeneratedFile
+    const signature = /^ {2}(\w+)\(([^)]*)\) \{/gm
+
+    it('imports page objects that sit where the project layout puts them', () => {
+      const layout = projectLayout(rendered, 'cypress')
+      const imports = [...spec.content.matchAll(/from '(\.\.\/pages\/\w+)'/g)].map((m) => m[1])
+      expect(imports.length).toBeGreaterThan(0)
+      for (const path of imports) expect(layout).toHaveProperty([`cypress/${path?.slice(3)}.js`])
+    })
+
+    it('drives the flow through page-object methods instead of inline commands', () => {
+      expect(spec.content).not.toMatch(/\bcy\.(get|find\w*|contains)\(/)
+      expectCallsMatchDeclarations(rendered, spec, signature, lowerFirst, classNameIn)
+      expect(spec.content).toMatch(/const \w+Page = new \w+Page\(\);/)
+    })
+
+    it('opens the recorded start URL first', () => {
+      const body = spec.content.split("it('full flow'")[1] as string
+      const first = body.split('\n').find((l) => l.includes('cy.'))
+      expect(first?.trim()).toBe(`cy.visit(${JSON.stringify(startUrlOf(recording))});`)
+    })
+
+    it('points each page object at the route it was recorded on', () => {
+      const routes = rendered
+        .filter((f) => f !== spec)
+        .map((f) => f.content.match(/visit\(\) \{\s*cy\.visit\(("[^"]*")\)/)?.[1])
+      expect(routes.map((r) => r && JSON.parse(r))).toEqual(recordedRoutes(recording))
+    })
+
+    it('uses every parameter a method declares', () => {
+      expectParametersUsed(rendered, spec, signature)
+    })
+  })
+
   it('Selenium Python locators carry the accessible name and parse', () => {
     const files = render(recording, 'selenium-py')
     const code = source(files)
@@ -99,6 +334,113 @@ describe.each(Object.entries(RECORDINGS))('real %s recording', (_label, recordin
       const result = validatePythonSource(f.content)
       expect(result.ok, `${f.filename}: ${result.error ?? ''}`).toBe(true)
     }
+  })
+
+  describe('Selenium Python scenario', () => {
+    const rendered = render(recording, 'selenium-py')
+    const files = () => rendered
+    const spec = () => rendered.find((f) => f.filename === 'test_scenario.py') as GeneratedFile
+    const pageFiles = () => rendered.filter((f) => f !== spec())
+
+    it('uses snake_case for every method and parameter', () => {
+      const names: string[] = []
+      for (const file of pageFiles()) {
+        for (const m of file.content.matchAll(/^ {4}def (\w+)\(self(?:, ([^)]*))?\)/gm)) {
+          names.push(m[1] as string)
+          for (const param of topLevelArgs(m[2] ?? '')) names.push(param.split(':')[0] as string)
+        }
+      }
+      expect(names.length).toBeGreaterThan(0)
+      for (const name of names) expect(name, name).toMatch(/^_{0,2}[a-z][a-z0-9_]*_{0,2}$/)
+    })
+
+    it('imports os in every file that reads the environment', () => {
+      for (const file of files()) {
+        if (file.content.includes('os.environ')) {
+          expect(file.content, file.filename).toMatch(/^import os$/m)
+        }
+      }
+      // The recordings mask secrets, so at least one file must read the environment.
+      expect(source(files())).toContain('os.environ')
+    })
+
+    it('uses the page objects instead of touching them for linters', () => {
+      expect(spec().content).not.toMatch(/^\s*_ = \w+\s+# noqa/m)
+      expectCallsMatchDeclarations(
+        files(),
+        spec(),
+        /^ {4}def (\w+)\(self(?:, ([^)]*))?\)/gm,
+        (className) => toSnakeCase(className),
+        classNameIn,
+      )
+      expect(spec().content).toMatch(/^ {4}\w+_page = \w+Page\(driver\)$/m)
+    })
+
+    it('imports page objects from modules that exist in the project layout', () => {
+      const layout = projectLayout(files(), 'selenium-py')
+      const imports = [...spec().content.matchAll(/^from (pages\.\w+) import/gm)].map((m) => m[1])
+      expect(imports.length).toBeGreaterThan(0)
+      for (const module of imports)
+        expect(layout).toHaveProperty([`${module?.replace('.', '/')}.py`])
+    })
+
+    it('opens the recorded start URL first', () => {
+      const body = spec().content.split(/^def test_\w+\(driver\):$/m)[1] as string
+      const first = body.split('\n').find((l) => /^ {4}[a-z_]/.test(l) && !l.includes('"""'))
+      expect(first?.trim()).toBe(`driver.get('${startUrlOf(recording)}')`)
+    })
+
+    it('points each page object at the absolute URL of its route', () => {
+      const origin = new URL(startUrlOf(recording)).origin
+      const gotos = pageFiles().map(
+        (f) => f.content.match(/def goto\(self\):\s*self\.driver\.get\('([^']*)'\)/)?.[1],
+      )
+      expect(gotos).toEqual(recordedRoutes(recording).map((route) => `${origin}${route}`))
+    })
+  })
+
+  describe('Selenium Java scenario', () => {
+    const rendered = render(recording, 'selenium-java')
+    const spec = rendered.find((f) => f.filename.startsWith('Test')) as GeneratedFile
+    const pageFiles = rendered.filter((f) => f !== spec)
+    const signature = /^ {4}public (?:void|\w+) (\w+)\(([^)]*)\)/gm
+
+    it('imports page objects from the package the project layout puts them in', () => {
+      const layout = projectLayout(rendered, 'selenium-java')
+      const imports = [...spec.content.matchAll(/^import pages\.(\w+);$/gm)].map((m) => m[1])
+      expect(imports.length).toBeGreaterThan(0)
+      for (const name of imports) {
+        expect(layout).toHaveProperty([`src/main/java/pages/${name}.java`])
+      }
+      expect(spec.content).toMatch(/^package tests;$/m)
+    })
+
+    it('drives the flow through page-object methods instead of inline locators', () => {
+      expect(spec.content).not.toContain('WebElement _el')
+      expect(spec.content).not.toMatch(/\bwait\.until\(/)
+      expectCallsMatchDeclarations(rendered, spec, signature, lowerFirst, classNameIn)
+      expect(spec.content).toMatch(/\w+Page \w+Page = new \w+Page\(driver\);/)
+    })
+
+    it('opens the recorded start URL first', () => {
+      const body = spec.content.split(/@Test\s+public void \w+\(\) \{/)[1] as string
+      const first = body.split('\n').find((l) => l.includes('driver.'))
+      expect(first?.trim()).toBe(`driver.get(${JSON.stringify(startUrlOf(recording))});`)
+    })
+
+    it('points each page object at the absolute URL of its route', () => {
+      const origin = new URL(startUrlOf(recording)).origin
+      const gotos = pageFiles.map(
+        (f) => f.content.match(/void goTo\(\) \{\s*driver\.get\(("[^"]*")\)/)?.[1],
+      )
+      expect(gotos.map((g) => g && JSON.parse(g))).toEqual(
+        recordedRoutes(recording).map((route) => `${origin}${route}`),
+      )
+    })
+
+    it('uses every parameter a method declares', () => {
+      expectParametersUsed(rendered, spec, signature, (d) => d.trim().split(/\s+/).pop() ?? d)
+    })
   })
 
   it('Selenium Java locators carry the accessible name and are well-formed', () => {

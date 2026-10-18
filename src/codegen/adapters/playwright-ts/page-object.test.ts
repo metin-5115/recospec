@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { renderPageObject, renderScenario, renderScaffold } from './index'
+import { inferMethods } from '../../planner/method-inferer'
 import type { IRPage, IRScenario, IRElement } from '../../ir/types'
 
 const loginElement: IRElement = {
@@ -52,17 +53,46 @@ describe('renderPageObject', () => {
 })
 
 describe('renderScenario', () => {
+  const pageWithMethods: IRPage = { ...loginPage, inferredMethods: inferMethods(loginPage.steps) }
+
   it('matches snapshot', () => {
-    const scenario: IRScenario = { name: 'Login flow', pages: [loginPage] }
+    const scenario: IRScenario = { name: 'Login flow', pages: [pageWithMethods] }
     const output = renderScenario(scenario)
-    expect(output).toContain('import { LoginPage }')
+    expect(output).toContain("import { LoginPage } from '../pages/LoginPage'")
     expect(output).toContain("test.describe('Login flow'")
+    expect(output).toMatchSnapshot()
   })
 
-  it('imports page object', () => {
-    const scenario: IRScenario = { name: 'Login flow', pages: [loginPage] }
+  it('imports the page object from pages/ and calls its methods', () => {
+    const scenario: IRScenario = { name: 'Login flow', pages: [pageWithMethods] }
     const output = renderScenario(scenario)
-    expect(output).toContain('import { LoginPage }')
+    expect(output).toContain("import { LoginPage } from '../pages/LoginPage';")
+    expect(output).toContain('const loginPage = new LoginPage(page);')
+    expect(output).toContain('await loginPage.submitForm("admin");')
+  })
+
+  it('opens the start URL before the first call', () => {
+    const steps = loginPage.steps.slice(1)
+    const scenario: IRScenario = {
+      name: 'Login flow',
+      startUrl: 'http://localhost:4500/login',
+      pages: [{ ...loginPage, steps, inferredMethods: inferMethods(steps) }],
+    }
+    const output = renderScenario(scenario)
+    expect(output.indexOf('await page.goto("http://localhost:4500/login");')).toBeGreaterThan(-1)
+    expect(output.indexOf('page.goto(')).toBeLessThan(output.indexOf('loginPage.submitForm'))
+  })
+
+  it('does not import a page whose steps are written inline', () => {
+    const scenario: IRScenario = { name: 'Login flow', pages: [loginPage] }
+    expect(renderScenario(scenario)).not.toContain('import { LoginPage }')
+  })
+})
+
+describe('renderPageObject — goto', () => {
+  it('falls back to the recorded route when no navigate step exists', () => {
+    const page: IRPage = { ...loginPage, steps: loginPage.steps.slice(1) }
+    expect(renderPageObject(page)).toContain('await this.page.goto("/login");')
   })
 })
 

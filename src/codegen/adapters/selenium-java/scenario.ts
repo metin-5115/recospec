@@ -11,6 +11,13 @@ import {
   screenshotName,
 } from './context'
 import { resolveTestData } from '../../planner/test-data-resolver'
+import {
+  buildScenarioFlow,
+  initialUrl,
+  pagesUsed,
+  type FlowArg,
+  type FlowItem,
+} from '../../shared/scenario-flow'
 
 let TEST_DATA: TestDataConfig | undefined
 export function setSeleniumJavaTestData(value: TestDataConfig | undefined): void {
@@ -116,10 +123,13 @@ function renderStepInTest(step: IRStep, indent: string): string {
   if (step.action === 'fill' && step.element) {
     const byExpr = renderByExpression(step.element)
     const expr = renderFillValueExpr(step.element, step.value ?? '')
+    // A block keeps each `_el` local out of its siblings' scope, so repeated fills compile.
     return [
-      `${indent}WebElement _el = wait.until(ExpectedConditions.visibilityOfElementLocated(${byExpr}));`,
-      `${indent}_el.clear();`,
-      `${indent}_el.sendKeys(${expr});`,
+      `${indent}{`,
+      `${indent}    WebElement _el = wait.until(ExpectedConditions.visibilityOfElementLocated(${byExpr}));`,
+      `${indent}    _el.clear();`,
+      `${indent}    _el.sendKeys(${expr});`,
+      `${indent}}`,
     ].join('\n')
   }
   if (step.element) {
@@ -152,60 +162,104 @@ function renderStepInTest(step: IRStep, indent: string): string {
   return ''
 }
 
-export function renderScenario(scenario: IRScenario): string {
-  const pageImports = scenario.pages.map((p) => `import pages.${p.className};`).join('\n')
+const INDENT = '        '
 
-  const pageVars = scenario.pages
-    .map((p) => `        ${p.className} ${toVarName(p.className)} = new ${p.className}(driver);`)
-    .join('\n')
+function renderArg(arg: FlowArg): string {
+  if (arg.fromFill && resolveTestData(arg.element, arg.value, TEST_DATA).useEnvVar) {
+    return renderFillValueExpr(arg.element, arg.value)
+  }
+  switch (arg.type) {
+    case 'boolean':
+      return arg.value
+    case 'number':
+      return String(Number.isFinite(Number(arg.value)) ? Number(arg.value) : 0)
+    default:
+      // A date arrives as the label the page rendered (see the template accessor in the page object).
+      return javaStr(arg.value)
+  }
+}
 
-  const contextState = newContextState()
-  const stepLines = scenario.pages
-    .flatMap((page) =>
-      page.steps
+function renderItem(item: FlowItem, contextState: ReturnType<typeof newContextState>): string[] {
+  switch (item.kind) {
+    case 'visit':
+      return [`${INDENT}driver.get(${javaStr(item.url)});`]
+    case 'call': {
+      const args = item.args.map(renderArg).join(', ')
+      return [`${INDENT}${toVarName(item.page.className)}.${item.method.name}(${args});`]
+    }
+    case 'inline':
+      return item.page.steps
         .map((step) => {
-          const rendered = renderStepInTest(step, '        ')
+          const rendered = renderStepInTest(step, INDENT)
           if (!rendered) return ''
-          return [...frameStatements(step, '        ', contextState), rendered].join('\n')
+          return [...frameStatements(step, INDENT, contextState), rendered].join('\n')
         })
-        .filter(Boolean),
-    )
-    .join('\n')
-  const allSteps = scenario.pages.flatMap((p) => p.steps)
-  const contextHelpers = renderContextHelpers(allSteps)
-  const contextImports = javaContextImports(allSteps)
+        .filter(Boolean)
+  }
+}
 
+export function renderScenario(scenario: IRScenario): string {
+  const flow = buildScenarioFlow(scenario)
+  const used = pagesUsed(flow)
+  const inlineSteps = flow.flatMap((item) => (item.kind === 'inline' ? item.page.steps : []))
+  const hasInline = flow.some((item) => item.kind === 'inline')
+
+  const pageImports = used.map((p) => `import pages.${p.className};`).join('\n')
+  const pageVars = used.map(
+    (p) => `${INDENT}${p.className} ${toVarName(p.className)} = new ${p.className}(driver);`,
+  )
+  const start = initialUrl(scenario, flow)
+  const opening = start ? [`${INDENT}driver.get(${javaStr(start)});`] : []
+  const contextState = newContextState()
+  const stepLines = [
+    ...opening,
+    ...pageVars,
+    ...flow.flatMap((item) => renderItem(item, contextState)),
+  ].join('\n')
+
+  const contextHelpers = renderContextHelpers(inlineSteps)
+  const contextImports = javaContextImports(inlineSteps)
   const networkNote = renderNetworkNote(
     scenario.pages.flatMap((p) => p.steps),
-    '        ',
+    INDENT,
   )
-  const safeBody = (networkNote + stepLines).trimEnd() || '        // no steps recorded'
+  const safeBody = (networkNote + stepLines).trimEnd() || `${INDENT}// no steps recorded`
   const methodSuffix = toJavaMethodName(scenario.name)
   const className = `Test${methodSuffix.charAt(0).toUpperCase() + methodSuffix.slice(1)}`
+  const interactionImports = javaInteractionImports(inlineSteps)
+  const extraImports = `${interactionImports}${contextImports}${pageImports}`
 
-  const pageVarsBlock = pageVars ? `${pageVars}\n` : ''
-  const interactionImports = javaInteractionImports(scenario.pages.flatMap((p) => p.steps))
-
-  return `package tests;
-
-import java.time.Duration;
+  // Inline steps locate elements themselves; a test that only calls page objects needs neither
+  // the locator types nor an explicit wait.
+  const waitImports = hasInline
+    ? `import java.time.Duration;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.support.ui.ExpectedConditions;
+`
+    : 'import org.openqa.selenium.WebDriver;\n'
+  const expectedConditionsImports = hasInline
+    ? `import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import org.testng.annotations.AfterMethod;
+`
+    : ''
+  const waitField = hasInline ? '    private WebDriverWait wait;\n' : ''
+  const waitInit = hasInline
+    ? '        wait = new WebDriverWait(driver, Duration.ofSeconds(10));\n'
+    : ''
+
+  return `package tests;
+
+${waitImports}import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+${expectedConditionsImports}import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-${interactionImports}${contextImports}${pageImports}
-
+${extraImports ? `${extraImports}\n` : ''}
 public class ${className} {
     private WebDriver driver;
-    private WebDriverWait wait;
-
+${waitField}
     @BeforeMethod
     public void setUp() {
         ChromeOptions options = new ChromeOptions();
@@ -215,12 +269,11 @@ public class ${className} {
         options.addArguments("--disable-gpu");
         options.addArguments("--window-size=1280,720");
         driver = new ChromeDriver(options);
-        wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-    }
+${waitInit}    }
 
     @Test
     public void ${methodSuffix}() {
-${pageVarsBlock}${safeBody}
+${safeBody}
     }
 
     @AfterMethod

@@ -98,10 +98,15 @@ describe('selenium-py — iframes', () => {
     expect(out).not.toContain('switch_to')
   })
 
-  it('renders the same switch in a test function', () => {
+  it('renders the same switch in a test function for a page written inline', () => {
     const scenario: IRScenario = {
       name: 'Pay',
-      pages: [pageWith([{ id: 's', action: 'click', element: framed }], [framed])],
+      pages: [
+        {
+          ...pageWith([{ id: 's', action: 'click', element: framed }], [framed]),
+          inferredMethods: undefined,
+        },
+      ],
     }
     const out = renderScenario(scenario)
     expect(out).toContain(`_enter_frames(driver, 'iframe[name="checkout"]', 'iframe#card')`)
@@ -144,10 +149,15 @@ describe('selenium-py — shadow DOM', () => {
     expect(out).not.toContain('try:')
   })
 
-  it('rebinds and restores the driver in a test function', () => {
+  it('rebinds and restores the driver in a test function for a page written inline', () => {
     const scenario: IRScenario = {
       name: 'Save',
-      pages: [pageWith([{ id: 's', action: 'click', element: shadowed }], [shadowed])],
+      pages: [
+        {
+          ...pageWith([{ id: 's', action: 'click', element: shadowed }], [shadowed]),
+          inferredMethods: undefined,
+        },
+      ],
     }
     const out = renderScenario(scenario)
     expect(out).toContain('_outer_driver = driver')

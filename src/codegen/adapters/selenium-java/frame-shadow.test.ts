@@ -78,10 +78,15 @@ describe('selenium-java — iframes', () => {
     expectBalanced(out)
   })
 
-  it('does the same in a test class', () => {
+  it('does the same in a test class for a page written inline', () => {
     const scenario: IRScenario = {
       name: 'Pay',
-      pages: [pageWith([{ id: 's', action: 'click', element: framed }], [framed])],
+      pages: [
+        {
+          ...pageWith([{ id: 's', action: 'click', element: framed }], [framed]),
+          inferredMethods: undefined,
+        },
+      ],
     }
     const out = renderScenario(scenario)
     expect(out).toContain('enterFrames(')
@@ -114,10 +119,15 @@ describe('selenium-java — shadow DOM', () => {
     expectBalanced(out)
   })
 
-  it('uses ShadowBy for by-based lookups in a test class', () => {
+  it('uses ShadowBy for by-based lookups in a test class for a page written inline', () => {
     const scenario: IRScenario = {
       name: 'Save',
-      pages: [pageWith([{ id: 's', action: 'click', element: shadowed }], [shadowed])],
+      pages: [
+        {
+          ...pageWith([{ id: 's', action: 'click', element: shadowed }], [shadowed]),
+          inferredMethods: undefined,
+        },
+      ],
     }
     const out = renderScenario(scenario)
     expect(out).toContain('elementToBeClickable(new ShadowBy(')

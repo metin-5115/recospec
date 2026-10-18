@@ -74,7 +74,7 @@ describe('cypress adapter — select / check / hover / dblclick', () => {
     expect(out).toContain('this.termsCheckbox().uncheck();')
   })
 
-  it('renders the new actions in spec scope with the literal value', () => {
+  it('calls the page-object methods for the new actions in spec scope', () => {
     const page = pageWith(
       [
         { id: 's1', action: 'select', element: country, value: 'tr' },
@@ -84,7 +84,28 @@ describe('cypress adapter — select / check / hover / dblclick', () => {
       ],
       [country, terms, menu, row],
     )
-    const scenario: IRScenario = { name: 'Checkout flow', pages: [page] }
+    const spec = renderScenario({ name: 'Checkout flow', pages: [page] })
+    expect(spec).toContain('checkoutPage.selectCountry("tr");')
+    expect(spec).toContain('checkoutPage.checkTerms();')
+    expect(spec).toContain('checkoutPage.hoverAccountMenu();')
+    expect(spec).toContain('checkoutPage.doubleClickRowItem();')
+    expect(spec).not.toContain('cy.get(')
+  })
+
+  it('renders the new actions inline for a page with no inferred methods', () => {
+    const page = pageWith(
+      [
+        { id: 's1', action: 'select', element: country, value: 'tr' },
+        { id: 's2', action: 'check', element: terms },
+        { id: 's3', action: 'hover', element: menu },
+        { id: 's4', action: 'dblclick', element: row },
+      ],
+      [country, terms, menu, row],
+    )
+    const scenario: IRScenario = {
+      name: 'Checkout flow',
+      pages: [{ ...page, inferredMethods: undefined }],
+    }
     const spec = renderScenario(scenario)
     expect(spec).toContain('.select("tr");')
     expect(spec).toContain('.check();')

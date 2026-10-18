@@ -100,7 +100,7 @@ describe('selenium-java adapter — select / check / hover / dblclick', () => {
     expect(out).not.toContain('interactions.Actions;')
   })
 
-  it('scopes each interaction in a block so repeated _el locals compile', () => {
+  it('calls the page-object methods for the new actions in the test class', () => {
     const page = pageWith(
       [
         { id: 's1', action: 'check', element: terms },
@@ -110,7 +110,29 @@ describe('selenium-java adapter — select / check / hover / dblclick', () => {
       ],
       [terms, country, menu, row],
     )
-    const scenario: IRScenario = { name: 'Checkout flow', pages: [page] }
+    const spec = renderScenario({ name: 'Checkout flow', pages: [page] })
+    expect(spec).toContain('checkoutPage.checkTerms();')
+    expect(spec).toContain('checkoutPage.selectCountry("tr");')
+    expect(spec).toContain('checkoutPage.hoverAccountMenu();')
+    expect(spec).toContain('checkoutPage.doubleClickRowItem();')
+    expect(spec).not.toContain('WebElement _el')
+    expectBalanced(spec)
+  })
+
+  it('scopes each inline interaction in a block so repeated _el locals compile', () => {
+    const page = pageWith(
+      [
+        { id: 's1', action: 'check', element: terms },
+        { id: 's2', action: 'select', element: country, value: 'tr' },
+        { id: 's3', action: 'hover', element: menu },
+        { id: 's4', action: 'dblclick', element: row },
+      ],
+      [terms, country, menu, row],
+    )
+    const scenario: IRScenario = {
+      name: 'Checkout flow',
+      pages: [{ ...page, inferredMethods: undefined }],
+    }
     const spec = renderScenario(scenario)
     expect(spec).toContain('import org.openqa.selenium.interactions.Actions;')
     expect(spec).toContain('import org.openqa.selenium.support.ui.Select;')

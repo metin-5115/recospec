@@ -46,7 +46,7 @@ describe('selenium-py adapter — select / check / hover / dblclick', { timeout:
     )
     const out = renderPageObject(page)
     expect(out).toContain('from selenium.webdriver.support.ui import Select\n')
-    expect(out).toContain('def selectCountry(self, country: str):')
+    expect(out).toContain('def select_country(self, country: str):')
     expect(out).toContain(
       'Select(self.wait.until(EC.visibility_of_element_located(self.COUNTRY_SELECT))).select_by_value(country)',
     )
@@ -91,7 +91,7 @@ describe('selenium-py adapter — select / check / hover / dblclick', { timeout:
       [terms, submit],
     )
     const out = renderPageObject(page)
-    expect(out).toContain('def acceptAndSubmit(self, terms: bool):')
+    expect(out).toContain('def accept_and_submit(self, terms: bool):')
     expect(out).toContain('if _el.is_selected() != terms:')
     expectValidPython(out)
   })
@@ -103,7 +103,7 @@ describe('selenium-py adapter — select / check / hover / dblclick', { timeout:
     expect(out).not.toContain('ActionChains')
   })
 
-  it('renders the new actions in the test function with the literal value', () => {
+  it('calls the page-object methods for the new actions in the test function', () => {
     const page = pageWith(
       [
         { id: 's1', action: 'select', element: country, value: 'tr' },
@@ -113,7 +113,30 @@ describe('selenium-py adapter — select / check / hover / dblclick', { timeout:
       ],
       [country, terms, menu, row],
     )
-    const scenario: IRScenario = { name: 'Checkout flow', pages: [page] }
+    const spec = renderScenario({ name: 'Checkout flow', pages: [page] })
+    expect(spec).toContain('checkout_page = CheckoutPage(driver)')
+    expect(spec).toContain("checkout_page.select_country('tr')")
+    expect(spec).toContain('checkout_page.check_terms()')
+    expect(spec).toContain('checkout_page.hover_account_menu()')
+    expect(spec).toContain('checkout_page.double_click_row_item()')
+    expect(spec).not.toContain('ActionChains')
+    expectValidPython(spec)
+  })
+
+  it('renders the new actions inline for a page with no inferred methods', () => {
+    const page = pageWith(
+      [
+        { id: 's1', action: 'select', element: country, value: 'tr' },
+        { id: 's2', action: 'check', element: terms },
+        { id: 's3', action: 'hover', element: menu },
+        { id: 's4', action: 'dblclick', element: row },
+      ],
+      [country, terms, menu, row],
+    )
+    const scenario: IRScenario = {
+      name: 'Checkout flow',
+      pages: [{ ...page, inferredMethods: undefined }],
+    }
     const spec = renderScenario(scenario)
     expect(spec).toContain(".select_by_value('tr')")
     expect(spec).toContain('ActionChains(driver).move_to_element(_el).perform()')

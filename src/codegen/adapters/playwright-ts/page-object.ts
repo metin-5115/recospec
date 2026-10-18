@@ -98,7 +98,7 @@ export function renderPageObject(page: IRPage): string {
   const elementGetters = page.elements.map(renderElementGetter).join('\n\n')
 
   const gotoStep = page.steps.find((s) => s.action === 'navigate')
-  const gotoUrl = gotoStep?.url ?? '/'
+  const gotoUrl = gotoStep?.url ?? page.normalizedUrl
 
   let methodsBlock = ''
   if (page.inferredMethods?.length) {

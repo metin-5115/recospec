@@ -4,6 +4,7 @@ import '../adapters/cypress'
 import '../adapters/selenium-py'
 import '../adapters/selenium-java'
 import { getAdapter, listAdapters } from '../adapters/registry'
+import { inferMethods } from '../planner/method-inferer'
 import type { IRPage, IRScenario, IRElement } from '../ir/types'
 
 const emailEl: IRElement = {
@@ -20,16 +21,19 @@ const submitEl: IRElement = {
   tagName: 'button',
 }
 
+const loginSteps: IRPage['steps'] = [
+  { id: 's1', action: 'navigate', url: '/login' },
+  { id: 's2', action: 'fill', element: emailEl, value: 'admin@example.com' },
+  { id: 's3', action: 'click', element: submitEl },
+]
+
 const loginPage: IRPage = {
   name: 'Login',
   className: 'LoginPage',
   normalizedUrl: '/login',
   elements: [emailEl, submitEl],
-  steps: [
-    { id: 's1', action: 'navigate', url: '/login' },
-    { id: 's2', action: 'fill', element: emailEl, value: 'admin@example.com' },
-    { id: 's3', action: 'click', element: submitEl },
-  ],
+  steps: loginSteps,
+  inferredMethods: inferMethods(loginSteps),
 }
 
 const scenario: IRScenario = { name: 'Login flow', pages: [loginPage] }

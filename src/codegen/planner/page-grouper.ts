@@ -15,8 +15,19 @@ function isInteraction(step: IRStep): boolean {
   return step.action !== 'wait' && step.action !== 'network'
 }
 
+/** Origin of an http(s) URL; `undefined` for file:, about:blank and unparseable input. */
+function httpOrigin(rawUrl: string): string | undefined {
+  try {
+    const url = new URL(rawUrl)
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url.origin : undefined
+  } catch {
+    return undefined
+  }
+}
+
 export function groupIntoPages(flatSteps: IRStep[], sessionStartUrl: string): IRDocument['pages'] {
   const pages: IRPage[] = []
+  const baseUrl = httpOrigin(sessionStartUrl)
   const usedClassNames = new Set<string>()
   // Track pages by normalizedUrl for collision detection
   const pagesByUrl = new Map<string, IRPage>()
@@ -47,6 +58,7 @@ export function groupIntoPages(flatSteps: IRStep[], sessionStartUrl: string): IR
       className,
       normalizedUrl: currentUrl,
       pageTitle: currentPageTitle,
+      baseUrl,
       collisionWarning: hasCollision || undefined,
       steps: currentSteps,
       elements: currentElements,

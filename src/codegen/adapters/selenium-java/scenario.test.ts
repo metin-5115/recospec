@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { renderScenario, toJavaMethodName } from './scenario'
+import { inferMethods } from '../../planner/method-inferer'
 import type { IRPage, IRScenario, IRElement } from '../../ir/types'
 
 // Non-sensitive field name keeps these scenario tests focused on rendering;
@@ -29,6 +30,8 @@ const loginPage: IRPage = {
     { id: 's3', action: 'click', element: submitEl },
   ],
 }
+
+const pageWithMethods: IRPage = { ...loginPage, inferredMethods: inferMethods(loginPage.steps) }
 
 describe('selenium-java renderScenario', () => {
   it('matches snapshot', () => {
@@ -67,13 +70,61 @@ describe('selenium-java renderScenario', () => {
   })
 
   it('imports page object classes', () => {
-    const scenario: IRScenario = { name: 'Login flow', pages: [loginPage] }
+    const scenario: IRScenario = { name: 'Login flow', pages: [pageWithMethods] }
     expect(renderScenario(scenario)).toContain('import pages.LoginPage;')
   })
 
-  it('instantiates page objects in the test method', () => {
-    const scenario: IRScenario = { name: 'Login flow', pages: [loginPage] }
-    expect(renderScenario(scenario)).toContain('LoginPage loginPage = new LoginPage(driver);')
+  it('instantiates page objects in the test method and calls them', () => {
+    const scenario: IRScenario = { name: 'Login flow', pages: [pageWithMethods] }
+    const out = renderScenario(scenario)
+    expect(out).toContain('LoginPage loginPage = new LoginPage(driver);')
+    expect(out).toContain('loginPage.submitForm("foo@bar.com");')
+    expect(out).not.toContain('WebDriverWait')
+  })
+
+  it('opens the start URL before the first call', () => {
+    const steps = loginPage.steps.slice(1)
+    const scenario: IRScenario = {
+      name: 'Login flow',
+      startUrl: 'http://localhost:4500/login',
+      pages: [{ ...loginPage, steps, inferredMethods: inferMethods(steps) }],
+    }
+    const out = renderScenario(scenario)
+    expect(out.indexOf('driver.get("http://localhost:4500/login");')).toBeGreaterThan(-1)
+    expect(out.indexOf('driver.get(')).toBeLessThan(out.indexOf('loginPage.'))
+  })
+
+  it('declares each inline fill in its own block so repeated _el locals compile', () => {
+    const steps: IRPage['steps'] = [
+      { id: 'a', action: 'fill', element: emailEl, value: 'one' },
+      { id: 'b', action: 'fill', element: emailEl, value: 'two' },
+    ]
+    const out = renderScenario({ name: 'Twice', pages: [{ ...loginPage, steps }] })
+    expect(out.match(/WebElement _el =/g)).toHaveLength(2)
+    expect(out.match(/^\s+\{$/gm)).toHaveLength(2)
+  })
+
+  it('passes a secret as an environment lookup, never the recorded value', () => {
+    const passwordEl: IRElement = {
+      name: 'passwordInput',
+      locatorStrategy: 'testid',
+      locatorValue: 'pw',
+      tagName: 'input',
+      inputType: 'password',
+    }
+    const steps = [
+      { id: 'p1', action: 'fill' as const, element: passwordEl, value: 'hunter2' },
+      { id: 'p2', action: 'click' as const, element: submitEl },
+    ]
+    const page: IRPage = {
+      ...loginPage,
+      elements: [passwordEl, submitEl],
+      steps,
+      inferredMethods: inferMethods(steps),
+    }
+    const out = renderScenario({ name: 'Secret flow', pages: [page] })
+    expect(out).toContain('System.getenv().getOrDefault("RECOSPEC_PASSWORD", "change-me")')
+    expect(out).not.toContain('hunter2')
   })
 
   it('respects -Dheaded system property in setUp', () => {

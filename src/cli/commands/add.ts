@@ -8,6 +8,7 @@ import { getAdapter } from '@codegen/adapters/registry'
 import type { FrameworkId, GeneratedFile, OutputSelection } from '@shared/types/generated'
 import { normalizeSelection } from '@shared/types/generated'
 import type { JsonExportPayload } from '@codegen/export/json-export'
+import { resolveOutputPath } from '@codegen/export/output-path'
 import type { ConflictReporter } from '@codegen/apply/conflict-reporter'
 import { detectFramework } from '../detect-framework'
 import { loadRc } from '../config-loader'
@@ -95,7 +96,7 @@ export async function runAdd(opts: AddOptions, reporter?: ConflictReporter): Pro
   applyTemplateModes(flatSteps, opts.templateModes)
   applyComposedModes(flatSteps, opts.composedModes)
   const pages = groupIntoPages(flatSteps, payload.session.startUrl)
-  const scenario = { name: payload.session.name, pages }
+  const scenario = { name: payload.session.name, startUrl: payload.session.startUrl, pages }
 
   const adapter = getAdapter(framework)
   if (bdd && selection.test) {
@@ -180,54 +181,19 @@ function resolveFramework(opts: AddOptions, rcFramework: FrameworkId | undefined
 
 /**
  * Map an adapter-emitted filename to a disk path under the target project.
- * Mirrors `zip-export.ts/resolveZipPath` but anchored at `projectDir`.
+ * Uses the same layout table as the ZIP export, anchored at `projectDir`.
  */
 function routeToDisk(
   file: GeneratedFile,
   framework: FrameworkId,
   projectDir: string,
 ): ResolvedTarget {
-  const relative = subPath(file.filename, framework)
+  const relative = resolveOutputPath(file.filename, framework)
   return {
     diskPath: resolve(projectDir, relative),
     filename: file.filename,
     content: file.content,
   }
-}
-
-function subPath(filename: string, framework: FrameworkId): string {
-  if (filename.includes('/')) return filename
-
-  // BDD: feature + step files route alongside the framework's BDD convention.
-  if (framework === 'cypress') {
-    if (filename.endsWith('.feature')) return `cypress/e2e/${filename}`
-    if (filename.endsWith('.steps.js')) {
-      const base = filename.replace(/\.steps\.js$/, '')
-      return `cypress/e2e/${base}/${filename}`
-    }
-    if (filename.endsWith('.cy.js')) return `cypress/e2e/${filename}`
-    if (filename.endsWith('.js')) return `cypress/pages/${filename}`
-  }
-  if (framework === 'playwright-ts') {
-    if (filename.endsWith('.feature')) return `features/${filename}`
-    if (filename.endsWith('.steps.ts')) return `features/steps/${filename}`
-    if (filename.endsWith('.spec.ts')) return `tests/${filename}`
-    if (filename.endsWith('.ts')) return `pages/${filename}`
-  }
-  if (framework === 'selenium-py') {
-    if (filename.endsWith('.feature')) return `features/${filename}`
-    if (filename.startsWith('test_') && filename.endsWith('.py')) return `tests/${filename}`
-    if (filename.endsWith('.py')) return `pages/${filename}`
-  }
-  if (framework === 'selenium-java') {
-    if (filename.endsWith('.feature')) return `src/test/resources/features/${filename}`
-    if (filename === 'StepDefinitions.java') return `src/test/java/steps/${filename}`
-    if (filename === 'CucumberRunner.java') return `src/test/java/runners/${filename}`
-    if (filename.startsWith('Test') && filename.endsWith('.java'))
-      return `src/test/java/tests/${filename}`
-    if (filename.endsWith('.java')) return `src/main/java/pages/${filename}`
-  }
-  return filename
 }
 
 type WriteOutcome = 'written' | 'merged' | 'skipped' | 'renamed'

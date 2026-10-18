@@ -75,12 +75,12 @@ describe('playwright adapter — network mock generation', () => {
     expect(out).toContain('JSON.stringify({"token":"abc"')
   })
 
-  it('renders mocks in the spec file when includeMocks=true', () => {
+  it('keeps the mock inside the page-object method the spec calls', () => {
     playwrightTsAdapter.applyOptions?.({ includeMocks: true })
     const scenario: IRScenario = { name: 'Login flow', pages: [pageWithLoginAndMock] }
     const out = renderScenario(scenario)
-    expect(out).toContain('await page.route("**/login"')
-    expect(out).toContain('route.fulfill')
+    expect(out).toContain('await loginPage.login(')
+    expect(out).not.toContain('page.route(')
   })
 
   it('infers login() with email/password param types', () => {
