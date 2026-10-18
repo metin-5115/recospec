@@ -15,7 +15,6 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import pages.LoginPage;
 
 public class TestLoginFlow {
     private WebDriver driver;
@@ -35,11 +34,12 @@ public class TestLoginFlow {
 
     @Test
     public void loginFlow() {
-        LoginPage loginPage = new LoginPage(driver);
         driver.get("/login");
-        WebElement _el = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("[data-testid=\\"login-email\\"]")));
-        _el.clear();
-        _el.sendKeys("foo@bar.com");
+        {
+            WebElement _el = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("[data-testid=\\"login-email\\"]")));
+            _el.clear();
+            _el.sendKeys("foo@bar.com");
+        }
         wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//button[normalize-space(.)='Submit' or @value='Submit' or @aria-label='Submit']"))).click();
     }
 

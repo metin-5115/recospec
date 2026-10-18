@@ -28,6 +28,7 @@ import {
   type JavaContextState,
 } from './context'
 import { resolveTestData } from '../../planner/test-data-resolver'
+import { absoluteUrl } from '../../shared/scenario-flow'
 
 let TEST_DATA: TestDataConfig | undefined
 export function setSeleniumJavaPageObjectTestData(value: TestDataConfig | undefined): void {
@@ -400,7 +401,8 @@ export function renderPageObject(page: IRPage): string {
   const fieldDecls = page.elements.map(renderElementField).join('\n\n')
 
   const gotoStep = page.steps.find((s) => s.action === 'navigate')
-  const gotoUrl = gotoStep?.url ?? '/'
+  // Selenium has no base URL, so the route is completed with the origin the session ran on.
+  const gotoUrl = absoluteUrl(page.baseUrl, gotoStep?.url ?? page.normalizedUrl)
 
   const templateAccessors = page.elements
     .filter(

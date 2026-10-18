@@ -399,6 +399,50 @@ describe.each(Object.entries(RECORDINGS))('real %s recording', (_label, recordin
     })
   })
 
+  describe('Selenium Java scenario', () => {
+    const rendered = render(recording, 'selenium-java')
+    const spec = rendered.find((f) => f.filename.startsWith('Test')) as GeneratedFile
+    const pageFiles = rendered.filter((f) => f !== spec)
+    const signature = /^ {4}public (?:void|\w+) (\w+)\(([^)]*)\)/gm
+
+    it('imports page objects from the package the project layout puts them in', () => {
+      const layout = projectLayout(rendered, 'selenium-java')
+      const imports = [...spec.content.matchAll(/^import pages\.(\w+);$/gm)].map((m) => m[1])
+      expect(imports.length).toBeGreaterThan(0)
+      for (const name of imports) {
+        expect(layout).toHaveProperty([`src/main/java/pages/${name}.java`])
+      }
+      expect(spec.content).toMatch(/^package tests;$/m)
+    })
+
+    it('drives the flow through page-object methods instead of inline locators', () => {
+      expect(spec.content).not.toContain('WebElement _el')
+      expect(spec.content).not.toMatch(/\bwait\.until\(/)
+      expectCallsMatchDeclarations(rendered, spec, signature, lowerFirst, classNameIn)
+      expect(spec.content).toMatch(/\w+Page \w+Page = new \w+Page\(driver\);/)
+    })
+
+    it('opens the recorded start URL first', () => {
+      const body = spec.content.split(/@Test\s+public void \w+\(\) \{/)[1] as string
+      const first = body.split('\n').find((l) => l.includes('driver.'))
+      expect(first?.trim()).toBe(`driver.get(${JSON.stringify(startUrlOf(recording))});`)
+    })
+
+    it('points each page object at the absolute URL of its route', () => {
+      const origin = new URL(startUrlOf(recording)).origin
+      const gotos = pageFiles.map(
+        (f) => f.content.match(/void goTo\(\) \{\s*driver\.get\(("[^"]*")\)/)?.[1],
+      )
+      expect(gotos.map((g) => g && JSON.parse(g))).toEqual(
+        recordedRoutes(recording).map((route) => `${origin}${route}`),
+      )
+    })
+
+    it('uses every parameter a method declares', () => {
+      expectParametersUsed(rendered, spec, signature, (d) => d.trim().split(/\s+/).pop() ?? d)
+    })
+  })
+
   it('Selenium Java locators carry the accessible name and are well-formed', () => {
     const files = render(recording, 'selenium-java')
     const code = source(files)
