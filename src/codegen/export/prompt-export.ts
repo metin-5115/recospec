@@ -8,9 +8,18 @@ import {
 } from '@shared/constants'
 import { xmlBlock, xmlText } from './prompt-xml'
 import { getFrameworkConvention } from './prompt-conventions'
+import {
+  buildRedactionMap,
+  buildRedactor,
+  collectContractRows,
+  slugifyFlow,
+  type ContractRow,
+  type PromptRedaction,
+  type Redact,
+} from './prompt-contract'
 import type { JsonExportPayload } from './json-export'
 import type { FrameworkId, PromptMode } from '@shared/types/generated'
-import type { IRElement, IRPage, IRStep, IRParamType } from '../ir/types'
+import type { IRElement, IRPage, IRStep } from '../ir/types'
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -49,11 +58,7 @@ export interface PromptSection {
   xml: string
 }
 
-export interface PromptRedaction {
-  rawValue: string
-  placeholder: string
-  envVarName: string
-}
+export type { PromptRedaction }
 
 export interface PromptDocument {
   flowSlug: string
@@ -96,8 +101,6 @@ export function assertNoLeakedSecrets(markdown: string): void {
 
 const ROOT_TAG = 'recospec_prompt'
 
-type Redact = (value: string) => string
-
 export function buildPromptDocument(
   payload: JsonExportPayload,
   opts: PromptOptions,
@@ -109,15 +112,7 @@ export function buildPromptDocument(
   const pages = groupIntoPages(flatSteps, payload.session.startUrl)
 
   const rows = collectContractRows(pages)
-  const redactionMap: PromptRedaction[] = redactSecrets
-    ? rows
-        .filter((r) => r.isSecret && r.envVarName && r.rawValue && r.rawValue.length >= 4)
-        .map((r) => ({
-          rawValue: r.rawValue,
-          envVarName: r.envVarName!,
-          placeholder: `[REDACTED:${r.envVarName!}]`,
-        }))
-    : []
+  const redactionMap = redactSecrets ? buildRedactionMap(rows) : []
   const redact = buildRedactor(redactionMap)
 
   const sections: PromptSection[] = [
@@ -178,58 +173,6 @@ export function renderPromptMarkdown(doc: PromptDocument): string {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function slugifyFlow(name: string): string {
-  const slug = name
-    .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9-]/g, '')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-  return slug || 'flow'
-}
-
-interface ContractRow {
-  pageClass: string
-  methodName: string
-  paramName: string
-  paramType: IRParamType
-  isSecret: boolean
-  envVarName?: string
-  /** Captured raw fill value (empty for non-fill params like booleans). */
-  rawValue: string
-}
-
-function collectContractRows(pages: IRPage[]): ContractRow[] {
-  const rows: ContractRow[] = []
-  for (const page of pages) {
-    for (const method of page.inferredMethods ?? []) {
-      const fillSteps = method.steps.filter((s) => s.action === 'fill')
-      method.params.forEach((paramName, idx) => {
-        const isSecret = method.paramSecret?.[idx] ?? false
-        const paramType = method.paramTypes?.[idx] ?? 'string'
-        const fill = fillSteps[idx]
-        rows.push({
-          pageClass: page.className,
-          methodName: method.name,
-          paramName,
-          paramType,
-          isSecret,
-          envVarName: isSecret ? getEnvVarName(paramName) : undefined,
-          rawValue: fill?.value ?? '',
-        })
-      })
-    }
-  }
-  return rows
-}
-
-/** Longest values first so a secret that contains another one is masked whole. */
-function buildRedactor(map: PromptRedaction[]): Redact {
-  if (map.length === 0) return (value) => value
-  const ordered = [...map].sort((a, b) => b.rawValue.length - a.rawValue.length)
-  return (value) => ordered.reduce((acc, r) => acc.split(r.rawValue).join(r.placeholder), value)
-}
 
 function buildFrontmatter(slug: string, framework: FrameworkId | undefined): string {
   const fwLine = framework ? `\nframework: ${framework}` : ''
