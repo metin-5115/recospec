@@ -27,6 +27,26 @@ export const SNAPSHOT_TEXT_MAX_LENGTH = 200 as const
  * cross-world channel available at `document_start`).
  */
 export const PIERCE_CLOSED_SHADOW_FLAG_KEY = 'recospec:pierce-closed-shadow' as const
+/**
+ * Page-origin localStorage key the ISOLATED content script sets while a recording is
+ * active. The MAIN-world network proxy reads it synchronously per request so it only
+ * intercepts fetch/XHR during a recording and stays inert otherwise.
+ */
+export const NETWORK_CAPTURE_FLAG_KEY = 'recospec:capture-network' as const
+/** Response content types whose bodies are never captured (streams and binary payloads). */
+export const NETWORK_BODY_SKIP_CONTENT_TYPES = [
+  'text/event-stream',
+  'image/',
+  'audio/',
+  'video/',
+  'font/',
+  'multipart/',
+  'application/octet-stream',
+  'application/pdf',
+  'application/zip',
+  'application/gzip',
+  'application/wasm',
+] as const
 export const SESSION_NAME_PREFIX = 'Session' as const
 export const CONTENT_REINJECT_MAX_ATTEMPTS = 3 as const
 export const GC_ARCHIVED_DAYS = 30 as const

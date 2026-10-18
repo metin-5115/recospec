@@ -13,6 +13,7 @@ vi.mock('./spinner-detector', () => ({
   observeForSpinner: vi.fn(async () => null),
 }))
 
+import { NETWORK_CAPTURE_FLAG_KEY, PIERCE_CLOSED_SHADOW_FLAG_KEY } from '@shared/constants'
 import { startCapture, stopCapture } from './event-capture'
 
 function types(): string[] {
@@ -27,6 +28,27 @@ beforeEach(() => {
 
 afterEach(() => {
   stopCapture()
+})
+
+describe('event-capture — page flags', () => {
+  it('raises the network capture flag while recording', () => {
+    expect(window.localStorage.getItem(NETWORK_CAPTURE_FLAG_KEY)).toBe('true')
+  })
+
+  it('clears the network and closed-shadow flags on stop', () => {
+    window.localStorage.setItem(PIERCE_CLOSED_SHADOW_FLAG_KEY, 'true')
+    stopCapture()
+    expect(window.localStorage.getItem(NETWORK_CAPTURE_FLAG_KEY)).toBeNull()
+    expect(window.localStorage.getItem(PIERCE_CLOSED_SHADOW_FLAG_KEY)).toBeNull()
+  })
+
+  it('still stops cleanly when localStorage is unavailable', () => {
+    const spy = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+      throw new DOMException('denied', 'SecurityError')
+    })
+    expect(() => stopCapture()).not.toThrow()
+    spy.mockRestore()
+  })
 })
 
 describe('event-capture — richer interactions', () => {
