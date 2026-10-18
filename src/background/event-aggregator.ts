@@ -1,6 +1,6 @@
 import type { CapturedEvent } from '@shared/types/action'
 import type { RecordedAction } from '@shared/types/action'
-import { appendAction, getActionsBySession } from '@storage/action-repo'
+import { appendNextAction, getActionsBySession } from '@storage/action-repo'
 import {
   computeFlowSignature,
   findIterationCandidate,
@@ -17,11 +17,13 @@ import { logger } from '@shared/logger'
  * can offer the user a "Continue as v<n+1>" link. Updates the live session's
  * placeholder signature with the real one in the same write.
  */
-async function maybeSuggestIteration(sessionId: string, steps: RecordedAction[]): Promise<void> {
+async function maybeSuggestIteration(sessionId: string): Promise<void> {
   const session = await getSession(sessionId)
   if (!session) return
   // Don't re-prompt once a session has already been linked to a parent.
   if (session.parentSessionId) return
+
+  const steps = await getActionsBySession(sessionId)
 
   const signature = computeFlowSignature(session.startUrl, steps)
   if (signature !== session.flowSignature) {
@@ -42,16 +44,13 @@ async function maybeSuggestIteration(sessionId: string, steps: RecordedAction[])
 }
 
 export async function aggregateEvent(sessionId: string, event: CapturedEvent): Promise<void> {
-  const existing = await getActionsBySession(sessionId)
-  const sequenceNumber = existing.length
-
   const bundle = event.target?.locatorBundle ?? null
   const quality = classifyBundle(bundle)
   const flag = quality.level !== 'ok' ? quality : undefined
-  const action: RecordedAction = {
+  // sequenceNumber is assigned inside the append transaction (see appendNextAction).
+  const draft: Omit<RecordedAction, 'sequenceNumber'> = {
     actionId: crypto.randomUUID(),
     sessionId,
-    sequenceNumber,
     type: event.type,
     timestamp: event.timestamp,
     pageUrl: event.pageMetadata.url,
@@ -77,7 +76,8 @@ export async function aggregateEvent(sessionId: string, event: CapturedEvent): P
     payload: event.payload,
   }
 
-  await appendAction(action)
+  const action = await appendNextAction(draft)
+  const { sequenceNumber } = action
   await broadcastToUI({ type: 'STEP_RECORDED', sessionId, step: action })
   logger.debug('[BG] Step recorded', action.actionId, action.type)
 
@@ -85,7 +85,7 @@ export async function aggregateEvent(sessionId: string, event: CapturedEvent): P
   // discriminate flows. `sequenceNumber === N - 1` is the step index of the
   // Nth captured step (zero-based).
   if (sequenceNumber === ITERATION_SIGNATURE_STEPS - 1) {
-    await maybeSuggestIteration(sessionId, [...existing, action]).catch((err) =>
+    await maybeSuggestIteration(sessionId).catch((err) =>
       logger.error('[BG] maybeSuggestIteration failed', err),
     )
   }

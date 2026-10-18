@@ -23,6 +23,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Recording stopping silently after a service-worker wake-up** — stop, pause, resume and the
+  post-navigation resume checked an in-memory active-session id that was still empty while the worker
+  re-read it from IndexedDB, so a message that woke the worker was ignored and capture never resumed on
+  the next page. Handlers now wait for the restore before acting.
+- **Duplicate step numbers under event bursts, and O(n²) recording** — every captured event re-read
+  the whole session just to count its steps. Numbers are now assigned inside the write transaction from
+  a new `[sessionId+sequenceNumber]` index (DB schema v3; existing data is indexed in place), the paged
+  read uses the same index, and reorder/delete renumbering uses bulk writes.
 - **Generated classes the locator engine kept trusting** — folder-prefixed CSS Modules
   (`hm__style_dropdown__3tpXH`, `hm__grid_col-12__A_EnK`) were not recognised as generated, so css,
   xpath and composed locators were built on them and broke on the next deploy. They are now detected,
