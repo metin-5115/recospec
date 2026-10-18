@@ -103,8 +103,8 @@ e2 P1 passwordInput input:password - "Password" aria:[aria-label="Password"] ~ l
 e3 P1 signIn button - "Sign in" tid:sign-in ~ role:button[name="Sign in"] ~ css:button[type="submit"]
 @fp
 e1 path=main>form>input near=Password|Sign in box=.50,.23 a=id:email,name:email,type:email,autocomplete:username
-e2 path=main>form>input near=Sign in box=.50,.32 a=id:password,name:password,type:password,autocomplete:current-password
-e3 path=main>form>button box=.39,.39 a=type:submit,data-testid:sign-in
+e2 path=main>form>input near=Sign in box=.50,.32 a=autocomplete:current-password
+e3 path=main>form>button box=.39,.39
 @steps
 1 fill e1 $RECOSPEC_EMAIL
 2 fill e2 $RECOSPEC_PASSWORD
@@ -175,8 +175,8 @@ e2 P1 passwordInput input:password - "Password" aria:[aria-label="Password"] ~ l
 e3 P1 signIn button - "Sign in" tid:sign-in ~ role:button[name="Sign in"] ~ css:button[type="submit"]
 @fp
 e1 path=main>form>input near=Password|Sign in box=.50,.23 a=id:email,name:email,type:email,autocomplete:username
-e2 path=main>form>input near=Sign in box=.50,.32 a=id:password,name:password,type:password,autocomplete:current-password
-e3 path=main>form>button box=.39,.39 a=type:submit,data-testid:sign-in
+e2 path=main>form>input near=Sign in box=.50,.32 a=autocomplete:current-password
+e3 path=main>form>button box=.39,.39
 @steps
 1 fill e1 $RECOSPEC_EMAIL
 2 fill e2 $RECOSPEC_PASSWORD

@@ -51,6 +51,7 @@ function click(idx: number, primary: ScoredLocator, fallbacks: ScoredLocator[]):
         tag: 'button',
         attributes: {
           id: 'buttonSearch',
+          name: 'searchflights',
           type: 'button',
           tabindex: '«dynamic»',
           'aria-expanded': 'false',
@@ -177,7 +178,7 @@ describe('fingerprint filtering', () => {
     expect(fpLine).not.toContain('path=')
     expect(fpLine).toContain('near=Sort by')
     expect(fpLine).toContain('box=.81,.22')
-    expect(fpLine).toContain('a=id:buttonSearch,type:button')
+    expect(fpLine).toContain('a=name:searchflights')
   })
 })
 
@@ -196,5 +197,53 @@ describe('fragile primary locators', () => {
         .split('\n')
         .find((l) => l.includes('role:button[name="Search')) ?? ''
     expect(line).not.toContain(' !')
+  })
+})
+
+describe('fingerprint attributes that repeat what the line already says', () => {
+  const LONG_LABEL = 'Economy cabin lowest fare: details of the fare package, select to continue'
+
+  function healText(): string {
+    const action = click(1, scored('aria-label', `[aria-label="${LONG_LABEL}"]`), [
+      scored('id', '#buttonSearch'),
+    ])
+    action.target!.fingerprint = {
+      ...action.target!.fingerprint!,
+      attributes: {
+        role: 'button',
+        'aria-label': LONG_LABEL,
+        id: 'buttonSearch',
+        'data-qa': 'fare-card',
+      },
+      accessibleName: LONG_LABEL,
+    }
+    const data: JsonExportPayload = { ...payload([]), actions: [action] }
+    return renderLlmContextCompact(
+      buildLlmContext(data, { task: 'heal', framework: 'playwright-ts' }),
+    )
+  }
+
+  it('drops an attribute equal to the full label even when the label is shortened', () => {
+    const fp =
+      healText()
+        .split('\n')
+        .find((l) => l.startsWith('e1 ') && l.includes('box=')) ?? ''
+    expect(fp).not.toContain('aria-label:')
+  })
+
+  it('drops an attribute whose value appears in a locator of the element', () => {
+    const fp =
+      healText()
+        .split('\n')
+        .find((l) => l.startsWith('e1 ') && l.includes('box=')) ?? ''
+    expect(fp).not.toContain('id:buttonSearch')
+  })
+
+  it('keeps an attribute that no locator or label mentions', () => {
+    const fp =
+      healText()
+        .split('\n')
+        .find((l) => l.startsWith('e1 ') && l.includes('box=')) ?? ''
+    expect(fp).toContain('data-qa:fare-card')
   })
 })

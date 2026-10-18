@@ -113,9 +113,17 @@ function toFallbacks(
 /** Strategies whose value is a selector expression and can embed generated classes. */
 const SELECTOR_STRATEGIES: ReadonlySet<string> = new Set(['css', 'xpath', 'composed', 'layout'])
 
+/** An attribute value this short would match almost any locator by accident. */
+const MIN_REDUNDANT_ATTR_LENGTH = 4
+
+/**
+ * @param stated everything the element's line already says (shortened label, full label and every
+ *   locator value); an attribute whose value is contained in one of them adds nothing.
+ */
 function toFingerprint(
   fp: ElementFingerprint,
   label: string | undefined,
+  stated: string[],
   redact: Redact,
 ): LlmFingerprint | undefined {
   const path = semanticDomPath(fp.domPath, LLM_CONTEXT_DOM_PATH_SEGMENTS)
@@ -137,7 +145,8 @@ function toFingerprint(
         !FINGERPRINT_SKIPPED_ATTRS.has(key) &&
         !isStateAttribute(key) &&
         !value.includes(DYNAMIC_VALUE_MASK) &&
-        value !== label,
+        value !== label &&
+        !(value.length >= MIN_REDUNDANT_ATTR_LENGTH && stated.some((text) => text.includes(value))),
     )
     .slice(0, FINGERPRINT_MAX_ATTRS)
     .map(([key, value]) => `${key}:${redact(truncate(value, FINGERPRINT_ATTR_VALUE_MAX))}`)
@@ -304,6 +313,8 @@ export function buildLlmContext(payload: JsonExportPayload, opts: LlmContextOpti
       (FORM_CONTROL_TAGS.has(el.tagName) ? undefined : el.elementSnapshot?.textContent)
     const label = rawLabel ? redact(truncate(rawLabel, LLM_CONTEXT_TEXT_MAX)) : undefined
     const locator = toLocator(el.locatorStrategy, el.locatorValue, redact)
+    const fallbacks = includeHealing ? toFallbacks(el.fallbackLocators, locator, redact) : []
+    const stated = [rawLabel ?? '', locator.value, ...fallbacks.map((f) => f.value)]
     elements.push({
       id,
       page: pageIdByClass.get(page.className) ?? '',
@@ -313,12 +324,12 @@ export function buildLlmContext(payload: JsonExportPayload, opts: LlmContextOpti
       role: el.elementSnapshot?.role ?? fp?.role ?? undefined,
       label: label || undefined,
       locator,
-      fallbacks: includeHealing ? toFallbacks(el.fallbackLocators, locator, redact) : [],
+      fallbacks,
       isSecret: isSensitiveField(el),
       isFragile:
         el.fragile === true ||
         (SELECTOR_STRATEGIES.has(el.locatorStrategy) && isFragileLocator(el.locatorValue)),
-      fingerprint: includeHealing && fp ? toFingerprint(fp, label, redact) : undefined,
+      fingerprint: includeHealing && fp ? toFingerprint(fp, label, stated, redact) : undefined,
     })
     return id
   }
