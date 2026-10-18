@@ -30,10 +30,35 @@ const DYNAMIC_CLASS_PATTERNS = [
  */
 const CSS_MODULE_PATTERN = /^[A-Za-z0-9-]+_[A-Za-z0-9-]+__([A-Za-z0-9_-]{5,8})$/
 
-function isCssModuleClass(cls: string): boolean {
-  const hash = CSS_MODULE_PATTERN.exec(cls)?.[1]
-  if (!hash) return false
+/**
+ * Folder-prefixed CSS Modules: `[folder]__[file]_[local]__[hash]`
+ * (`hm__style_dropdown__3tpXH`, `hm__grid_col-12__A_EnK`). Two `__` separators with the
+ * hash after the last one; the base64 hash may itself end in `_` or `-`. A hand-written
+ * BEM chain (`react-calendar__month-view__days__day`) ends in a plain word, which the
+ * digit-or-mixed-case rule on the hash rejects.
+ */
+const FOLDER_CSS_MODULE_PATTERN = /^[A-Za-z0-9-]+__[A-Za-z0-9_-]+__([A-Za-z0-9_-]{5,8})$/
+
+/** A hash is generated when it carries a digit or mixes cases; plain lowercase is a word. */
+function looksLikeClassHash(hash: string): boolean {
   return /[0-9]/.test(hash) || (/[a-z]/.test(hash) && /[A-Z]/.test(hash))
+}
+
+export function isCssModuleClass(cls: string): boolean {
+  const hash = (CSS_MODULE_PATTERN.exec(cls) ?? FOLDER_CSS_MODULE_PATTERN.exec(cls))?.[1]
+  return hash !== undefined && looksLikeClassHash(hash)
+}
+
+/**
+ * BEM modifiers toggled by the pointer or keyboard focus (`tile--hover`, `item--focused`). The
+ * recorder captures them because the pointer is over the element at record time; a locator built
+ * on one fails as soon as the pointer moves. `--active` / `--selected` are deliberately absent:
+ * authors use them for durable state as often as for transient state.
+ */
+const POINTER_STATE_MODIFIER = /--(hover(-?(start|end))?|focus(ed|-visible|-within)?)$/i
+
+export function isPointerStateClass(cls: string): boolean {
+  return POINTER_STATE_MODIFIER.test(cls)
 }
 
 const DYNAMIC_ID_PATTERNS = [
@@ -117,7 +142,7 @@ function looksLikeRandomHash(value: string, minLength: number): boolean {
 
 export function isDynamicClass(cls: string): boolean {
   if (DYNAMIC_CLASS_PATTERNS.some((p) => p.test(cls))) return true
-  if (isCssModuleClass(cls)) return true
+  if (isCssModuleClass(cls) || isPointerStateClass(cls)) return true
   return looksLikeRandomHash(cls, 8)
 }
 

@@ -90,3 +90,16 @@ describe('XPathStrategy', () => {
     expect(loc.framework.seleniumPy).toContain('By.XPATH')
   })
 })
+
+describe('XPathStrategy — generated and pointer-state classes', () => {
+  it('never leans on folder-prefixed CSS-module or hover classes', () => {
+    document.body.innerHTML =
+      '<div class="hm__style_dropdown__3tpXH hm__style_monthDropdown__Gi2lM"><button class="hm__style_thyButton__1O245 react-calendar__tile--hover">Go</button></div>'
+    const el = document.querySelector('button')!
+    const loc = strategy.evaluate(el, document)!
+    const xpath = loc.selector as string
+    expect(xpath).not.toContain('hm__style')
+    expect(xpath).not.toContain('--hover')
+    expect(evalXPath(xpath)).toEqual([el])
+  })
+})

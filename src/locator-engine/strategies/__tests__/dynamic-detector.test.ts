@@ -192,3 +192,48 @@ describe('isDynamicClass — build-generated class families', () => {
     expect(isDynamicClass(cls)).toBe(false)
   })
 })
+
+describe('isDynamicClass — folder__file_local__hash CSS Modules', () => {
+  it.each([
+    'hm__style_dropdown__3tpXH',
+    'hm__style_thyButton__1O245',
+    'hm__style_button__QxvpK',
+    'hm__grid_col-lg-12__3ND2n',
+    'hm__grid_col-12__A_EnK',
+    'hm__style_priceCalendarBestPrice__XUS8_',
+    'hm__RoundAndOneWayTab_buttonWrapper__v15PI',
+  ])('flags the generated class %s', (cls) => {
+    expect(isDynamicClass(cls)).toBe(true)
+  })
+
+  it.each([
+    'react-calendar__tile',
+    'react-calendar__month-view__days',
+    'react-calendar__month-view__days__day',
+    'card__title__text',
+    'list__item__label',
+    'block__elem__sub',
+    'nav__item--wide',
+  ])('keeps the hand-written BEM class %s', (cls) => {
+    expect(isDynamicClass(cls)).toBe(false)
+  })
+})
+
+describe('isDynamicClass — pointer-state modifiers', () => {
+  it.each([
+    'react-calendar__tile--hover',
+    'react-calendar__tile--hoverEnd',
+    'react-calendar__tile--hoverStart',
+    'menu__item--focus',
+    'menu__item--focused',
+  ])('flags %s, which only exists while the pointer or focus is on the element', (cls) => {
+    expect(isDynamicClass(cls)).toBe(true)
+  })
+
+  it.each(['hover-card', 'card__title--active', 'btn--primary', 'hovercraft'])(
+    'keeps %s',
+    (cls) => {
+      expect(isDynamicClass(cls)).toBe(false)
+    },
+  )
+})

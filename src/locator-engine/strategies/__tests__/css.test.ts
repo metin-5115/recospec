@@ -97,3 +97,18 @@ describe('CssStrategy — non-unique attributes fall through to a positional sel
     expect(Array.from(root.querySelectorAll(selector))).toEqual([second])
   })
 })
+
+describe('CssStrategy — generated and pointer-state classes', () => {
+  it('builds the selector from the stable class only', () => {
+    document.body.innerHTML = ''
+    const el = document.createElement('button')
+    el.className =
+      'react-calendar__tile hm__style_thyButton__1O245 hm__style_priceCalendarBestPrice__XUS8_ react-calendar__tile--hover'
+    document.body.appendChild(el)
+
+    const selector = strategy.evaluate(el, document)!.selector as string
+    expect(selector).toContain('react-calendar__tile')
+    expect(selector).not.toContain('hm__style')
+    expect(selector).not.toContain('--hover')
+  })
+})
