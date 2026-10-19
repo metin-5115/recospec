@@ -3,6 +3,7 @@ import { KeyRound, Lock, Unlock } from 'lucide-react'
 import { normalizeActions } from '@codegen/normalizer/action-normalizer'
 import { groupIntoPages } from '@codegen/planner/page-grouper'
 import { buildDefaultTestDataConfig } from '@codegen/planner/test-data-resolver'
+import { deriveFillVariants, withFillVariants } from '@codegen/planner/fill-variants'
 import {
   isSensitiveField,
   getParameterName,
@@ -10,7 +11,7 @@ import {
 } from '@codegen/planner/sensitive-detector'
 import { SECRET_PARAM_DEFAULT_VALUE } from '@shared/constants'
 import type { RecordedAction } from '@shared/types/action'
-import type { IRElement, TestDataConfig, TestDataParam } from '@codegen/ir/types'
+import type { IRElement, IRStep, TestDataConfig, TestDataParam } from '@codegen/ir/types'
 
 interface TestDataPanelProps {
   steps: RecordedAction[]
@@ -24,8 +25,14 @@ interface PanelEntry extends TestDataParam {
   sourceLabel: string
 }
 
-function collectFillElements(steps: RecordedAction[], startUrl: string): IRElement[] {
-  if (steps.length === 0) return []
+interface FillInfo {
+  elements: IRElement[]
+  /** Every step of the recording in order — fills of one field with different values need them. */
+  flatSteps: IRStep[]
+}
+
+function collectFillElements(steps: RecordedAction[], startUrl: string): FillInfo {
+  if (steps.length === 0) return { elements: [], flatSteps: [] }
   const { flatSteps } = normalizeActions(steps)
   const pages = groupIntoPages(flatSteps, startUrl)
   const out: IRElement[] = []
@@ -38,7 +45,7 @@ function collectFillElements(steps: RecordedAction[], startUrl: string): IREleme
       out.push(step.element)
     }
   }
-  return out
+  return { elements: out, flatSteps }
 }
 
 export function TestDataPanel({ steps, startUrl, testData, onChange }: TestDataPanelProps) {
@@ -46,7 +53,14 @@ export function TestDataPanel({ steps, startUrl, testData, onChange }: TestDataP
   // hasn't picked them up in the panel yet, hydrate the config so the panel
   // shows them on first render.
   const initializedRef = useRef(false)
-  const fillElements = useMemo(() => collectFillElements(steps, startUrl), [steps, startUrl])
+  const fillInfo = useMemo(() => collectFillElements(steps, startUrl), [steps, startUrl])
+  const fillElements = fillInfo.elements
+  // A password typed with a different value (a failed login) reads its own env var.
+  const variants = useMemo(() => deriveFillVariants(fillInfo.flatSteps), [fillInfo])
+  const effectiveParams = useMemo(
+    () => withFillVariants(testData, fillInfo.flatSteps)?.params ?? testData.params,
+    [testData, fillInfo],
+  )
 
   useEffect(() => {
     if (initializedRef.current) return
@@ -55,17 +69,19 @@ export function TestDataPanel({ steps, startUrl, testData, onChange }: TestDataP
       initializedRef.current = true
       return
     }
-    const seeded = buildDefaultTestDataConfig(fillElements)
-    if (seeded.params.length > 0) {
+    const seeded = withFillVariants(buildDefaultTestDataConfig(fillElements), fillInfo.flatSteps)
+    if (seeded && seeded.params.length > 0) {
       onChange(seeded)
     }
     initializedRef.current = true
-  }, [fillElements, testData.params.length, onChange])
+  }, [fillElements, fillInfo, testData.params.length, onChange])
 
   const entries = useMemo<PanelEntry[]>(() => {
-    const byKey = new Map(testData.params.map((p) => [p.key, p]))
+    const byKey = new Map(effectiveParams.map((p) => [p.key, p]))
+    const unusedBase = new Set(variants.filter((v) => v.replacesBase).map((v) => v.baseKey))
     const result: PanelEntry[] = []
     for (const el of fillElements) {
+      if (unusedBase.has(el.name)) continue
       const detected = isSensitiveField(el)
       const existing = byKey.get(el.name)
       if (!detected && !existing) continue
@@ -82,19 +98,21 @@ export function TestDataPanel({ steps, startUrl, testData, onChange }: TestDataP
       })
     }
     // Append manual overrides that don't correspond to a fill element (rare but supported).
-    for (const p of testData.params) {
+    for (const p of effectiveParams) {
       if (!result.some((e) => e.key === p.key)) {
         result.push({ ...p, detected: false, sourceLabel: p.key })
       }
     }
     return result
-  }, [fillElements, testData.params])
+  }, [fillElements, effectiveParams, variants])
 
   const updateParam = (key: string, patch: Partial<TestDataParam>): void => {
     const existing = testData.params.find((p) => p.key === key)
     const entry = entries.find((e) => e.key === key)
     if (!entry) return
     const merged: TestDataParam = {
+      baseKey: entry.baseKey,
+      valueFingerprint: entry.valueFingerprint,
       key,
       name: existing?.name ?? entry.name,
       isSecret: existing?.isSecret ?? entry.isSecret,
@@ -147,7 +165,7 @@ export function TestDataPanel({ steps, startUrl, testData, onChange }: TestDataP
                 className="shrink-0 truncate font-mono text-[10px] text-text-subtle"
                 title={p.sourceLabel}
               >
-                {p.sourceLabel}
+                {p.baseKey ? `${p.baseKey} (other value)` : p.sourceLabel}
               </span>
               <input
                 type="text"
@@ -176,6 +194,9 @@ export function TestDataPanel({ steps, startUrl, testData, onChange }: TestDataP
                 <span title={`env var: ${p.envVarName}`}>use env var</span>
               </label>
             </div>
+            {p.useEnvVar && (
+              <p className="font-mono text-[10px] text-text-subtle">{p.envVarName}</p>
+            )}
           </li>
         ))}
       </ul>
