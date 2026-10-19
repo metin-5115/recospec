@@ -14,7 +14,7 @@ Recospec is an open-source Chrome extension that records your browser interactio
 - **Self-healing locators** — every element ships with ranked fallbacks (inline comment) and the generated project includes a `selfHealingLocator` / `cy.selfHealing` helper that walks the chain at runtime.
 - **Method inference v2** — 10 patterns (search, login, register, submitForm, fillForm, navigateFromMenu, …) with parameter-type inference; rename inline in the side panel before export.
 - **Network capture & mocks** — recorder transparently captures `fetch` and `XMLHttpRequest`; opt-in mock emission produces Playwright `page.route(...)` blocks.
-- **Visual regression** — capture page snapshots during recording; generated tests use Playwright's built-in `toHaveScreenshot()` or Cypress with `cypress-image-snapshot`. Baselines land under `tests/scenario.spec.ts-snapshots/` (Playwright) or `cypress/screenshots/` (Cypress) — commit them on first run.
+- **Visual regression** — capture page snapshots during recording; generated tests use Playwright's built-in `toHaveScreenshot()` or Cypress with `cypress-image-snapshot`. Baselines land under `tests/<flow-slug>.spec.ts-snapshots/` (Playwright) or `cypress/screenshots/` (Cypress) — commit them on first run.
 - **Multi-framework export** — Playwright (TypeScript), Cypress (JavaScript), Selenium Python (pytest), and Selenium Java (TestNG). One recording, four outputs.
 - **Assertions UI** — point-and-click visibility / text / value / attribute / count / screenshot assertions.
 - **Privacy-first** — no telemetry, all session data stored locally in IndexedDB.
@@ -82,6 +82,34 @@ export, so `.feature` + step-definition files land in the framework-idiomatic
 locations (`features/` for Playwright TS, `cypress/e2e/` for Cypress,
 `features/` for Selenium Py, `src/test/resources/features/` for Selenium
 Java).
+
+### File names, base URL and folders
+
+- **One file per flow.** Specs are named after the recorded flow, so a second
+  flow never overwrites the first: `<flow-slug>.spec.ts` (Playwright),
+  `<flow-slug>.cy.js` (Cypress), `test_<flow_slug>.py` (Selenium Py),
+  `<FlowSlug>Test.java` (Selenium Java). Feature and step files follow the same
+  slug, and Playwright's visual baselines live in
+  `tests/<flow-slug>.spec.ts-snapshots/`.
+- **One base URL.** Generated config defaults to the origin the flow was
+  recorded on and every framework lets `BASE_URL` override it
+  (`BASE_URL=https://staging.example.com npx playwright test`). Specs and page
+  objects use routes relative to it.
+- **Your folders.** `.recospecrc.json` can relocate where `add` writes files;
+  folders you leave out keep the framework's standard layout, and the
+  generated imports (relative paths, Python modules, Java packages) follow:
+
+  ```json
+  {
+    "version": 1,
+    "framework": "playwright-ts",
+    "paths": { "pagesDir": "e2e/pages", "testsDir": "e2e/specs", "featuresDir": "e2e/bdd" }
+  }
+  ```
+
+  Folders must be inside the project. For Selenium Java they must sit under
+  `src/main/java` (pages) and `src/test/java` (tests), because the folder is
+  the package.
 
 ## Local LLM context (low-token export)
 

@@ -27,6 +27,23 @@ describe('loadRc', () => {
     expect(loaded?.source).toMatch(/\.recospecrc\.json$/)
   })
 
+  it('keeps the configured output folders', () => {
+    const paths = { pagesDir: 'e2e/po', testsDir: 'e2e/specs', featuresDir: 'e2e/bdd' }
+    writeFileSync(join(tmp, RC_FILENAME), JSON.stringify({ version: 1, paths }), 'utf8')
+    expect(loadRc(tmp)?.config.paths).toEqual(paths)
+  })
+
+  it('drops path settings that are not strings and unknown keys', () => {
+    const paths = { pagesDir: 7, testsDir: 'e2e', featuresDir: null, scaffoldDir: 'x' }
+    writeFileSync(join(tmp, RC_FILENAME), JSON.stringify({ paths }), 'utf8')
+    expect(loadRc(tmp)?.config.paths).toEqual({ testsDir: 'e2e' })
+  })
+
+  it('ignores a paths value that is not an object', () => {
+    writeFileSync(join(tmp, RC_FILENAME), JSON.stringify({ paths: 'tests' }), 'utf8')
+    expect(loadRc(tmp)?.config.paths).toBeUndefined()
+  })
+
   it('returns null for malformed JSON (caller logs)', () => {
     writeFileSync(join(tmp, RC_FILENAME), '{not valid', 'utf8')
     expect(loadRc(tmp)).toBeNull()

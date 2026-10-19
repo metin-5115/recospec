@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **One spec per flow** — every adapter wrote `scenario.spec.ts` / `test_scenario.py` /
+  `scenario.cy.js`, so recording a second flow overwrote the first. Files are now named after the
+  flow (`<flow-slug>.spec.ts`, `<flow-slug>.cy.js`, `test_<flow_slug>.py`, `<FlowSlug>Test.java`);
+  feature and step files, Playwright's `<flow-slug>.spec.ts-snapshots/` baseline folder and the
+  pytest-bdd `scenarios()` path follow. Java page classes named `Test*Page` are no longer routed
+  to the tests folder, and a flow whose name starts with a digit gets a legal Java identifier.
+- **A single, overridable base URL** — the scaffold hard-coded `http://localhost:3000` while specs
+  opened the recorded origin (and Selenium page objects embedded it). Config now defaults to the
+  recorded origin and `BASE_URL` overrides it in every framework (Playwright
+  `process.env.BASE_URL ?? '<origin>'`, Cypress `baseUrl`, pytest `conftest.py`, Java
+  `System.getenv()`); specs and page objects use relative routes, a URL on another origin stays
+  absolute. The generated README documents the override.
+- **`paths` in `.recospecrc.json` is applied** — `pagesDir`, `testsDir` and `featuresDir` were read
+  but ignored. `recospec add` (and the VS Code extension) now write there, and generated imports,
+  Python module paths and Java packages follow the chosen folders. Folders outside the project are
+  refused before anything is written; Java folders must sit under `src/main/java` / `src/test/java`.
+
 - **Local LLM context export** — a low-token alternative to the XML Claude prompt for small local
   models. Elements are listed once and steps reference them by id; secrets become `$RECOSPEC_*`
   references. Tasks `codegen` / `heal` / `both` (healing adds fallback locators and a recorded-element

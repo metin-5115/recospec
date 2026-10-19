@@ -11,6 +11,7 @@ import type { FrameworkId, GeneratedFile, OutputSelection } from '@shared/types/
 import { normalizeSelection } from '@shared/types/generated'
 import type { JsonExportPayload } from '@codegen/export/json-export'
 import { resolveOutputPath } from '@codegen/export/output-path'
+import type { OutputDirOverrides } from '@codegen/export/output-layout'
 import type { ConflictReporter } from '@codegen/apply/conflict-reporter'
 import { detectFramework } from '../detect-framework'
 import { loadRc } from '../config-loader'
@@ -108,6 +109,7 @@ export async function runAdd(opts: AddOptions, reporter?: ConflictReporter): Pro
     bdd,
     flowSlug: flowSlug(scenario.name),
     baseUrl: recordedOrigin(scenario),
+    dirs: rc?.config.paths,
   }
   if (bdd && selection.test) {
     if (!adapter.renderBddFeature || !adapter.renderBddSteps) {
@@ -132,7 +134,7 @@ export async function runAdd(opts: AddOptions, reporter?: ConflictReporter): Pro
 
   // Per spec: SKIP scaffold. The CLI assumes the user's project already has
   // a configured test runner.
-  const targets = emitted.map((f) => routeToDisk(f, framework, opts.projectDir))
+  const targets = emitted.map((f) => routeToDisk(f, framework, opts.projectDir, rc?.config.paths))
 
   let written = 0
   let merged = 0
@@ -191,14 +193,16 @@ function resolveFramework(opts: AddOptions, rcFramework: FrameworkId | undefined
 
 /**
  * Map an adapter-emitted filename to a disk path under the target project.
- * Uses the same layout table as the ZIP export, anchored at `projectDir`.
+ * Uses the same layout table as the ZIP export, anchored at `projectDir`, with any folders the
+ * project's `.recospecrc.json` `paths` setting relocates.
  */
 function routeToDisk(
   file: GeneratedFile,
   framework: FrameworkId,
   projectDir: string,
+  dirs: OutputDirOverrides | undefined,
 ): ResolvedTarget {
-  const relative = resolveOutputPath(file.filename, framework)
+  const relative = resolveOutputPath(file.filename, framework, dirs)
   return {
     diskPath: resolve(projectDir, relative),
     filename: file.filename,
