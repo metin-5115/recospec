@@ -16,6 +16,12 @@ export interface AdapterMetadata {
 export interface RenderOptions {
   includeMocks?: boolean
   /**
+   * Wire the recorded fallback locators into the generated code, so they take over at run time
+   * when the primary one breaks (Playwright `selfHealingLocator`, Cypress `cy.selfHealing`).
+   * Off when omitted; the Selenium adapters have no runtime helper and only list suggestions.
+   */
+  selfHealing?: boolean
+  /**
    * User-edited test-data config. Adapters use this to render env-var
    * lookups for sensitive fields and `.env.example` / fixture scaffolds.
    */

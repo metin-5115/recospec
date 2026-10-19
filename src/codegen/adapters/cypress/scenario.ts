@@ -1,6 +1,6 @@
 import type { IRScenario, IRStep } from '../../ir/types'
 import { isPageLevelAssertion } from '../../shared/page-assertion'
-import { renderLocator } from './locator'
+import { healingLocator, renderLocator } from './locator'
 import { renderAssertion } from './assertion'
 import { renderInteraction } from './interaction'
 import { renderCypressMocks } from './mock'
@@ -43,14 +43,14 @@ function renderStepInSpec(step: IRStep, indent: string, options: RenderOptions):
     return `${indent}cy.visit(${JSON.stringify(step.url)});`
   }
   if (step.action === 'click' && step.element) {
-    return `${indent}${renderLocator(step.element)}.click();`
+    return `${indent}${healingLocator(step.element, options)}.click();`
   }
   if (step.action === 'fill' && step.element) {
     const expr = renderFillValueExpr(step.element, step.value ?? '', options.testData)
-    return `${indent}${renderLocator(step.element)}.clear().type(${expr});`
+    return `${indent}${healingLocator(step.element, options)}.clear().type(${expr});`
   }
   if (step.element) {
-    const interaction = renderInteraction(step, renderLocator(step.element), indent)
+    const interaction = renderInteraction(step, healingLocator(step.element, options), indent)
     if (interaction) return interaction
   }
   if (step.action === 'keypress' && step.key) {
@@ -64,7 +64,7 @@ function renderStepInSpec(step: IRStep, indent: string, options: RenderOptions):
       const chain =
         isPageLevelAssertion(step.assertionDetail) || !step.element
           ? 'cy'
-          : renderLocator(step.element)
+          : healingLocator(step.element, options)
       return renderAssertion(step.assertionDetail, chain, indent)
     }
     return `${indent}// assert: ${step.annotation ?? ''}`

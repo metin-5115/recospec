@@ -1,5 +1,6 @@
 import type { IRElement } from '../../ir/types'
 import { parseRoleName } from '@codegen/shared/locator-value'
+import type { RenderOptions } from '../registry'
 
 /**
  * testing-library `findByRole(role, { name })` call (no subject) for a
@@ -123,4 +124,37 @@ export function renderLocator(el: IRElement): string {
   }
 
   return renderInnerLocator(el)
+}
+
+/** Strategies whose locator value is (or maps to) a plain CSS selector `cy.get` understands. */
+const CSS_STRATEGIES: ReadonlySet<string> = new Set(['test-attr', 'id', 'css'])
+
+/** CSS selector for a recorded locator, or `undefined` when it needs a testing-library query. */
+function cssSelectorOf(strategy: string, value: string): string | undefined {
+  if (strategy === 'testid')
+    return `[data-testid="${value.replace(/^\[data-testid="(.+)"\]$/, '$1')}"]`
+  if (strategy === 'aria-label')
+    return `[aria-label="${value.replace(/^\[aria-label="(.+)"\]$/, '$1')}"]`
+  return CSS_STRATEGIES.has(strategy) ? value : undefined
+}
+
+/**
+ * `cy.selfHealing([...selectors])` when the option is on and the primary locator and at least one
+ * fallback are plain CSS selectors (the helper probes the DOM with them); otherwise the recorded
+ * locator. Role/text/label fallbacks stay in the `// Fallbacks:` comment.
+ */
+export function healingLocator(el: IRElement, options: RenderOptions): string {
+  const plain = renderLocator(el)
+  if (!options.selfHealing || !el.fallbackLocators?.length) return plain
+  if (el.frameContext?.frameChain.length || el.shadowContext?.hostChain.length) return plain
+  if (el.locatorStrategy === 'template' || el.locatorStrategy === 'composed') return plain
+
+  const primary = cssSelectorOf(el.locatorStrategy, el.locatorValue)
+  if (!primary) return plain
+  const fallbacks = el.fallbackLocators.flatMap((f) => {
+    const css = cssSelectorOf(f.strategy, f.locatorValue)
+    return css && css !== primary ? [css] : []
+  })
+  if (fallbacks.length === 0) return plain
+  return `cy.selfHealing(${JSON.stringify([primary, ...fallbacks])})`
 }

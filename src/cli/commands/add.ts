@@ -45,6 +45,8 @@ export interface AddOptions {
   bdd?: boolean
   /** Emit network mocks for captured requests (Playwright / Cypress / notes elsewhere). */
   includeMocks?: boolean
+  /** Wire fallback locators into the generated code at run time. Defaults to true. */
+  selfHealing?: boolean
   /** Add a "flow ended on this URL" assertion to a recording with none. Defaults to true. */
   finalStateAssertion?: boolean
   /**
@@ -112,6 +114,7 @@ export async function runAdd(opts: AddOptions, reporter?: ConflictReporter): Pro
   const adapter = getAdapter(framework)
   const renderOptions: RenderOptions = {
     includeMocks: opts.includeMocks,
+    selfHealing: opts.selfHealing !== false,
     testData: withFillVariants(undefined, normalized),
     bdd,
     flowSlug: flowSlug(scenario.name),

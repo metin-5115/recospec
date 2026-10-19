@@ -1,6 +1,7 @@
 import type { IRElement, IRFallback } from '../../ir/types'
 import { dateFnsLocaleImportName } from '@shared/date-template'
 import { parseRoleName } from '@codegen/shared/locator-value'
+import type { RenderOptions } from '../registry'
 
 /** `getByRole(role, { name })` call for a role-name locatorValue, or a raw `locator()` if unparseable. */
 function roleQuery(value: string): string {
@@ -242,7 +243,25 @@ export function memberExpr(el: IRElement): string {
   return templateMemberExpr(el)
 }
 
-export function renderElementGetter(el: IRElement): string {
+/** Elements whose fallbacks are plain alternatives to a page-level locator. */
+function canHeal(el: IRElement): boolean {
+  if (!el.fallbackLocators?.length) return false
+  if (el.locatorStrategy === 'template' || isContainerParam(el)) return false
+  return !el.frameContext?.frameChain.length
+}
+
+/**
+ * `selfHealingLocator(<page>, [primary, ...fallbacks])` when the option is on and the element has
+ * fallbacks that can stand in for the primary; otherwise the plain recorded locator.
+ */
+export function healingLocator(el: IRElement, pageRef: string, options: RenderOptions): string {
+  const primary = renderLocator(el).replace(/^page\b/, pageRef)
+  if (!options.selfHealing || !canHeal(el)) return primary
+  const fallbacks = (el.fallbackLocators ?? []).map((f) => `${pageRef}.${renderFallbackExpr(f)}`)
+  return `selfHealingLocator(${pageRef}, [${[primary, ...fallbacks].join(', ')}])`
+}
+
+export function renderElementGetter(el: IRElement, options: RenderOptions = {}): string {
   if (el.locatorStrategy === 'template' && el.template) {
     const accessor = renderTemplateAccessor(el)
     if (!el.fallbackLocators?.length) return accessor
@@ -263,7 +282,7 @@ export function renderElementGetter(el: IRElement): string {
     : fragileWarning
   // Inside the page-object class the Page lives on `this.page`, not a bare
   // `page` binding (that only exists in spec scope). Re-root the locator.
-  const locator = renderLocator(el).replace(/^page\b/, 'this.page')
+  const locator = healingLocator(el, 'this.page', options)
   const primary = `${shadowWarning}  get ${el.name}() { return ${locator}; }`
   if (!el.fallbackLocators?.length) return primary
   const exprs = el.fallbackLocators.map(renderFallbackExpr).join(', ')

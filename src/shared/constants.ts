@@ -312,6 +312,9 @@ export const ERROR_ELEMENT_NAME_PATTERN = /error|alert|invalid|failure|warning/i
 /** First HTTP status that counts as a failed request. */
 export const HTTP_ERROR_STATUS_MIN = 400 as const
 
+/** Folder (relative to the project root) the generated self-healing helper lives in. */
+export const SELF_HEALING_HELPER_DIR = 'utils' as const
+
 /** What a masked secret is replaced with in logs and captured network bodies. */
 export const REDACTED_PLACEHOLDER = '***' as const
 

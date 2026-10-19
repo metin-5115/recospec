@@ -132,6 +132,6 @@ describe('renderScaffold — self-healing helper', () => {
     const files = renderScaffold()
     const helper = files.find((f) => f.filename === 'utils/locator.ts')
     expect(helper).toBeDefined()
-    expect(helper!.content).toContain('export async function selfHealingLocator')
+    expect(helper!.content).toContain('export function selfHealingLocator')
   })
 })

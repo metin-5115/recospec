@@ -1,6 +1,6 @@
 import type { IRPage, IRElement, IRStep, IRFallback, InferredMethod } from '../../ir/types'
 import { isPageLevelAssertion } from '../../shared/page-assertion'
-import { renderLocator, roleQuery } from './locator'
+import { healingLocator, roleQuery } from './locator'
 import { renderAssertion } from './assertion'
 import { renderInteraction, renderToggleByParam } from './interaction'
 import { renderCypressMocks } from './mock'
@@ -94,7 +94,7 @@ function templateCallExpr(el: IRElement): string {
   return `this.${el.name}(${JSON.stringify(t.capturedValue)})`
 }
 
-function renderElementGetter(el: IRElement): string {
+function renderElementGetter(el: IRElement, options: RenderOptions): string {
   if (el.locatorStrategy === 'template' && el.template) {
     const accessor = renderTemplateAccessor(el)
     if (!el.fallbackLocators?.length) return accessor
@@ -104,7 +104,7 @@ function renderElementGetter(el: IRElement): string {
   const shadowWarning = el.shadowClosed
     ? `  // WARNING: element is inside a closed shadow root — locator may be unreliable\n`
     : ''
-  const primary = `${shadowWarning}  ${el.name}() { return ${renderLocator(el)}; }`
+  const primary = `${shadowWarning}  ${el.name}() { return ${healingLocator(el, options)}; }`
   if (!el.fallbackLocators?.length) return primary
   const exprs = el.fallbackLocators.map(renderFallbackExpr).join(', ')
   const fallbackComment = `  // Fallbacks: ${exprs}`
@@ -241,7 +241,7 @@ function renderDateFnsImports(page: IRPage): string {
 }
 
 export function renderPageObject(page: IRPage, options: RenderOptions = {}): string {
-  const elementGetters = page.elements.map(renderElementGetter).join('\n\n')
+  const elementGetters = page.elements.map((el) => renderElementGetter(el, options)).join('\n\n')
 
   const gotoStep = page.steps.find((s) => s.action === 'navigate')
   const gotoUrl = navigationTarget(options.baseUrl, page, gotoStep?.url ?? page.normalizedUrl)

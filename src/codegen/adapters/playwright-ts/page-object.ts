@@ -4,6 +4,8 @@ import { isContainerParam, renderElementGetter } from './locator'
 import { mocksFirst, renderStepInMethod } from './step'
 import type { RenderOptions } from '../registry'
 import { navigationTarget } from '../../shared/scenario-flow'
+import { relativeModule, resolveOutputDirs } from '../../export/output-layout'
+import { SELF_HEALING_HELPER_DIR } from '@shared/constants'
 
 const PARAM_SUFFIX_REGEX = /Input$|Button$|Btn$|Link$|Select$|Field$|Box$|Toggle$|Checkbox$|Radio$/
 
@@ -95,7 +97,7 @@ function renderDateFnsImports(page: IRPage): string {
 }
 
 export function renderPageObject(page: IRPage, options: RenderOptions = {}): string {
-  const elementGetters = page.elements.map(renderElementGetter).join('\n\n')
+  const elementGetters = page.elements.map((el) => renderElementGetter(el, options)).join('\n\n')
 
   const gotoStep = page.steps.find((s) => s.action === 'navigate')
   const gotoUrl = navigationTarget(options.baseUrl, page, gotoStep?.url ?? page.normalizedUrl)
@@ -125,8 +127,13 @@ export function renderPageObject(page: IRPage, options: RenderOptions = {}): str
     ? "import { expect, type Page } from '@playwright/test';"
     : "import { type Page } from '@playwright/test';"
 
+  const dirs = resolveOutputDirs('playwright-ts', options.dirs)
+  const healingImport = /\bselfHealingLocator\(/.test(elementGetters)
+    ? `import { selfHealingLocator } from '${relativeModule(dirs.pages, SELF_HEALING_HELPER_DIR, 'locator')}';\n`
+    : ''
+
   return `${playwrightImport}
-${renderDateFnsImports(page)}
+${healingImport}${renderDateFnsImports(page)}
 export class ${page.className} {
   constructor(private readonly page: Page) {}
 

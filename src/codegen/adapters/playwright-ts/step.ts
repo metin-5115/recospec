@@ -1,5 +1,5 @@
 import type { IRStep } from '../../ir/types'
-import { renderLocator, memberExpr } from './locator'
+import { renderLocator, memberExpr, healingLocator } from './locator'
 import { renderAssertionMatcher } from './assertion'
 import { renderMockBlock } from './mock'
 import { renderFillValueExpr } from './fill-value'
@@ -132,18 +132,18 @@ export function renderStepInSpec(
     return `${indent}await page.goto(${JSON.stringify(step.url)});`
   }
   if (step.action === 'click' && step.element) {
-    return `${indent}await ${renderLocator(step.element)}.click();`
+    return `${indent}await ${healingLocator(step.element, 'page', options)}.click();`
   }
   if (step.action === 'fill' && step.element) {
     const expr = renderFillValueExpr(step.element, step.value ?? '', options.testData)
-    return `${indent}await ${renderLocator(step.element)}.fill(${expr});`
+    return `${indent}await ${healingLocator(step.element, 'page', options)}.fill(${expr});`
   }
   if (step.action === 'upload' && step.element && step.upload) {
-    return `${indent}await ${renderLocator(step.element)}.setInputFiles(${uploadArg(step)});`
+    return `${indent}await ${healingLocator(step.element, 'page', options)}.setInputFiles(${uploadArg(step)});`
   }
   if (step.element && INTERACTION_CALLS[step.action]) {
     const args = step.action === 'select' ? JSON.stringify(step.value ?? '') : ''
-    return `${indent}await ${renderLocator(step.element)}.${INTERACTION_CALLS[step.action]}(${args});`
+    return `${indent}await ${healingLocator(step.element, 'page', options)}.${INTERACTION_CALLS[step.action]}(${args});`
   }
   if (step.action === 'keypress' && step.key) {
     return `${indent}await page.keyboard.press(${JSON.stringify(step.key)});`
@@ -153,7 +153,7 @@ export function renderStepInSpec(
       const target =
         isPageLevelAssertion(step.assertionDetail) || !step.element
           ? 'page'
-          : renderLocator(step.element)
+          : healingLocator(step.element, 'page', options)
       return renderAssertionMatcher(step.assertionDetail, target, indent)
     }
     return `${indent}// assert: ${step.annotation ?? ''}`

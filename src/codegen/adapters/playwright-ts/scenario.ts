@@ -14,6 +14,7 @@ import { mocksFirst, renderStepInSpec } from './step'
 import { renderFillValueExpr } from './fill-value'
 import type { RenderOptions } from '../registry'
 import { relativeModule, resolveOutputDirs } from '../../export/output-layout'
+import { SELF_HEALING_HELPER_DIR } from '@shared/constants'
 
 const INDENT = '    '
 
@@ -84,7 +85,16 @@ export function renderScenario(scenario: IRScenario, given: RenderOptions = {}):
     ...flow.flatMap((item) => renderItem(item, options)),
   ].join('\n')
 
-  const header = ["import { test, expect } from '@playwright/test';", ...imports].join('\n')
+  const healingImport = /\bselfHealingLocator\(/.test(body)
+    ? [
+        `import { selfHealingLocator } from '${relativeModule(dirs.tests, SELF_HEALING_HELPER_DIR, 'locator')}';`,
+      ]
+    : []
+  const header = [
+    "import { test, expect } from '@playwright/test';",
+    ...healingImport,
+    ...imports,
+  ].join('\n')
 
   return `${header}
 

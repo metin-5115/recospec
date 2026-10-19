@@ -195,3 +195,25 @@ describe('buildZipExport — upload fixtures', () => {
     expect(readme).not.toContain('Upload fixtures')
   })
 })
+
+describe('buildZipExport — fallback locator wording', () => {
+  async function readmeFor(framework: GeneratedCode['framework']): Promise<string> {
+    const blob = await buildZipExport(makeSession(), { framework, files: [] })
+    return readZipFile(blob, 'README.md')
+  }
+
+  it('calls the Selenium fallbacks suggestions, not self-healing', async () => {
+    for (const framework of ['selenium-py', 'selenium-java'] as const) {
+      const readme = await readmeFor(framework)
+      expect(readme).toContain('## Fallback locator suggestions')
+      expect(readme).not.toContain('## Self-healing locators')
+    }
+  })
+
+  it('describes the run-time helpers for Playwright and Cypress', async () => {
+    const playwright = await readmeFor('playwright-ts')
+    expect(playwright).toContain('## Self-healing locators')
+    expect(playwright).toContain('selfHealingLocator(this.page, [primary, ...fallbacks])')
+    expect((await readmeFor('cypress')).toLowerCase()).toContain('cy.selfhealing')
+  })
+})

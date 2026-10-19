@@ -41,6 +41,11 @@ export interface GenerateOptions {
    * Defaults to `true`.
    */
   finalStateAssertion?: boolean
+  /**
+   * Let the recorded fallback locators take over at run time (Playwright / Cypress only; the
+   * Selenium adapters list them as suggestions). Defaults to `true`.
+   */
+  selfHealing?: boolean
   /** Emit Gherkin `.feature` + step definitions alongside the page objects. */
   bdd?: boolean
   /**
@@ -116,6 +121,7 @@ export async function generate(
   const adapter = getAdapter(framework)
   const renderOptions: RenderOptions = {
     includeMocks: options.includeMocks,
+    selfHealing: options.selfHealing !== false,
     testData: withFillVariants(options.testData, normalized),
     bdd: options.bdd,
     flowSlug: flowSlug(scenario.name),

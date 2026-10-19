@@ -63,6 +63,8 @@ export type UIToBackgroundMessage =
       sessionId: string
       framework: FrameworkId
       includeMocks?: boolean
+      /** When false, keep fallback locators as comments instead of wiring them in. Defaults to true. */
+      selfHealing?: boolean
       /** When false, skip the auto-added "flow ended on this URL" assertion. Defaults to true. */
       finalStateAssertion?: boolean
       /** When false, strip auto-detected `wait` steps before codegen. */

@@ -46,12 +46,20 @@ const README_TEMPLATE = (session: Session, framework: string, hasUploads: boolea
         : `\`\`\`\npages/                              Page Object Model classes (one file per page)\ntests/                              Test scenarios\n${snapshotsDir}   Visual regression baselines (committed)\nutils/                              selfHealingLocator helper\nplaywright.config.ts\npackage.json\n\`\`\``
 
   const selfHealingNote = isCypress
-    ? '`cypress/support/locator.js` registers `cy.selfHealing([...])` — pass the primary selector and recorded fallbacks; the first one that matches wins.'
+    ? 'Elements whose primary and fallback locators are CSS selectors read `cy.selfHealing([...])` (registered in `cypress/support/locator.js`): the first selector that matches wins, and a warning names the fallback when the primary is gone. Fallbacks that need a testing-library query stay as `// Fallbacks:` comments.'
     : isSeleniumPy
       ? 'Each page-object element class constant ships with a `# Fallbacks: ...` comment listing the locator tuples Recospec ranked just below the primary. Swap them in manually if the primary selector breaks.'
       : isSeleniumJava
         ? 'Each `@FindBy`-annotated WebElement field ships with a `// Fallbacks: ...` comment listing the alternate `@FindBy(...)` annotations Recospec ranked just below the primary. Swap one in manually when the primary selector breaks — PageFactory will pick it up on the next page navigation.'
-        : '`utils/locator.ts` exports `selfHealingLocator(page, [...])` — pass the primary selector and recorded fallbacks; the first one whose `count()` is positive wins.'
+        : 'Page-object getters for elements with fallbacks return `selfHealingLocator(this.page, [primary, ...fallbacks])` (`utils/locator.ts`): it matches the primary locator or, when that no longer exists, a fallback, and logs a warning naming the fallback in use. Pick Runtime self-healing off when generating to keep plain locators.'
+
+  const selfHealingTitle =
+    isSeleniumPy || isSeleniumJava ? 'Fallback locator suggestions' : 'Self-healing locators'
+
+  const selfHealingIntro =
+    isSeleniumPy || isSeleniumJava
+      ? 'Selenium has no runtime self-healing helper here, so these are fallback suggestions:'
+      : 'Fallbacks are used at run time when the primary locator breaks:'
 
   const visualRegressionNote = isCypress
     ? `Generated tests use [\`cypress-image-snapshot\`](https://github.com/jaredpalmer/cypress-image-snapshot) for visual regression. The first run produces baselines under \`cypress/screenshots/\` — commit them. Later runs compare pixel-by-pixel; the default \`failureThreshold\` is \`0.02\` (2%). Update baselines with:
@@ -93,12 +101,11 @@ BASE_URL=https://staging.example.com ${baseUrlRunCommand(framework)}
 
 ${structure}
 
-## Self-healing locators
+## ${selfHealingTitle}
 
 Each page-object element ships with a \`// Fallbacks: ...\` comment listing
-the locator strategies Recospec ranked just below the primary. When a UI
-change breaks the primary selector, swap in a fallback or wire up the
-included helper:
+the locator strategies Recospec ranked just below the primary.
+${selfHealingIntro}
 
 ${selfHealingNote}
 
