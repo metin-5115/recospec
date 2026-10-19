@@ -75,7 +75,7 @@ function buildCanvasLocator(el: Element, doc: Document): ScoredLocator {
   try {
     matchCount = doc.querySelectorAll(selector).length
   } catch {
-    /* keep default */
+    // An id that is not a valid selector: the canvas is assumed to be unique.
   }
   return {
     strategy: 'css',

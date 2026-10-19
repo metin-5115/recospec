@@ -99,6 +99,7 @@ async function writePendingNetwork(): Promise<void> {
  */
 export function flushNetworkBatch(): Promise<void> {
   const run = writes.then(writePendingNetwork)
+  // The caller sees a failed write through `run`; the queue itself must keep going.
   writes = run.catch(() => undefined)
   return run
 }
@@ -124,6 +125,7 @@ export async function attachFingerprint(
   actionId: string,
   fingerprint: ElementFingerprint,
 ): Promise<void> {
+  // A failed write is reported by aggregateEvent; here there is just no action to attach to.
   await storingActions.get(actionId)?.catch(() => undefined)
   if (!(await setActionFingerprint(actionId, fingerprint))) return
   await broadcastToUI({ type: 'STEP_FINGERPRINT', sessionId, actionId, fingerprint })

@@ -17,6 +17,19 @@ let activeSessionId: string | null = null
 let activeTabId: number | null = null
 let restored: Promise<void> | null = null
 
+/**
+ * The toolbar badge is cosmetic: the action API can reject while the extension reloads, and a
+ * missing badge must never fail a recording state change.
+ */
+async function setBadge(text: string, color?: string): Promise<void> {
+  try {
+    await chrome.action.setBadgeText({ text })
+    if (color) await chrome.action.setBadgeBackgroundColor({ color })
+  } catch {
+    // See above: nothing to recover.
+  }
+}
+
 async function loadActiveSession(): Promise<void> {
   const recording = await listSessionsByState('recording')
   if (recording.length > 0) {
@@ -56,7 +69,9 @@ export async function startSession(
     // Service worker may have restored a stale 'recording' session from DB after
     // being terminated. Archive it so the user can start fresh without reloading.
     logger.warn('[BG] Archiving stale session to allow new recording', activeSessionId)
-    await updateSession(activeSessionId, { state: 'archived' }).catch(() => undefined)
+    await updateSession(activeSessionId, { state: 'archived' }).catch((err) =>
+      logger.warn('[BG] Could not archive the stale session', err),
+    )
     if (activeTabId !== null) {
       await sendToTab(activeTabId, { type: 'STOP_CAPTURE', sessionId: activeSessionId }).catch(
         () => undefined,
@@ -101,8 +116,7 @@ export async function startSession(
 
   await broadcastToUI({ type: 'SESSION_STATE_CHANGED', session })
 
-  await chrome.action.setBadgeText({ text: 'REC' }).catch(() => undefined)
-  await chrome.action.setBadgeBackgroundColor({ color: '#dc2626' }).catch(() => undefined)
+  await setBadge('REC', '#dc2626')
 
   logger.info('[BG] Session started', sessionId)
 }
@@ -134,7 +148,7 @@ export async function stopSession(sessionId: string): Promise<void> {
   activeTabId = null
   await writeRecordingFlag(false)
 
-  await chrome.action.setBadgeText({ text: '' }).catch(() => undefined)
+  await setBadge('')
 
   logger.info('[BG] Session stopped', sessionId)
 }
@@ -159,8 +173,7 @@ export async function pauseSession(sessionId: string): Promise<void> {
   const paused = await getSession(sessionId)
   if (paused) await broadcastToUI({ type: 'SESSION_STATE_CHANGED', session: paused })
 
-  await chrome.action.setBadgeText({ text: 'PAUSE' }).catch(() => undefined)
-  await chrome.action.setBadgeBackgroundColor({ color: '#d97706' }).catch(() => undefined)
+  await setBadge('PAUSE', '#d97706')
 
   logger.info('[BG] Session paused', sessionId)
 }
@@ -189,8 +202,7 @@ export async function resumeSession(sessionId: string): Promise<void> {
   const resumed = await getSession(sessionId)
   if (resumed) await broadcastToUI({ type: 'SESSION_STATE_CHANGED', session: resumed })
 
-  await chrome.action.setBadgeText({ text: 'REC' }).catch(() => undefined)
-  await chrome.action.setBadgeBackgroundColor({ color: '#dc2626' }).catch(() => undefined)
+  await setBadge('REC', '#dc2626')
 
   logger.info('[BG] Session resumed', sessionId)
 }
@@ -199,13 +211,14 @@ export async function deleteSessionById(sessionId: string): Promise<void> {
   await whenSessionRestored()
   if (activeSessionId === sessionId) {
     if (activeTabId !== null) {
+      // The tab may already be closed; the session is being deleted regardless.
       await sendToTab(activeTabId, { type: 'STOP_CAPTURE', sessionId }).catch(() => undefined)
       resetReinjectAttempts(activeTabId)
     }
     activeSessionId = null
     activeTabId = null
     await writeRecordingFlag(false)
-    await chrome.action.setBadgeText({ text: '' }).catch(() => undefined)
+    await setBadge('')
   }
 
   await deleteSession(sessionId)

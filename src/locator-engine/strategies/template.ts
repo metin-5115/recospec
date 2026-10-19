@@ -33,7 +33,7 @@ function explicitOrImplicitRole(el: Element): string | null {
     try {
       if (el.matches(selectorForRole(role))) return role
     } catch {
-      /* skip */
+      // A role selector this DOM implementation cannot parse: try the next role.
     }
   }
   return null

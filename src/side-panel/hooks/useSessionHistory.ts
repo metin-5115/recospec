@@ -2,6 +2,7 @@ import { useEffect, useCallback, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useSessionStore } from '../sessionStore'
 import { onUIMessage } from '@shared/messaging/listen'
+import { logger } from '@shared/logger'
 import { sendToBackground } from '@shared/messaging/send'
 import { listSessions } from '@storage/session-repo'
 import { getActionsBySession } from '@storage/action-repo'
@@ -53,7 +54,7 @@ export function useSessionHistory() {
   useEffect(() => {
     listSessions()
       .then(setSessions)
-      .catch(() => undefined)
+      .catch((err) => logger.warn('[UI] Could not load the saved sessions', err))
   }, [setSessions])
 
   useEffect(

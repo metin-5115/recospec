@@ -38,6 +38,7 @@ let active: ActiveReplay | null = null
 function startKeepalive(): void {
   // chrome.alarms.create is fire-and-forget; clearing first guarantees a
   // fresh schedule on rapid replay restarts.
+  // Clearing an alarm that does not exist rejects; there is nothing to recover.
   chrome.alarms.clear(REPLAY_KEEPALIVE_ALARM_NAME).catch(() => undefined)
   chrome.alarms.create(REPLAY_KEEPALIVE_ALARM_NAME, { periodInMinutes: 0.4 }).catch?.((err) => {
     logger.warn('[BG] keepalive alarm create failed', err)
@@ -56,6 +57,7 @@ function onKeepaliveAlarm(alarm: chrome.alarms.Alarm): void {
 }
 
 function stopKeepalive(): void {
+  // Same as above: no alarm to clear is not an error worth reporting.
   chrome.alarms.clear(REPLAY_KEEPALIVE_ALARM_NAME).catch(() => undefined)
 }
 

@@ -11,6 +11,7 @@ import type { Session } from '@shared/types/session'
 logger.info('[BG] Service worker started')
 
 initMessageRouter()
+// Never rejects (it logs and returns); the catch only satisfies no-floating-promises.
 allowContentScriptsToReadRecordingFlag().catch(() => undefined)
 
 // Expose the export handler on the service-worker global so the VS Code
