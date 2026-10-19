@@ -2,7 +2,7 @@ import type { IRPage, IRScenario, IRStep, AssertionDetail, IRElement } from '../
 import { urlAssertionPattern } from '../../shared/url-assertion'
 import { renderByExpression, javaStr } from './locator'
 import { renderJavaInteraction, javaInteractionImports } from './interaction'
-import { renderNetworkNote } from './network-note'
+import { renderNetworkNote } from '../../shared/network-note'
 import {
   DEFAULT_SCREENSHOT_THRESHOLD,
   frameStatements,
@@ -246,6 +246,7 @@ export function renderScenario(scenario: IRScenario, given: RenderOptions = {}):
   const networkNote = renderNetworkNote(
     scenario.pages.flatMap((p) => p.steps),
     INDENT,
+    '//',
     options,
   )
   const safeBody = (networkNote + stepLines).trimEnd() || `${INDENT}// no steps recorded`

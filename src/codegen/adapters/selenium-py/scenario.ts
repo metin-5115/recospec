@@ -8,7 +8,7 @@ import {
   renderTestContextHelpers,
   type PyContextState,
 } from './context'
-import { renderNetworkNote } from './network-note'
+import { renderNetworkNote } from '../../shared/network-note'
 import {
   renderScreenshotHelper,
   screenshotStdlibImports,
@@ -208,6 +208,7 @@ export function renderScenario(scenario: IRScenario, given: RenderOptions = {}):
   const networkNote = renderNetworkNote(
     scenario.pages.flatMap((p) => p.steps),
     indent,
+    '#',
     options,
   )
   const safeBody = (networkNote + body).trimEnd() || '    pass'

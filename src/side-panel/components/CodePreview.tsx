@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Check, Copy, Download, Loader2, Play, Repeat, X } from 'lucide-react'
+import { COPY_FEEDBACK_MS } from '@shared/constants'
 import type { GeneratedCode } from '@shared/types/generated'
 
 interface CodePreviewProps {
@@ -44,7 +45,7 @@ export function CodePreview({
   const handleCopy = () => {
     void navigator.clipboard.writeText(activeFile?.content ?? '').then(() => {
       setCopied(true)
-      window.setTimeout(() => setCopied(false), 2000)
+      window.setTimeout(() => setCopied(false), COPY_FEEDBACK_MS)
     })
   }
 

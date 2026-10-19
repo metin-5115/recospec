@@ -1,10 +1,11 @@
-import type { IRStep } from '../../ir/types'
-import type { RenderOptions } from '../registry'
+import type { IRStep } from '../ir/types'
+import type { RenderOptions } from '../adapters/registry'
 
 /**
  * Core Selenium cannot intercept or mock network traffic. When the user asked
  * for mocks, say so in the generated test and list what was recorded instead
- * of silently dropping the option.
+ * of silently dropping the option. The two Selenium adapters differ only in how
+ * a comment starts (`#` or `//`).
  */
 function pathOf(url: string): string {
   try {
@@ -19,6 +20,7 @@ function pathOf(url: string): string {
 export function renderNetworkNote(
   steps: readonly IRStep[],
   indent: string,
+  commentToken: string,
   options: RenderOptions = {},
 ): string {
   if (!options.includeMocks) return ''
@@ -29,9 +31,9 @@ export function renderNetworkNote(
     const line = `${step.network.method.toUpperCase()} ${pathOf(step.network.url)} -> ${step.network.status ?? '?'}`
     if (seen.has(line)) continue
     seen.add(line)
-    lines.push(`${indent}#   ${line}`)
+    lines.push(`${indent}${commentToken}   ${line}`)
   }
   if (lines.length === 0) return ''
-  const header = `${indent}# Not mocked — Selenium cannot intercept network traffic. Requests captured while recording:`
+  const header = `${indent}${commentToken} Not mocked — Selenium cannot intercept network traffic. Requests captured while recording:`
   return [header, ...lines].join('\n') + '\n'
 }

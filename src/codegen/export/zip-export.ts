@@ -1,7 +1,6 @@
 import JSZip from 'jszip'
 import type { GeneratedCode } from '@shared/types/generated'
 import type { Session } from '@shared/types/session'
-import { slugifyFilename } from '@shared/slug'
 import { resolveOutputPath } from './output-path'
 import { flowSlug } from '../shared/flow-slug'
 
@@ -133,14 +132,4 @@ export async function buildZipExport(session: Session, code: GeneratedCode): Pro
   zip.file('README.md', README_TEMPLATE(session, code.framework, hasUploads))
 
   return zip.generateAsync({ type: 'blob', compression: 'DEFLATE' })
-}
-
-export async function downloadZipExport(session: Session, code: GeneratedCode): Promise<void> {
-  const blob = await buildZipExport(session, code)
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${slugifyFilename(session.name)}_${session.sessionId.slice(0, 8)}.zip`
-  a.click()
-  URL.revokeObjectURL(url)
 }

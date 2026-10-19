@@ -5,7 +5,7 @@ import { onUIMessage } from '@shared/messaging/listen'
 import { sendToBackground } from '@shared/messaging/send'
 import { listSessions } from '@storage/session-repo'
 import { getActionsBySession } from '@storage/action-repo'
-import { downloadJsonExport } from '@codegen/export/json-export'
+import { downloadJsonExport } from '../download'
 import type { RecordedAction } from '@shared/types/action'
 import type { Session } from '@shared/types/session'
 
