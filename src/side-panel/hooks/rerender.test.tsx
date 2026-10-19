@@ -37,9 +37,9 @@ describe('useSession', () => {
     expect(after).toBe(before)
   })
 
-  it('re-renders when a recorded step is appended', () => {
+  it('does not re-render when a recorded step is appended — step views select the list themselves', () => {
     const { before, after } = rendersAround(useSession, appendStep)
-    expect(after).toBeGreaterThan(before)
+    expect(after).toBe(before)
   })
 })
 

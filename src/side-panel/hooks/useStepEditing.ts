@@ -30,11 +30,12 @@ export function useSetStepLocator() {
   )
 }
 
-/** The recorded step list and the edits a user can make to it once recording has stopped. */
+/**
+ * The edits a user can make to the recorded steps once recording has stopped. It does not read the
+ * step list: components that show steps select it themselves, so editing actions never cause renders.
+ */
 export function useStepEditing() {
   const activeSession = useSessionStore((s) => s.activeSession)
-  const steps = useSessionStore((s) => s.steps)
-  const stepsDirty = useSessionStore((s) => s.stepsDirty)
   const { deleteStep, reorderSteps, updateStep } = useSessionStore(
     useShallow((s) => ({
       deleteStep: s.deleteStep,
@@ -90,8 +91,6 @@ export function useStepEditing() {
   const handleSetStepLocator = useSetStepLocator()
 
   return {
-    steps,
-    stepsDirty,
     deleteStep: handleDeleteStep,
     reorderStep: handleReorderStep,
     updateStep: handleUpdateStep,
