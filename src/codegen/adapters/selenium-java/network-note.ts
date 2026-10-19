@@ -1,16 +1,11 @@
 import type { IRStep } from '../../ir/types'
+import type { RenderOptions } from '../registry'
 
 /**
  * Core Selenium cannot intercept or mock network traffic. When the user asked
  * for mocks, say so in the generated test and list what was recorded instead
  * of silently dropping the option.
  */
-let INCLUDE_MOCKS = false
-
-export function setSeleniumJavaIncludeMocks(value: boolean): void {
-  INCLUDE_MOCKS = value
-}
-
 function pathOf(url: string): string {
   try {
     const u = new URL(url)
@@ -21,8 +16,12 @@ function pathOf(url: string): string {
 }
 
 /** Comment block (newline-terminated) listing the unmocked requests, or ''. */
-export function renderNetworkNote(steps: readonly IRStep[], indent: string): string {
-  if (!INCLUDE_MOCKS) return ''
+export function renderNetworkNote(
+  steps: readonly IRStep[],
+  indent: string,
+  options: RenderOptions = {},
+): string {
+  if (!options.includeMocks) return ''
   const seen = new Set<string>()
   const lines: string[] = []
   for (const step of steps) {

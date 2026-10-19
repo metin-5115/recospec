@@ -1,4 +1,4 @@
-import type { IRScenario, IRStep, AssertionDetail, IRElement, TestDataConfig } from '../../ir/types'
+import type { IRScenario, IRStep, AssertionDetail, IRElement } from '../../ir/types'
 import { renderByExpression, javaStr } from './locator'
 import { renderJavaInteraction, javaInteractionImports } from './interaction'
 import { renderNetworkNote } from './network-note'
@@ -11,6 +11,8 @@ import {
   screenshotName,
 } from './context'
 import { resolveTestData } from '../../planner/test-data-resolver'
+import { renderFillValueExpr } from './fill-value'
+import type { RenderOptions } from '../registry'
 import {
   buildScenarioFlow,
   initialUrl,
@@ -18,17 +20,6 @@ import {
   type FlowArg,
   type FlowItem,
 } from '../../shared/scenario-flow'
-
-let TEST_DATA: TestDataConfig | undefined
-export function setSeleniumJavaTestData(value: TestDataConfig | undefined): void {
-  TEST_DATA = value
-}
-
-function renderFillValueExpr(el: IRElement | undefined, recordedValue: string): string {
-  const r = resolveTestData(el, recordedValue, TEST_DATA)
-  if (!r.useEnvVar) return javaStr(r.literal)
-  return `System.getenv().getOrDefault(${javaStr(r.envVarName)}, ${javaStr(r.defaultValue)})`
-}
 
 /** Convert a recorded scenario name to a valid Java method name suffix. */
 export function toJavaMethodName(name: string): string {
@@ -112,7 +103,7 @@ function renderWait(step: IRStep, indent: string): string {
   return ''
 }
 
-function renderStepInTest(step: IRStep, indent: string): string {
+function renderStepInTest(step: IRStep, indent: string, options: RenderOptions): string {
   if (step.action === 'navigate' && step.url) {
     return `${indent}driver.get(${javaStr(step.url)});`
   }
@@ -122,7 +113,7 @@ function renderStepInTest(step: IRStep, indent: string): string {
   }
   if (step.action === 'fill' && step.element) {
     const byExpr = renderByExpression(step.element)
-    const expr = renderFillValueExpr(step.element, step.value ?? '')
+    const expr = renderFillValueExpr(step.element, step.value ?? '', options.testData)
     // A block keeps each `_el` local out of its siblings' scope, so repeated fills compile.
     return [
       `${indent}{`,
@@ -164,9 +155,9 @@ function renderStepInTest(step: IRStep, indent: string): string {
 
 const INDENT = '        '
 
-function renderArg(arg: FlowArg): string {
-  if (arg.fromFill && resolveTestData(arg.element, arg.value, TEST_DATA).useEnvVar) {
-    return renderFillValueExpr(arg.element, arg.value)
+function renderArg(arg: FlowArg, options: RenderOptions): string {
+  if (arg.fromFill && resolveTestData(arg.element, arg.value, options.testData).useEnvVar) {
+    return renderFillValueExpr(arg.element, arg.value, options.testData)
   }
   switch (arg.type) {
     case 'boolean':
@@ -179,18 +170,22 @@ function renderArg(arg: FlowArg): string {
   }
 }
 
-function renderItem(item: FlowItem, contextState: ReturnType<typeof newContextState>): string[] {
+function renderItem(
+  item: FlowItem,
+  contextState: ReturnType<typeof newContextState>,
+  options: RenderOptions,
+): string[] {
   switch (item.kind) {
     case 'visit':
       return [`${INDENT}driver.get(${javaStr(item.url)});`]
     case 'call': {
-      const args = item.args.map(renderArg).join(', ')
+      const args = item.args.map((a) => renderArg(a, options)).join(', ')
       return [`${INDENT}${toVarName(item.page.className)}.${item.method.name}(${args});`]
     }
     case 'inline':
       return item.page.steps
         .map((step) => {
-          const rendered = renderStepInTest(step, INDENT)
+          const rendered = renderStepInTest(step, INDENT, options)
           if (!rendered) return ''
           return [...frameStatements(step, INDENT, contextState), rendered].join('\n')
         })
@@ -198,7 +193,7 @@ function renderItem(item: FlowItem, contextState: ReturnType<typeof newContextSt
   }
 }
 
-export function renderScenario(scenario: IRScenario): string {
+export function renderScenario(scenario: IRScenario, options: RenderOptions = {}): string {
   const flow = buildScenarioFlow(scenario)
   const used = pagesUsed(flow)
   const inlineSteps = flow.flatMap((item) => (item.kind === 'inline' ? item.page.steps : []))
@@ -214,7 +209,7 @@ export function renderScenario(scenario: IRScenario): string {
   const stepLines = [
     ...opening,
     ...pageVars,
-    ...flow.flatMap((item) => renderItem(item, contextState)),
+    ...flow.flatMap((item) => renderItem(item, contextState, options)),
   ].join('\n')
 
   const contextHelpers = renderContextHelpers(inlineSteps)
@@ -222,6 +217,7 @@ export function renderScenario(scenario: IRScenario): string {
   const networkNote = renderNetworkNote(
     scenario.pages.flatMap((p) => p.steps),
     INDENT,
+    options,
   )
   const safeBody = (networkNote + stepLines).trimEnd() || `${INDENT}// no steps recorded`
   const methodSuffix = toJavaMethodName(scenario.name)

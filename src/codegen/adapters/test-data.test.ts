@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import type { IRElement, IRPage, IRScenario, TestDataConfig } from '../ir/types'
 import type { RenderOptions } from './registry'
 import { playwrightTsAdapter } from './playwright-ts'
@@ -181,17 +181,13 @@ describe('test-data parameterization — selenium-py', () => {
 })
 
 describe('test-data parameterization — selenium-java', () => {
-  beforeEach(() => {
-    seleniumJavaAdapter.applyOptions?.({ testData: undefined })
-  })
-
   it('renders System.getenv().getOrDefault for password fields', () => {
     const out = seleniumJavaAdapter.renderScenario(scenario)
     expect(out.content).toContain(`System.getenv().getOrDefault("RECOSPEC_PASSWORD", "change-me")`)
   })
 
   it('emits test-data.properties.example under src/test/resources when params exist', () => {
-    seleniumJavaAdapter.applyOptions?.({
+    const options: RenderOptions = {
       testData: {
         params: [
           {
@@ -204,9 +200,9 @@ describe('test-data parameterization — selenium-java', () => {
           },
         ],
       },
-    })
+    }
     const props = seleniumJavaAdapter
-      .renderScaffold()
+      .renderScaffold(options)
       .find((f) => f.filename === 'src/test/resources/test-data.properties.example')
     expect(props?.content).toContain('RECOSPEC_PASSWORD=')
   })

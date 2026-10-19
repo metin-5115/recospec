@@ -1,6 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { renderScenario } from './scenario'
-import { seleniumJavaAdapter } from './index'
 import { validateJavaSource } from './java-validate'
 import type { IRElement, IRPage, IRScenario, IRStep } from '../../ir/types'
 
@@ -38,29 +37,23 @@ const scenario: IRScenario = {
   ],
 }
 
-beforeEach(() => {
-  seleniumJavaAdapter.applyOptions?.({ includeMocks: false })
-})
-
 describe('selenium-java — network mock note', () => {
   it('stays silent when mocks were not requested', () => {
     expect(renderScenario(scenario)).not.toContain('Not mocked')
   })
 
   it('lists the captured requests once when mocks were requested', () => {
-    seleniumJavaAdapter.applyOptions?.({ includeMocks: true })
-    const out = renderScenario(scenario)
+    const out = renderScenario(scenario, { includeMocks: true })
     expect(out).toContain('// Not mocked')
     expect(out.match(/POST \/api\/login\?x=1 -> 201/g)).toHaveLength(1)
     expect(validateJavaSource(out).ok).toBe(true)
   })
 
   it('adds nothing when no request was captured', () => {
-    seleniumJavaAdapter.applyOptions?.({ includeMocks: true })
     const quiet: IRScenario = {
       name: 'Quiet',
       pages: [{ ...scenario.pages[0], steps: [steps[0]] }],
     }
-    expect(renderScenario(quiet)).not.toContain('Not mocked')
+    expect(renderScenario(quiet, { includeMocks: true })).not.toContain('Not mocked')
   })
 })

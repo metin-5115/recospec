@@ -5,7 +5,6 @@ import type {
   InferredMethod,
   AssertionDetail,
   IRParamType,
-  TestDataConfig,
 } from '../../ir/types'
 import {
   renderFindByAnnotation,
@@ -27,19 +26,9 @@ import {
   renderContextHelpers,
   type JavaContextState,
 } from './context'
-import { resolveTestData } from '../../planner/test-data-resolver'
+import { renderFillValueExpr } from './fill-value'
+import type { RenderOptions } from '../registry'
 import { absoluteUrl } from '../../shared/scenario-flow'
-
-let TEST_DATA: TestDataConfig | undefined
-export function setSeleniumJavaPageObjectTestData(value: TestDataConfig | undefined): void {
-  TEST_DATA = value
-}
-
-function renderFillValueExpr(el: IRElement | undefined, recordedValue: string): string {
-  const r = resolveTestData(el, recordedValue, TEST_DATA)
-  if (!r.useEnvVar) return javaStr(r.literal)
-  return `System.getenv().getOrDefault(${javaStr(r.envVarName)}, ${javaStr(r.defaultValue)})`
-}
 
 // ---------------------------------------------------------------------------
 // Naming helpers
@@ -283,7 +272,7 @@ function fieldTarget(el: IRElement): JavaInteractionTarget {
   }
 }
 
-function renderStepInMethod(step: IRStep, indent: string): string {
+function renderStepInMethod(step: IRStep, indent: string, options: RenderOptions): string {
   if (step.action === 'navigate' && step.url) {
     return `${indent}driver.get(${javaStr(step.url)});`
   }
@@ -293,7 +282,7 @@ function renderStepInMethod(step: IRStep, indent: string): string {
   }
   if (step.action === 'fill' && step.element) {
     const fieldRef = toJavaFieldName(step.element.name)
-    const expr = renderFillValueExpr(step.element, step.value ?? '')
+    const expr = renderFillValueExpr(step.element, step.value ?? '', options.testData)
     return [
       `${indent}wait.until(ExpectedConditions.visibilityOf(${fieldRef}));`,
       `${indent}${fieldRef}.clear();`,
@@ -331,7 +320,7 @@ function renderStepInMethod(step: IRStep, indent: string): string {
 // Inferred methods
 // ---------------------------------------------------------------------------
 
-function renderInferredMethod(method: InferredMethod): string {
+function renderInferredMethod(method: InferredMethod, options: RenderOptions): string {
   const types = method.paramTypes ?? method.params.map(() => 'string' as IRParamType)
   const params = method.params.map((p, i) => `${javaType(types[i])} ${p}`).join(', ')
 
@@ -383,7 +372,7 @@ function renderInferredMethod(method: InferredMethod): string {
         })
       }
     }
-    return renderStepInMethod(s, '        ')
+    return renderStepInMethod(s, '        ', options)
   }
   const body = method.steps
     .map((s) => withContext(s, renderOne(s), '        ', contextState))
@@ -397,7 +386,7 @@ function renderInferredMethod(method: InferredMethod): string {
 // Page Object class
 // ---------------------------------------------------------------------------
 
-export function renderPageObject(page: IRPage): string {
+export function renderPageObject(page: IRPage, options: RenderOptions = {}): string {
   const fieldDecls = page.elements.map(renderElementField).join('\n\n')
 
   const gotoStep = page.steps.find((s) => s.action === 'navigate')
@@ -416,12 +405,15 @@ export function renderPageObject(page: IRPage): string {
 
   let methodsBlock = ''
   if (page.inferredMethods?.length) {
-    methodsBlock = '\n\n' + page.inferredMethods.map(renderInferredMethod).join('\n\n')
+    methodsBlock =
+      '\n\n' + page.inferredMethods.map((m) => renderInferredMethod(m, options)).join('\n\n')
   } else {
     const contextState = newContextState()
     const stepLines = page.steps
       .filter((s) => s.action !== 'navigate')
-      .map((s) => withContext(s, renderStepInMethod(s, '        '), '        ', contextState))
+      .map((s) =>
+        withContext(s, renderStepInMethod(s, '        ', options), '        ', contextState),
+      )
       .filter(Boolean)
       .join('\n')
     if (stepLines) {

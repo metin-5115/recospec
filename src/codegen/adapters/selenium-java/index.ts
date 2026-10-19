@@ -1,15 +1,12 @@
 import type { GeneratedFile } from '@shared/types/generated'
 import type { IRPage, IRScenario } from '../../ir/types'
-import { registerAdapter, type FrameworkAdapter } from '../registry'
-import { renderPageObject, setSeleniumJavaPageObjectTestData } from './page-object'
-import { renderScenario, toJavaMethodName, setSeleniumJavaTestData } from './scenario'
-import { renderScaffold, setSeleniumJavaScaffoldTestData } from './scaffold'
+import { registerAdapter, type FrameworkAdapter, type RenderOptions } from '../registry'
+import { renderPageObject } from './page-object'
+import { renderScenario, toJavaMethodName } from './scenario'
+import { renderScaffold } from './scaffold'
 import { renderFeatureFile, renderStepsFile, renderBddScaffoldFiles } from './bdd'
-import { setSeleniumJavaIncludeMocks } from './network-note'
 
 export { renderPageObject, renderScenario, renderScaffold, toJavaMethodName }
-
-let BDD_MODE = false
 
 export const seleniumJavaAdapter: FrameworkAdapter = {
   id: 'selenium-java',
@@ -20,32 +17,25 @@ export const seleniumJavaAdapter: FrameworkAdapter = {
     testRunner: 'TestNG',
     packageName: 'org.seleniumhq.selenium:selenium-java',
   },
-  applyOptions(options) {
-    BDD_MODE = Boolean(options.bdd)
-    setSeleniumJavaTestData(options.testData)
-    setSeleniumJavaPageObjectTestData(options.testData)
-    setSeleniumJavaScaffoldTestData(options.testData)
-    setSeleniumJavaIncludeMocks(options.includeMocks === true)
-  },
-  postProcess(files) {
-    if (!BDD_MODE) return files
+  postProcess(files, options) {
+    if (!options?.bdd) return files
     // BDD mode drives test discovery via JUnit Platform Suite (CucumberRunner)
     // — testng.xml from the vanilla scaffold is dead weight; strip it.
     return files.filter((f) => f.filename !== 'testng.xml')
   },
-  renderPageObject(page: IRPage): GeneratedFile {
+  renderPageObject(page: IRPage, options?: RenderOptions): GeneratedFile {
     return {
       filename: `${page.className}.java`,
-      content: renderPageObject(page),
+      content: renderPageObject(page, options),
     }
   },
-  renderScenario(scenario: IRScenario): GeneratedFile {
+  renderScenario(scenario: IRScenario, options?: RenderOptions): GeneratedFile {
     const suffix = toJavaMethodName(scenario.name)
     const className = `Test${suffix.charAt(0).toUpperCase() + suffix.slice(1)}`
-    return { filename: `${className}.java`, content: renderScenario(scenario) }
+    return { filename: `${className}.java`, content: renderScenario(scenario, options) }
   },
-  renderScaffold() {
-    return renderScaffold()
+  renderScaffold(options) {
+    return renderScaffold(options)
   },
   renderBddFeature(scenario) {
     return { filename: 'scenario.feature', content: renderFeatureFile(scenario) }
