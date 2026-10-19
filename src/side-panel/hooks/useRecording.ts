@@ -20,6 +20,7 @@ export function useRecording() {
   const {
     appendStep,
     appendSteps,
+    attachFingerprint,
     syncSteps,
     setActiveSession,
     upsertSession,
@@ -31,6 +32,7 @@ export function useRecording() {
     useShallow((s) => ({
       appendStep: s.appendStep,
       appendSteps: s.appendSteps,
+      attachFingerprint: s.attachFingerprint,
       syncSteps: s.syncSteps,
       setActiveSession: s.setActiveSession,
       upsertSession: s.upsertSession,
@@ -57,6 +59,8 @@ export function useRecording() {
           setLastStepId(null)
           flashTimerRef.current = null
         }, STEP_FLASH_DURATION_MS)
+      } else if (message.type === 'STEP_FINGERPRINT') {
+        attachFingerprint(message.actionId, message.fingerprint)
       } else if (message.type === 'NETWORK_STEPS_RECORDED') {
         appendSteps(message.steps)
       } else if (message.type === 'STEPS_SYNCED') {
@@ -75,7 +79,15 @@ export function useRecording() {
         flashTimerRef.current = null
       }
     }
-  }, [appendStep, appendSteps, syncSteps, setActiveSession, upsertSession, setAsyncError])
+  }, [
+    appendStep,
+    appendSteps,
+    attachFingerprint,
+    syncSteps,
+    setActiveSession,
+    upsertSession,
+    setAsyncError,
+  ])
 
   const startRecording = useCallback(async () => {
     if (isStarting) return

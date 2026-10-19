@@ -1,4 +1,5 @@
 import type {
+  ElementFingerprint,
   Locator,
   LocatorBundle,
   RejectedCandidate,
@@ -50,6 +51,11 @@ export interface EvaluateOptions {
   composedPath?: readonly EventTarget[]
   /** The element's text changed during the recording session (MutationObserver). */
   mutatedText?: boolean
+  /**
+   * Leave the fingerprint out of the bundle (it reads layout and sibling text). The caller builds
+   * it later with {@link LocatorEngine.fingerprintFor}, off the interaction's critical path.
+   */
+  deferFingerprint?: boolean
 }
 
 /** @deprecated superseded by EvaluateOptions; kept for source compatibility. */
@@ -208,6 +214,17 @@ export class LocatorEngine {
   /** Evaluated only when `needsXPath` opens the gate. */
   private readonly xpathStrategy = new XPathStrategy()
 
+  /** The element's fingerprint on its own — what `evaluate` would have put in the bundle. */
+  fingerprintFor(
+    element: Element,
+    rootDoc: Document,
+    options?: Pick<EvaluateOptions, 'viewport'>,
+  ): ElementFingerprint {
+    return buildFingerprint(element, scopeDocumentTo(element, rootDoc), {
+      viewport: options?.viewport,
+    })
+  }
+
   /**
    * Three-stage pipeline:
    *   A) hard-constraint filter (uniqueness · renderability · no raw volatile)
@@ -229,7 +246,9 @@ export class LocatorEngine {
         rejected: [],
         allCandidates: [synthetic],
         diagnostics: [],
-        fingerprint: buildFingerprint(element, doc, { viewport: options?.viewport }),
+        fingerprint: options?.deferFingerprint
+          ? undefined
+          : buildFingerprint(element, doc, { viewport: options?.viewport }),
         shadowContext: options?.shadowContext,
         shadowClosed: options?.shadowClosed,
         frameContext: options?.frameContext,
@@ -365,7 +384,9 @@ export class LocatorEngine {
       rejected: rejectedLocators,
       allCandidates,
       diagnostics: [...diagnostics, ...validationDiagnostics],
-      fingerprint: buildFingerprint(element, doc, { viewport: options?.viewport }),
+      fingerprint: options?.deferFingerprint
+        ? undefined
+        : buildFingerprint(element, doc, { viewport: options?.viewport }),
       shadowContext: options?.shadowContext,
       shadowClosed: options?.shadowClosed,
       frameContext: options?.frameContext,

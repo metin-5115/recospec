@@ -6,7 +6,7 @@ import { createSession, getSession } from '@storage/session-repo'
 import { ITERATION_SIGNATURE_STEPS, NETWORK_BATCH_WINDOW_MS } from '@shared/constants'
 import type { CapturedEvent, ElementSnapshot } from '@shared/types/action'
 import type { Session } from '@shared/types/session'
-import { aggregateEvent, flushNetworkBatch } from './event-aggregator'
+import { aggregateEvent, attachFingerprint, flushNetworkBatch } from './event-aggregator'
 
 const broadcasts: Array<{ type: string } & Record<string, unknown>> = []
 
@@ -251,5 +251,72 @@ describe('aggregateEvent — network batching', () => {
     )
     const stored = await getSession('s1')
     expect(stored?.flowSignature).not.toBe('placeholder')
+  })
+})
+
+describe('aggregateEvent — deferred fingerprint', () => {
+  const FINGERPRINT = {
+    tag: 'button',
+    attributes: {},
+    role: null,
+    accessibleName: 'Buy',
+    neighborTexts: ['Shop'],
+    domPath: 'main>button',
+    boundingBoxRatio: { x: 0.5, y: 0.5 },
+  }
+
+  function clickWithId(eventId: string): CapturedEvent {
+    return {
+      ...clickEvent(10),
+      eventId,
+      target: {
+        locatorBundle: {
+          primary: {
+            strategy: 'testid',
+            selector: '[data-testid="buy"]',
+            framework: {},
+            score: 95,
+            matchCount: 1,
+          },
+          fallbacks: [],
+          rejected: [],
+          allCandidates: [],
+        },
+        elementSnapshot: SNAPSHOT,
+      },
+    }
+  }
+
+  it('stores the action under the id the page chose', async () => {
+    await createSession(makeSession())
+    await aggregateEvent('s1', clickWithId('evt-1'))
+    expect((await getActionsBySession('s1'))[0]?.actionId).toBe('evt-1')
+  })
+
+  it('attaches the fingerprint to that action and tells the UI', async () => {
+    await createSession(makeSession())
+    await aggregateEvent('s1', clickWithId('evt-1'))
+
+    await attachFingerprint('s1', 'evt-1', FINGERPRINT)
+
+    expect((await getActionsBySession('s1'))[0]?.target?.fingerprint).toEqual(FINGERPRINT)
+    expect(broadcasts).toContainEqual(
+      expect.objectContaining({ type: 'STEP_FINGERPRINT', actionId: 'evt-1' }),
+    )
+  })
+
+  it('waits for the action to be stored when the fingerprint arrives first', async () => {
+    await createSession(makeSession())
+    const storing = aggregateEvent('s1', clickWithId('evt-2'))
+    const attaching = attachFingerprint('s1', 'evt-2', FINGERPRINT)
+    await Promise.all([storing, attaching])
+
+    expect((await getActionsBySession('s1'))[0]?.target?.fingerprint).toEqual(FINGERPRINT)
+  })
+
+  it('ignores a fingerprint for an action that does not exist', async () => {
+    await createSession(makeSession())
+    await expect(attachFingerprint('s1', 'missing', FINGERPRINT)).resolves.toBeUndefined()
+    expect(broadcasts.some((m) => m.type === 'STEP_FINGERPRINT')).toBe(false)
   })
 })

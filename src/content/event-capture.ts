@@ -34,6 +34,7 @@ import {
   NETWORK_CAPTURE_FLAG_KEY,
   PIERCE_CLOSED_SHADOW_FLAG_KEY,
   RECORDED_KEYS,
+  FINGERPRINT_IDLE_TIMEOUT_MS,
   SNAPSHOT_TEXT_MAX_LENGTH,
 } from '@shared/constants'
 
@@ -66,17 +67,50 @@ function buildEvent(
     viewport: { width: window.innerWidth, height: window.innerHeight },
     composedPath,
     mutatedText: wasTextMutated(target),
+    // Reads layout and sibling text: built after the click, when the page is idle.
+    deferFingerprint: true,
   })
   if (shadowResult?.closed) {
     logger.warn('[CS] Element is inside a closed shadow root — locator may be unreliable', target)
   }
-  return {
+  const event: CapturedEvent = {
+    eventId: crypto.randomUUID(),
     type,
     target: { locatorBundle: bundle, elementSnapshot: buildSnapshot(target) },
     payload,
     timestamp: Date.now(),
     pageMetadata: { url: location.href, title: document.title },
   }
+  if (bundle) fingerprintTargets.set(event, target)
+  return event
+}
+
+/** Elements whose fingerprint is still to be computed, by the event they belong to. */
+const fingerprintTargets = new WeakMap<CapturedEvent, Element>()
+
+function whenIdle(task: () => void): void {
+  if (typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(task, { timeout: FINGERPRINT_IDLE_TIMEOUT_MS })
+  } else {
+    void Promise.resolve().then(task)
+  }
+}
+
+/** Computes the fingerprint of a sent event's element once the page is idle and sends it along. */
+function scheduleFingerprint(sessionId: string, event: CapturedEvent): void {
+  const element = fingerprintTargets.get(event)
+  const eventId = event.eventId
+  if (!element || !eventId) return
+  fingerprintTargets.delete(event)
+  whenIdle(() => {
+    if (activeSessionId !== sessionId) return
+    const fingerprint = engine.fingerprintFor(element, document, {
+      viewport: { width: window.innerWidth, height: window.innerHeight },
+    })
+    sendToBackground({ type: 'ACTION_FINGERPRINT', sessionId, eventId, fingerprint }).catch((err) =>
+      logger.error('[CS] Failed to send ACTION_FINGERPRINT', err),
+    )
+  })
 }
 
 function buildWaitEvent(reason: IRWaitReason, target: Element | null): CapturedEvent {
@@ -182,6 +216,7 @@ function sendCaptured(sessionId: string, event: CapturedEvent): void {
   sendToBackground({ type: 'EVENT_CAPTURED', sessionId, event }).catch((err) =>
     logger.error('[CS] Failed to send EVENT_CAPTURED', err),
   )
+  scheduleFingerprint(sessionId, event)
 }
 
 function isInHoverRevealedContent(event: CapturedEvent): boolean {
@@ -223,8 +258,8 @@ function onClickCapture(e: MouseEvent): void {
   const sessionId = activeSessionId
   const event = buildEvent('click', target, undefined, path)
   if (isInHoverRevealedContent(event)) recordRevealingHover(sessionId)
-  sendToBackground({ type: 'EVENT_CAPTURED', sessionId, event })
-    .catch((err) => logger.error('[CS] Failed to send EVENT_CAPTURED', err))
+  sendCaptured(sessionId, event)
+  Promise.resolve()
     .then(() => watchForWait(sessionId))
     .catch((err) => logger.error('[CS] watchForWait failed', err))
 }

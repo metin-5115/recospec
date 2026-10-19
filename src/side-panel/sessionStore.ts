@@ -3,7 +3,7 @@ import type { Session } from '@shared/types/session'
 import type { RecordedAction } from '@shared/types/action'
 import type { GeneratedCode, FrameworkId, OutputSelection } from '@shared/types/generated'
 import { DEFAULT_OUTPUT_SELECTION } from '@shared/types/generated'
-import type { ScoredLocator } from '@shared/types/locator'
+import type { ElementFingerprint, ScoredLocator } from '@shared/types/locator'
 import type { StepPatch } from '@shared/types/messages'
 import type { RecospecError } from '@shared/errors'
 
@@ -57,6 +57,8 @@ interface SessionStore {
   setAsyncError: (error: RecospecError | null) => void
   appendStep: (step: RecordedAction) => void
   appendSteps: (steps: RecordedAction[]) => void
+  /** Adds a fingerprint computed after the step was recorded; only that step changes. */
+  attachFingerprint: (actionId: string, fingerprint: ElementFingerprint) => void
   deleteStep: (actionId: string) => void
   reorderSteps: (fromIndex: number, toIndex: number) => string[]
   updateStep: (actionId: string, patch: StepPatch) => void
@@ -225,6 +227,12 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
   setAsyncError: (error) => set({ asyncError: error }),
   appendStep: (step) => set((state) => ({ steps: [...state.steps, step] })),
   appendSteps: (steps) => set((state) => ({ steps: [...state.steps, ...steps] })),
+  attachFingerprint: (actionId, fingerprint) =>
+    set((state) => ({
+      steps: state.steps.map((s) =>
+        s.actionId === actionId && s.target ? { ...s, target: { ...s.target, fingerprint } } : s,
+      ),
+    })),
   deleteStep: (actionId) =>
     set((state) => ({
       steps: state.steps.filter((s) => s.actionId !== actionId),

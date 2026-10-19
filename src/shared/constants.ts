@@ -360,3 +360,6 @@ export const THUMBNAIL_PADDING_PX = 8 as const
 
 /** JPEG quality as a 0..1 fraction (captureVisibleTab takes it as a percentage). */
 export const THUMBNAIL_JPEG_QUALITY = 0.7 as const
+
+/** Longest the fingerprint of a recorded element may wait for an idle moment before it is computed. */
+export const FINGERPRINT_IDLE_TIMEOUT_MS = 500 as const

@@ -1,7 +1,14 @@
 import type { CaptureConfig, Session, SessionMeta } from './session'
 import type { CapturedEvent, RecordedAction, AssertionSuggestion } from './action'
 import type { GeneratedCode, FrameworkId, OutputSelection } from './generated'
-import type { FrameContext, Locator, LocatorBundle, ScoredLocator, ShadowContext } from './locator'
+import type {
+  ElementFingerprint,
+  FrameContext,
+  Locator,
+  LocatorBundle,
+  ScoredLocator,
+  ShadowContext,
+} from './locator'
 import type { ElementRect, ElementSnapshot } from './action'
 import type { TestDataConfig, TemplateParamMode } from '@codegen/ir/types'
 import type { ComposedParamMode } from '@codegen/planner/template-modes'
@@ -147,6 +154,13 @@ export type UIToBackgroundMessage =
 
 export type BackgroundToUIMessage =
   | { type: 'STEP_RECORDED'; sessionId: string; step: RecordedAction }
+  /** The element fingerprint of an already-recorded step, computed after the click. */
+  | {
+      type: 'STEP_FINGERPRINT'
+      sessionId: string
+      actionId: string
+      fingerprint: ElementFingerprint
+    }
   /** A batch of captured network calls — the steps carry no response bodies (the UI never shows them). */
   | { type: 'NETWORK_STEPS_RECORDED'; sessionId: string; steps: RecordedAction[] }
   | { type: 'STEPS_SYNCED'; sessionId: string; steps: RecordedAction[] }
@@ -230,6 +244,13 @@ export type ContentToBackgroundMessage =
    * sender's tab — without it, recording silently stops after any navigation.
    */
   | { type: 'CONTENT_READY'; url: string }
+  /** Fingerprint of the element of a previously sent event, computed while the page was idle. */
+  | {
+      type: 'ACTION_FINGERPRINT'
+      sessionId: string
+      eventId: string
+      fingerprint: ElementFingerprint
+    }
   | {
       type: 'ASSERTION_SUGGESTION'
       sessionId: string

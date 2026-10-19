@@ -3,6 +3,7 @@ import { db } from './db'
 import type { RecordedAction } from '@shared/types/action'
 import type { StepPatch } from '@shared/types/messages'
 import { IndexedDBQuotaError, isQuotaExceededError } from '@shared/errors'
+import type { ElementFingerprint } from '@shared/types/locator'
 
 /**
  * Run a Dexie write and re-throw IndexedDB quota failures as a typed
@@ -143,6 +144,19 @@ export async function reorderActions(
 export async function updateAction(actionId: string, patch: StepPatch): Promise<void> {
   if (Object.keys(patch).length === 0) return
   await withQuotaGuard(() => db.actions.update(actionId, patch))
+}
+
+/** Adds the element fingerprint to a stored action; `false` when there is no such action to attach it to. */
+export async function setActionFingerprint(
+  actionId: string,
+  fingerprint: ElementFingerprint,
+): Promise<boolean> {
+  const action = await db.actions.get(actionId)
+  if (!action?.target) return false
+  await withQuotaGuard(() =>
+    db.actions.update(actionId, { target: { ...action.target!, fingerprint } }),
+  )
+  return true
 }
 
 export async function getAction(actionId: string): Promise<RecordedAction | undefined> {

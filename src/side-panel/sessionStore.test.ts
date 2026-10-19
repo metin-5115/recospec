@@ -215,3 +215,33 @@ describe('sessionStore: persisted preferences', () => {
     }
   })
 })
+
+describe('sessionStore: attachFingerprint', () => {
+  it('adds the fingerprint to the matching step and leaves the others untouched', () => {
+    const a: RecordedAction = {
+      ...makeStep('a', 0),
+      target: {
+        primaryLocator: makeLocator('testid', '[data-testid="buy"]', 95),
+        fallbackLocators: [],
+        elementSnapshot: { tagName: 'button', attributes: {}, textContent: 'Buy' },
+      },
+    }
+    const b = makeStep('b', 1)
+    useSessionStore.setState({ steps: [a, b] })
+    const fingerprint = {
+      tag: 'button',
+      attributes: {},
+      role: null,
+      accessibleName: 'Buy',
+      neighborTexts: [],
+      domPath: 'main>button',
+      boundingBoxRatio: { x: 0, y: 0 },
+    }
+
+    useSessionStore.getState().attachFingerprint('a', fingerprint)
+
+    const [first, second] = useSessionStore.getState().steps
+    expect(first?.target?.fingerprint).toEqual(fingerprint)
+    expect(second).toBe(b)
+  })
+})

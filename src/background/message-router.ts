@@ -8,7 +8,7 @@ import {
   renameSessionById,
   resumeCaptureOnReady,
 } from './session-manager'
-import { aggregateEvent } from './event-aggregator'
+import { aggregateEvent, attachFingerprint } from './event-aggregator'
 import { handleCodeGenerate } from './codegen-orchestrator'
 import {
   handleAssertionProbeStart,
@@ -104,6 +104,11 @@ export function initMessageRouter(): void {
           composedModes: message.composedModes,
           templateModes: message.templateModes,
         }).catch(handleBgError('CODE_GENERATE', message.sessionId))
+
+      case 'ACTION_FINGERPRINT':
+        return attachFingerprint(message.sessionId, message.eventId, message.fingerprint).catch(
+          handleBgError('ACTION_FINGERPRINT', message.sessionId),
+        )
 
       case 'ASSERTION_PROBE_START':
         return handleAssertionProbeStart(message.sessionId).catch(

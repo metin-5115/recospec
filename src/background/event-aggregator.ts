@@ -1,6 +1,12 @@
 import type { CapturedEvent } from '@shared/types/action'
 import type { RecordedAction } from '@shared/types/action'
-import { appendNextAction, appendNextActions, getActionsBySession } from '@storage/action-repo'
+import {
+  appendNextAction,
+  appendNextActions,
+  getActionsBySession,
+  setActionFingerprint,
+} from '@storage/action-repo'
+import type { ElementFingerprint } from '@shared/types/locator'
 import {
   computeFlowSignature,
   findIterationCandidate,
@@ -109,13 +115,27 @@ function enqueueNetwork(draft: ActionDraft): Promise<void> {
   return openWindow
 }
 
+/** Actions being written right now, so a fingerprint that overtakes its action can wait for it. */
+const storingActions = new Map<string, Promise<RecordedAction>>()
+
+/** Attaches a fingerprint computed after the click to the action it belongs to. */
+export async function attachFingerprint(
+  sessionId: string,
+  actionId: string,
+  fingerprint: ElementFingerprint,
+): Promise<void> {
+  await storingActions.get(actionId)?.catch(() => undefined)
+  if (!(await setActionFingerprint(actionId, fingerprint))) return
+  await broadcastToUI({ type: 'STEP_FINGERPRINT', sessionId, actionId, fingerprint })
+}
+
 export async function aggregateEvent(sessionId: string, event: CapturedEvent): Promise<void> {
   const bundle = event.target?.locatorBundle ?? null
   const quality = classifyBundle(bundle)
   const flag = quality.level !== 'ok' ? quality : undefined
   // sequenceNumber is assigned inside the append transaction (see appendNextAction).
   const draft: Omit<RecordedAction, 'sequenceNumber'> = {
-    actionId: crypto.randomUUID(),
+    actionId: event.eventId ?? crypto.randomUUID(),
     sessionId,
     type: event.type,
     timestamp: event.timestamp,
@@ -145,9 +165,10 @@ export async function aggregateEvent(sessionId: string, event: CapturedEvent): P
   // A page makes many requests per interaction: write them as a batch, but never let one
   // overtake the step recorded after it.
   if (event.type === 'network') return enqueueNetwork(draft)
-  await flushNetworkBatch()
-
-  const action = await appendNextAction(draft)
+  // Registered before the flush, so a fingerprint that arrives meanwhile finds it.
+  const storing = flushNetworkBatch().then(() => appendNextAction(draft))
+  storingActions.set(draft.actionId, storing)
+  const action = await storing.finally(() => storingActions.delete(draft.actionId))
   const { sequenceNumber } = action
   await broadcastToUI({ type: 'STEP_RECORDED', sessionId, step: action })
   logger.debug('[BG] Step recorded', action.actionId, action.type)

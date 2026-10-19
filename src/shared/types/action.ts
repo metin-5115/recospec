@@ -144,6 +144,11 @@ export interface RecordedAction {
 }
 
 export interface CapturedEvent {
+  /**
+   * Chosen by the page; the background stores the action under it, so details computed after the
+   * event was sent (the fingerprint) can be attached to the right action.
+   */
+  eventId?: string
   type: ActionType
   target: {
     locatorBundle: LocatorBundle | null
