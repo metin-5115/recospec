@@ -5,11 +5,18 @@ import type {
   UIToBackgroundMessage,
 } from '@shared/types/messages'
 
+/** Delivers a message to the background worker and rejects when it cannot be reached. */
+export async function trySendToBackground(
+  message: UIToBackgroundMessage | ContentToBackgroundMessage,
+): Promise<void> {
+  await chrome.runtime.sendMessage(message)
+}
+
 export async function sendToBackground(
   message: UIToBackgroundMessage | ContentToBackgroundMessage,
 ): Promise<void> {
   try {
-    await chrome.runtime.sendMessage(message)
+    await trySendToBackground(message)
   } catch {
     // Background may not be ready yet; ignore
   }

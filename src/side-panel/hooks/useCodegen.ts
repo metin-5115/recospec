@@ -2,7 +2,7 @@ import { useEffect, useCallback, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useSessionStore } from '../sessionStore'
 import { onUIMessage } from '@shared/messaging/listen'
-import { sendToBackground } from '@shared/messaging/send'
+import { trySendToBackground } from '@shared/messaging/send'
 import { downloadZipExport } from '@codegen/export/zip-export'
 import { generate } from '@codegen/index'
 import { isEmptySelection } from '@shared/types/generated'
@@ -78,7 +78,7 @@ export function useCodegen() {
     setCodeGenError(null)
     for (let attempt = 0; attempt < CODEGEN_MAX_ATTEMPTS; attempt++) {
       try {
-        await sendToBackground({
+        await trySendToBackground({
           type: 'CODE_GENERATE',
           sessionId: activeSession.sessionId,
           framework: selectedFramework,
