@@ -46,6 +46,17 @@ describe('useCodegen.generateCode options', () => {
   })
 })
 
+describe('useCodegen.generateCode self-healing option', () => {
+  it('sends the runtime self-healing choice', async () => {
+    await runGenerateCode()
+    expect(sendMessageMock().mock.calls[0]?.[0]).toMatchObject({ selfHealing: true })
+    useSessionStore.setState({ selfHealing: false })
+    sendMessageMock().mockClear()
+    await runGenerateCode()
+    expect(sendMessageMock().mock.calls[0]?.[0]).toMatchObject({ selfHealing: false })
+  })
+})
+
 describe('useCodegen.generateCode retry', () => {
   it('retries when the background worker is not reachable yet', async () => {
     sendMessageMock()

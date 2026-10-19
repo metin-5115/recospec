@@ -63,6 +63,8 @@ export function SidePanelApp() {
     setIncludeMocks,
     finalStateAssertion,
     setFinalStateAssertion,
+    selfHealing,
+    setSelfHealing,
     outputSelection,
     setOutputSelection,
     methodRenames,
@@ -396,6 +398,20 @@ export function SidePanelApp() {
             <span>
               Include mocks for captured network requests
               <span className="ml-1 text-text-subtle">(page.route)</span>
+            </span>
+          </label>
+          <label className="flex cursor-pointer items-center gap-2 text-xs text-text-muted">
+            <input
+              type="checkbox"
+              checked={selfHealing}
+              onChange={(e) => setSelfHealing(e.target.checked)}
+              className="h-3.5 w-3.5 cursor-pointer rounded border-border accent-accent"
+            />
+            <span>
+              Runtime self-healing
+              <span className="ml-1 text-text-subtle">
+                (Playwright, Cypress · Selenium: fallback suggestions)
+              </span>
             </span>
           </label>
           <label className="flex cursor-pointer items-center gap-2 text-xs text-text-muted">

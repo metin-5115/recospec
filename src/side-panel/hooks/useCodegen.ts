@@ -20,6 +20,7 @@ export function useCodegen() {
   const bddEnabled = useSessionStore((s) => s.bddEnabled)
   const includeMocks = useSessionStore((s) => s.includeMocks)
   const finalStateAssertion = useSessionStore((s) => s.finalStateAssertion)
+  const selfHealing = useSessionStore((s) => s.selfHealing)
   const outputSelection = useSessionStore((s) => s.outputSelection)
   const {
     setGeneratedCode,
@@ -29,6 +30,7 @@ export function useCodegen() {
     setBddEnabled,
     setIncludeMocks,
     setFinalStateAssertion,
+    setSelfHealing,
     setOutputSelection,
   } = useSessionStore(
     useShallow((s) => ({
@@ -39,6 +41,7 @@ export function useCodegen() {
       setBddEnabled: s.setBddEnabled,
       setIncludeMocks: s.setIncludeMocks,
       setFinalStateAssertion: s.setFinalStateAssertion,
+      setSelfHealing: s.setSelfHealing,
       setOutputSelection: s.setOutputSelection,
     })),
   )
@@ -87,6 +90,7 @@ export function useCodegen() {
           framework: selectedFramework,
           includeMocks,
           finalStateAssertion,
+          selfHealing,
           autoWaitEnabled,
           methodRenames,
           testData,
@@ -111,6 +115,7 @@ export function useCodegen() {
     selectedFramework,
     includeMocks,
     finalStateAssertion,
+    selfHealing,
     autoWaitEnabled,
     methodRenames,
     testData,
@@ -133,6 +138,7 @@ export function useCodegen() {
         const code = await generate(sessionId, selectedFramework, {
           includeMocks,
           finalStateAssertion,
+          selfHealing,
           methodRenames,
           autoWaitEnabled,
           testData,
@@ -150,6 +156,7 @@ export function useCodegen() {
       selectedFramework,
       includeMocks,
       finalStateAssertion,
+      selfHealing,
       autoWaitEnabled,
       methodRenames,
       testData,
@@ -174,6 +181,8 @@ export function useCodegen() {
     setIncludeMocks,
     finalStateAssertion,
     setFinalStateAssertion,
+    selfHealing,
+    setSelfHealing,
     outputSelection,
     setOutputSelection,
     methodRenames,

@@ -180,6 +180,13 @@ describe('sessionStore: persisted preferences', () => {
     expect(window.localStorage.getItem('recospec.finalStateAssertion')).toBe('false')
   })
 
+  it('wires fallback locators in by default and persists the choice', () => {
+    expect(useSessionStore.getState().selfHealing).toBe(true)
+    useSessionStore.getState().setSelfHealing(false)
+    expect(useSessionStore.getState().selfHealing).toBe(false)
+    expect(window.localStorage.getItem('recospec.selfHealing')).toBe('false')
+  })
+
   it('captures network requests by default and persists the choice', () => {
     expect(useSessionStore.getState().captureNetwork).toBe(true)
     useSessionStore.getState().setCaptureNetwork(false)

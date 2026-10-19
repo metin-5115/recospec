@@ -34,6 +34,7 @@ export function resetUiHarness(): void {
     asyncError: null,
     includeMocks: false,
     finalStateAssertion: true,
+    selfHealing: true,
     pierceClosedShadow: false,
     captureNetwork: true,
   })

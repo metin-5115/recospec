@@ -29,6 +29,8 @@ interface SessionStore {
   includeMocks: boolean
   /** Append a "flow ended on this URL" assertion to recordings with no assertion. Default on. */
   finalStateAssertion: boolean
+  /** Wire fallback locators into Playwright / Cypress output at run time. Default on. */
+  selfHealing: boolean
   /**
    * Opt-in: pierce CLOSED shadow roots during recording (invasive MAIN-world
    * `attachShadow` proxy). Persisted; default off.
@@ -71,6 +73,7 @@ interface SessionStore {
   setBddEnabled: (enabled: boolean) => void
   setIncludeMocks: (enabled: boolean) => void
   setFinalStateAssertion: (enabled: boolean) => void
+  setSelfHealing: (enabled: boolean) => void
   setPierceClosedShadow: (enabled: boolean) => void
   setCaptureNetwork: (enabled: boolean) => void
   setOutputSelection: (selection: OutputSelection) => void
@@ -84,6 +87,7 @@ const FRAMEWORK_STORAGE_KEY = 'recospec.selectedFramework'
 const AUTO_WAIT_STORAGE_KEY = 'recospec.autoWaitEnabled'
 const BDD_ENABLED_STORAGE_KEY = 'recospec.bddEnabled'
 const INCLUDE_MOCKS_STORAGE_KEY = 'recospec.includeMocks'
+const SELF_HEALING_STORAGE_KEY = 'recospec.selfHealing'
 const FINAL_STATE_ASSERTION_STORAGE_KEY = 'recospec.finalStateAssertion'
 const CAPTURE_NETWORK_STORAGE_KEY = 'recospec.captureNetwork'
 const PIERCE_CLOSED_SHADOW_STORAGE_KEY = 'recospec.pierceClosedShadow'
@@ -117,6 +121,15 @@ function loadInitialIncludeMocks(): boolean {
     /* localStorage unavailable in some test envs */
   }
   return false
+}
+
+function loadInitialSelfHealing(): boolean {
+  try {
+    if (window.localStorage.getItem(SELF_HEALING_STORAGE_KEY) === 'false') return false
+  } catch {
+    /* localStorage unavailable in some test envs */
+  }
+  return true
 }
 
 function loadInitialFinalStateAssertion(): boolean {
@@ -200,6 +213,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
   bddEnabled: loadInitialBddEnabled(),
   includeMocks: loadInitialIncludeMocks(),
   finalStateAssertion: loadInitialFinalStateAssertion(),
+  selfHealing: loadInitialSelfHealing(),
   pierceClosedShadow: loadInitialPierceClosedShadow(),
   captureNetwork: loadInitialCaptureNetwork(),
   outputSelection: loadInitialOutputSelection(),
@@ -336,6 +350,14 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       /* localStorage unavailable */
     }
     set({ includeMocks: enabled })
+  },
+  setSelfHealing: (enabled) => {
+    try {
+      window.localStorage.setItem(SELF_HEALING_STORAGE_KEY, enabled ? 'true' : 'false')
+    } catch {
+      /* localStorage unavailable */
+    }
+    set({ selfHealing: enabled })
   },
   setFinalStateAssertion: (enabled) => {
     try {

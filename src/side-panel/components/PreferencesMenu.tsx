@@ -36,6 +36,8 @@ export function PreferencesMenu() {
   const setBddEnabled = useSessionStore((s) => s.setBddEnabled)
   const includeMocks = useSessionStore((s) => s.includeMocks)
   const setIncludeMocks = useSessionStore((s) => s.setIncludeMocks)
+  const selfHealing = useSessionStore((s) => s.selfHealing)
+  const setSelfHealing = useSessionStore((s) => s.setSelfHealing)
   const finalStateAssertion = useSessionStore((s) => s.finalStateAssertion)
   const setFinalStateAssertion = useSessionStore((s) => s.setFinalStateAssertion)
   const captureNetwork = useSessionStore((s) => s.captureNetwork)
@@ -124,6 +126,19 @@ export function PreferencesMenu() {
               className="h-3.5 w-3.5 cursor-pointer rounded border-border accent-accent"
             />
             <span>Include network mocks</span>
+          </label>
+
+          <label
+            className="flex cursor-pointer items-center gap-2 text-xs text-text-muted"
+            title="Playwright and Cypress use the recorded fallback locators at run time. Selenium has no runtime helper: its fallbacks are suggestions in comments."
+          >
+            <input
+              type="checkbox"
+              checked={selfHealing}
+              onChange={(e) => setSelfHealing(e.target.checked)}
+              className="h-3.5 w-3.5 cursor-pointer rounded border-border accent-accent"
+            />
+            <span>Runtime self-healing</span>
           </label>
 
           <label className="flex cursor-pointer items-center gap-2 text-xs text-text-muted">

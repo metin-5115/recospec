@@ -93,6 +93,7 @@ export function initMessageRouter(): void {
       case 'CODE_GENERATE':
         return handleCodeGenerate(message.sessionId, message.framework, {
           includeMocks: message.includeMocks,
+          selfHealing: message.selfHealing,
           finalStateAssertion: message.finalStateAssertion,
           methodRenames: message.methodRenames,
           autoWaitEnabled: message.autoWaitEnabled,

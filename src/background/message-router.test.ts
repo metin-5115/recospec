@@ -100,6 +100,7 @@ describe('message router — dispatch', () => {
       autoWaitEnabled: false,
       bdd: true,
       finalStateAssertion: false,
+      selfHealing: false,
     })
     expect(mocks.handleCodeGenerate).toHaveBeenCalledWith(
       's1',
@@ -109,6 +110,7 @@ describe('message router — dispatch', () => {
         autoWaitEnabled: false,
         bdd: true,
         finalStateAssertion: false,
+        selfHealing: false,
       }),
     )
   })
