@@ -1,8 +1,8 @@
 import { CircleDot, PanelRightOpen } from 'lucide-react'
-import { useSession } from '../side-panel/hooks/useSession'
+import { useRecordingStatus } from '../side-panel/hooks/useRecordingStatus'
 
 export function PopupApp() {
-  const { isRecording, isPaused } = useSession()
+  const { isRecording, isPaused } = useRecordingStatus()
 
   async function openSidePanel() {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
