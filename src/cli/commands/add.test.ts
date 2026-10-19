@@ -87,6 +87,16 @@ afterEach(() => {
   rmSync(tmp, { recursive: true, force: true })
 })
 
+describe('runAdd dry run', () => {
+  it('writes nothing, not even new files', async () => {
+    await runAdd(
+      { json: jsonPath, projectDir: tmp, framework: 'playwright-ts', dryRun: true },
+      failingReporter,
+    )
+    expect(listFiles(tmp)).toEqual(['/session.json'])
+  })
+})
+
 describe('runAdd output selection', () => {
   it('page-objects-only writes a page object and no test spec', async () => {
     await runAdd(

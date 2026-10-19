@@ -222,6 +222,11 @@ async function writeOne(
   reporter: ConflictReporter,
 ): Promise<WriteOutcome> {
   if (!existsSync(target.diskPath)) {
+    if (opts.dryRun) {
+      // eslint-disable-next-line no-console
+      console.log(`[recospec] would write (dry-run): ${target.diskPath}`)
+      return 'skipped'
+    }
     persist(target.diskPath, target.content)
     return 'written'
   }
