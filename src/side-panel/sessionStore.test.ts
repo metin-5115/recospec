@@ -180,6 +180,13 @@ describe('sessionStore: persisted preferences', () => {
     expect(window.localStorage.getItem('recospec.finalStateAssertion')).toBe('false')
   })
 
+  it('captures network requests by default and persists the choice', () => {
+    expect(useSessionStore.getState().captureNetwork).toBe(true)
+    useSessionStore.getState().setCaptureNetwork(false)
+    expect(useSessionStore.getState().captureNetwork).toBe(false)
+    expect(window.localStorage.getItem('recospec.captureNetwork')).toBe('false')
+  })
+
   it('round-trips outputSelection as JSON', () => {
     const selection = { pageObjects: true, test: false, scaffold: false }
     useSessionStore.getState().setOutputSelection(selection)

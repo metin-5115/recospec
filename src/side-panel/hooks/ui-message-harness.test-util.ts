@@ -35,6 +35,7 @@ export function resetUiHarness(): void {
     includeMocks: false,
     finalStateAssertion: true,
     pierceClosedShadow: false,
+    captureNetwork: true,
   })
 }
 

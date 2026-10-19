@@ -16,6 +16,7 @@ export function useRecording() {
   const activeSession = useSessionStore((s) => s.activeSession)
   const asyncError = useSessionStore((s) => s.asyncError)
   const pierceClosedShadow = useSessionStore((s) => s.pierceClosedShadow)
+  const captureNetwork = useSessionStore((s) => s.captureNetwork)
   const {
     appendStep,
     syncSteps,
@@ -109,6 +110,7 @@ export function useRecording() {
             captureInputs: true,
             captureNavigation: true,
             pierceClosedShadow,
+            captureNetwork,
           },
         })
       } catch (err) {
@@ -133,7 +135,15 @@ export function useRecording() {
     } finally {
       setIsStarting(false)
     }
-  }, [isStarting, clearSteps, setGeneratedCode, setCodeGenError, setAsyncError, pierceClosedShadow])
+  }, [
+    isStarting,
+    clearSteps,
+    setGeneratedCode,
+    setCodeGenError,
+    setAsyncError,
+    pierceClosedShadow,
+    captureNetwork,
+  ])
 
   const stopRecording = useCallback(async () => {
     if (!activeSession) return

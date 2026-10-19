@@ -38,6 +38,8 @@ export function PreferencesMenu() {
   const setIncludeMocks = useSessionStore((s) => s.setIncludeMocks)
   const finalStateAssertion = useSessionStore((s) => s.finalStateAssertion)
   const setFinalStateAssertion = useSessionStore((s) => s.setFinalStateAssertion)
+  const captureNetwork = useSessionStore((s) => s.captureNetwork)
+  const setCaptureNetwork = useSessionStore((s) => s.setCaptureNetwork)
   const pierceClosedShadow = useSessionStore((s) => s.pierceClosedShadow)
   const setPierceClosedShadow = useSessionStore((s) => s.setPierceClosedShadow)
 
@@ -164,6 +166,19 @@ export function PreferencesMenu() {
               className="h-3.5 w-3.5 cursor-pointer rounded border-border accent-accent disabled:cursor-not-allowed"
             />
             <span>BDD output (Gherkin)</span>
+          </label>
+
+          <label
+            className="flex cursor-pointer items-center gap-2 text-xs text-text-muted"
+            title="Record the page's own fetch/XHR responses (secrets masked) for mocks and wait detection. Applies to the next recording."
+          >
+            <input
+              type="checkbox"
+              checked={captureNetwork}
+              onChange={(e) => setCaptureNetwork(e.target.checked)}
+              className="h-3.5 w-3.5 cursor-pointer rounded border-border accent-accent"
+            />
+            <span>Capture network requests</span>
           </label>
 
           <label

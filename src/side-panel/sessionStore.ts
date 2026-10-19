@@ -34,6 +34,8 @@ interface SessionStore {
    * `attachShadow` proxy). Persisted; default off.
    */
   pierceClosedShadow: boolean
+  /** Record the page's fetch/XHR traffic during a session. Default on; takes effect on the next recording. */
+  captureNetwork: boolean
   /**
    * Which file groups the ZIP export emits (page objects / test / scaffold).
    * Persisted so "I only want the page object" is a one-time choice.
@@ -70,6 +72,7 @@ interface SessionStore {
   setIncludeMocks: (enabled: boolean) => void
   setFinalStateAssertion: (enabled: boolean) => void
   setPierceClosedShadow: (enabled: boolean) => void
+  setCaptureNetwork: (enabled: boolean) => void
   setOutputSelection: (selection: OutputSelection) => void
 }
 
@@ -82,6 +85,7 @@ const AUTO_WAIT_STORAGE_KEY = 'recospec.autoWaitEnabled'
 const BDD_ENABLED_STORAGE_KEY = 'recospec.bddEnabled'
 const INCLUDE_MOCKS_STORAGE_KEY = 'recospec.includeMocks'
 const FINAL_STATE_ASSERTION_STORAGE_KEY = 'recospec.finalStateAssertion'
+const CAPTURE_NETWORK_STORAGE_KEY = 'recospec.captureNetwork'
 const PIERCE_CLOSED_SHADOW_STORAGE_KEY = 'recospec.pierceClosedShadow'
 const OUTPUT_SELECTION_STORAGE_KEY = 'recospec.outputSelection'
 
@@ -118,6 +122,15 @@ function loadInitialIncludeMocks(): boolean {
 function loadInitialFinalStateAssertion(): boolean {
   try {
     if (window.localStorage.getItem(FINAL_STATE_ASSERTION_STORAGE_KEY) === 'false') return false
+  } catch {
+    /* localStorage unavailable in some test envs */
+  }
+  return true
+}
+
+function loadInitialCaptureNetwork(): boolean {
+  try {
+    if (window.localStorage.getItem(CAPTURE_NETWORK_STORAGE_KEY) === 'false') return false
   } catch {
     /* localStorage unavailable in some test envs */
   }
@@ -188,6 +201,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
   includeMocks: loadInitialIncludeMocks(),
   finalStateAssertion: loadInitialFinalStateAssertion(),
   pierceClosedShadow: loadInitialPierceClosedShadow(),
+  captureNetwork: loadInitialCaptureNetwork(),
   outputSelection: loadInitialOutputSelection(),
   activeTab: 'recording',
   asyncError: null,
@@ -330,6 +344,14 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       /* localStorage unavailable */
     }
     set({ finalStateAssertion: enabled })
+  },
+  setCaptureNetwork: (enabled) => {
+    try {
+      window.localStorage.setItem(CAPTURE_NETWORK_STORAGE_KEY, enabled ? 'true' : 'false')
+    } catch {
+      /* localStorage unavailable */
+    }
+    set({ captureNetwork: enabled })
   },
   setPierceClosedShadow: (enabled) => {
     try {
