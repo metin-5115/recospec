@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { normalizeActions } from './normalizer/action-normalizer'
 import { groupIntoPages } from './planner/page-grouper'
-import { getAdapter } from './adapters/registry'
+import { getAdapter, type RenderOptions } from './adapters/registry'
 import './adapters/playwright-ts'
 import './adapters/cypress'
 import './adapters/selenium-py'
@@ -16,6 +16,7 @@ import { resolveOutputPath } from './export/output-path'
 import type { FrameworkId, GeneratedFile } from '@shared/types/generated'
 import checkoutRecording from './__fixtures__/real-checkout-recording.json'
 import loginRecording from './__fixtures__/real-login-recording.json'
+import assertMockRecording from './__fixtures__/real-assert-mock-recording.json'
 
 /**
  * Renders recordings captured by the real extension through every adapter.
@@ -27,7 +28,11 @@ const RECORDINGS: Record<string, unknown> = {
   login: loginRecording,
 }
 
-function render(recording: unknown, framework: FrameworkId): GeneratedFile[] {
+function render(
+  recording: unknown,
+  framework: FrameworkId,
+  options: RenderOptions = {},
+): GeneratedFile[] {
   const payload = JSON.parse(JSON.stringify(recording)) as JsonExportPayload
   const pages = groupIntoPages(
     normalizeActions(payload.actions).flatSteps,
@@ -35,12 +40,11 @@ function render(recording: unknown, framework: FrameworkId): GeneratedFile[] {
   )
   const adapter = getAdapter(framework)
   return [
-    ...pages.map((page) => adapter.renderPageObject(page)),
-    adapter.renderScenario({
-      name: payload.session.name,
-      startUrl: payload.session.startUrl,
-      pages,
-    }),
+    ...pages.map((page) => adapter.renderPageObject(page, options)),
+    adapter.renderScenario(
+      { name: payload.session.name, startUrl: payload.session.startUrl, pages },
+      options,
+    ),
   ]
 }
 
@@ -451,5 +455,44 @@ describe.each(Object.entries(RECORDINGS))('real %s recording', (_label, recordin
       expect(code).not.toContain(`css = "${name}"`)
     }
     for (const f of files) expect(validateJavaSource(f.content).ok).toBe(true)
+  })
+})
+
+/**
+ * Assertions and captured network calls are the two things the login/checkout recordings lack.
+ * Rendered with mocks on, the output must still compile and register each mock before the
+ * click that fires the request.
+ */
+describe('recording with an assertion and a network mock', () => {
+  const options: RenderOptions = { includeMocks: true }
+
+  it('Playwright output type-checks, so every helper it uses is imported', () => {
+    const files = render(assertMockRecording, 'playwright-ts', options)
+    const code = source(files)
+    expect(code).toContain('await expect(')
+    expect(code).toContain('page.route(')
+    expect(typeErrors(projectLayout(files, 'playwright-ts'))).toEqual([])
+  }, 30_000)
+
+  it('Playwright registers each mock before the first click in its method', () => {
+    const pages = render(assertMockRecording, 'playwright-ts', options).filter((f) =>
+      f.content.includes('page.route('),
+    )
+    expect(pages.length).toBeGreaterThan(0)
+    for (const file of pages) {
+      for (const method of file.content
+        .split(/^ {2}async /m)
+        .filter((m) => m.includes('.route('))) {
+        const click = method.indexOf('.click()')
+        expect(click, `${file.filename} has a click after the mock`).toBeGreaterThan(-1)
+        expect(method.indexOf('.route('), file.filename).toBeLessThan(click)
+      }
+    }
+  })
+
+  it('Cypress output with the same recording parses', () => {
+    for (const f of render(assertMockRecording, 'cypress', options)) {
+      expect(syntaxErrors(f.content, f.filename)).toEqual([])
+    }
   })
 })
