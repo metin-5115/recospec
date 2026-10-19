@@ -14,6 +14,15 @@ const INTERACTION_CALLS: Partial<Record<IRStep['action'], string>> = {
   dblclick: 'dblclick',
 }
 
+/**
+ * Moves the mock registrations to the front of a rendered step list: a `page.route` registered
+ * after the click that fires the request would miss it. `lines` is index-aligned with `steps`.
+ */
+export function mocksFirst(steps: readonly IRStep[], lines: readonly string[]): string[] {
+  const isMock = (i: number) => steps[i]?.action === 'network'
+  return [...lines.filter((_, i) => isMock(i)), ...lines.filter((_, i) => !isMock(i))]
+}
+
 export function renderStepInMethod(
   step: IRStep,
   indent: string,

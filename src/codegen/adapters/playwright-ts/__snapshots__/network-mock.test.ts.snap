@@ -17,14 +17,14 @@ export class LoginPage {
   }
 
   async login(email: string, password: string) {
-    await this.emailInput.fill(email);
-    await this.passwordInput.fill(password);
-    await this.submitBtn.click();
     await this.page.route("**/login", (route) => route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({"token":"abc","user":{"id":1}}),
     }));
+    await this.emailInput.fill(email);
+    await this.passwordInput.fill(password);
+    await this.submitBtn.click();
   }
 }
 "

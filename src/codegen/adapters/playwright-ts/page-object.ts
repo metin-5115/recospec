@@ -1,7 +1,7 @@
 import type { IRPage, InferredMethod } from '../../ir/types'
 import { dateFnsLocaleImportName } from '@shared/date-template'
 import { isContainerParam, renderElementGetter } from './locator'
-import { renderStepInMethod } from './step'
+import { mocksFirst, renderStepInMethod } from './step'
 import type { RenderOptions } from '../registry'
 
 const PARAM_SUFFIX_REGEX = /Input$|Button$|Btn$|Link$|Select$|Field$|Box$|Toggle$|Checkbox$|Radio$/
@@ -18,53 +18,51 @@ function tsType(t: string | undefined): string {
 function renderInferredMethod(method: InferredMethod, options: RenderOptions): string {
   const types = method.paramTypes ?? method.params.map(() => 'string')
   const paramList = method.params.map((p, i) => `${p}: ${tsType(types[i])}`).join(', ')
-  const bodyLines = method.steps
-    .map((s) => {
-      // A click on a template element receives the data value as a parameter.
-      if (s.action === 'click' && s.element?.template) {
-        const param = s.element.template.kind === 'date' ? 'date' : 'value'
-        const idx = method.params.indexOf(param)
-        if (idx !== -1) {
-          return `    await this.${s.element.name}(${method.params[idx]}).click();`
-        }
+  const renderedSteps = method.steps.map((s) => {
+    // A click on a template element receives the data value as a parameter.
+    if (s.action === 'click' && s.element?.template) {
+      const param = s.element.template.kind === 'date' ? 'date' : 'value'
+      const idx = method.params.indexOf(param)
+      if (idx !== -1) {
+        return `    await this.${s.element.name}(${method.params[idx]}).click();`
       }
-      // A click on a container-param element receives the row label as a parameter.
-      if (s.action === 'click' && s.element && isContainerParam(s.element)) {
-        const idx = method.params.indexOf('name')
-        if (idx !== -1) return `    await this.${s.element.name}(${method.params[idx]}).click();`
+    }
+    // A click on a container-param element receives the row label as a parameter.
+    if (s.action === 'click' && s.element && isContainerParam(s.element)) {
+      const idx = method.params.indexOf('name')
+      if (idx !== -1) return `    await this.${s.element.name}(${method.params[idx]}).click();`
+    }
+    // Substitute the param name into fill calls when the slug matches.
+    if (s.action === 'fill' && s.element) {
+      const slug = paramSlugFromElement(s.element.name)
+      const paramIdx = method.params.findIndex((p) => p === slug)
+      if (paramIdx !== -1) {
+        const ref =
+          types[paramIdx] === 'string'
+            ? method.params[paramIdx]
+            : `String(${method.params[paramIdx]})`
+        return `    await this.${s.element.name}.fill(${ref});`
       }
-      // Substitute the param name into fill calls when the slug matches.
-      if (s.action === 'fill' && s.element) {
-        const slug = paramSlugFromElement(s.element.name)
-        const paramIdx = method.params.findIndex((p) => p === slug)
-        if (paramIdx !== -1) {
-          const ref =
-            types[paramIdx] === 'string'
-              ? method.params[paramIdx]
-              : `String(${method.params[paramIdx]})`
-          return `    await this.${s.element.name}.fill(${ref});`
-        }
+    }
+    // A select receives its option value as a parameter when the slug matches.
+    if (s.action === 'select' && s.element) {
+      const paramIdx = method.params.findIndex((p) => p === paramSlugFromElement(s.element!.name))
+      if (paramIdx !== -1) {
+        return `    await this.${s.element.name}.selectOption(${method.params[paramIdx]});`
       }
-      // A select receives its option value as a parameter when the slug matches.
-      if (s.action === 'select' && s.element) {
-        const paramIdx = method.params.findIndex((p) => p === paramSlugFromElement(s.element!.name))
-        if (paramIdx !== -1) {
-          return `    await this.${s.element.name}.selectOption(${method.params[paramIdx]});`
-        }
+    }
+    // check/uncheck driven by a boolean parameter collapses to setChecked(param).
+    if ((s.action === 'check' || s.action === 'uncheck') && s.element) {
+      const paramIdx = method.params.findIndex(
+        (p, i) => types[i] === 'boolean' && p === paramSlugFromElement(s.element!.name),
+      )
+      if (paramIdx !== -1) {
+        return `    await this.${s.element.name}.setChecked(${method.params[paramIdx]});`
       }
-      // check/uncheck driven by a boolean parameter collapses to setChecked(param).
-      if ((s.action === 'check' || s.action === 'uncheck') && s.element) {
-        const paramIdx = method.params.findIndex(
-          (p, i) => types[i] === 'boolean' && p === paramSlugFromElement(s.element!.name),
-        )
-        if (paramIdx !== -1) {
-          return `    await this.${s.element.name}.setChecked(${method.params[paramIdx]});`
-        }
-      }
-      return renderStepInMethod(s, '    ', options)
-    })
-    .filter(Boolean)
-    .join('\n')
+    }
+    return renderStepInMethod(s, '    ', options)
+  })
+  const bodyLines = mocksFirst(method.steps, renderedSteps).filter(Boolean).join('\n')
 
   return `  async ${method.name}(${paramList}) {\n${bodyLines}\n  }`
 }
@@ -106,9 +104,11 @@ export function renderPageObject(page: IRPage, options: RenderOptions = {}): str
     methodsBlock =
       '\n' + page.inferredMethods.map((m) => renderInferredMethod(m, options)).join('\n\n')
   } else {
-    const stepLines = page.steps
-      .filter((s) => s.action !== 'navigate')
-      .map((s) => renderStepInMethod(s, '    ', options))
+    const performed = page.steps.filter((s) => s.action !== 'navigate')
+    const stepLines = mocksFirst(
+      performed,
+      performed.map((s) => renderStepInMethod(s, '    ', options)),
+    )
       .filter(Boolean)
       .join('\n')
     if (stepLines) {

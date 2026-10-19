@@ -75,6 +75,30 @@ describe('playwright adapter — network mock generation', () => {
     expect(out).not.toContain('page.route(')
   })
 
+  it('registers the mock before the click that triggers the request', () => {
+    const out = renderPageObject(pageWithLoginAndMock, { includeMocks: true })
+    const route = out.indexOf('this.page.route(')
+    expect(route).toBeGreaterThan(-1)
+    expect(route).toBeLessThan(out.indexOf('.click()'))
+  })
+
+  it('registers the mock first in performSteps when no method was inferred', () => {
+    const page: IRPage = { ...pageWithLoginAndMock, inferredMethods: undefined }
+    const out = renderPageObject(page, { includeMocks: true })
+    expect(out).toContain('async performSteps()')
+    const route = out.indexOf('this.page.route(')
+    expect(route).toBeGreaterThan(-1)
+    expect(route).toBeLessThan(out.indexOf('.click()'))
+  })
+
+  it('registers the mock before the click in an inlined scenario step list', () => {
+    const page: IRPage = { ...pageWithLoginAndMock, inferredMethods: undefined }
+    const out = renderScenario({ name: 'Inline', pages: [page] }, { includeMocks: true })
+    const route = out.indexOf('page.route(')
+    expect(route).toBeGreaterThan(-1)
+    expect(route).toBeLessThan(out.indexOf('.click()'))
+  })
+
   it('infers login() with email/password param types', () => {
     const out = renderPageObject(pageWithLoginAndMock, { includeMocks: false })
     expect(out).toMatch(/async login\(email: string, password: string\)/)

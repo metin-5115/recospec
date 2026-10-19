@@ -8,7 +8,7 @@ import {
 } from '../../shared/scenario-flow'
 import { dateCtorFromIso } from '../../shared/date-literal'
 import { resolveTestData } from '../../planner/test-data-resolver'
-import { renderStepInSpec } from './step'
+import { mocksFirst, renderStepInSpec } from './step'
 import { renderFillValueExpr } from './fill-value'
 import type { RenderOptions } from '../registry'
 
@@ -35,7 +35,10 @@ function renderArg(arg: FlowArg, options: RenderOptions): string {
 }
 
 function renderInline(page: IRPage, options: RenderOptions): string[] {
-  return page.steps.map((step) => renderStepInSpec(step, INDENT, options)).filter(Boolean)
+  return mocksFirst(
+    page.steps,
+    page.steps.map((step) => renderStepInSpec(step, INDENT, options)),
+  ).filter(Boolean)
 }
 
 function renderItem(item: FlowItem, options: RenderOptions): string[] {
