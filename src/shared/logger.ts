@@ -26,6 +26,10 @@ function redact(value: unknown, seen: WeakSet<object> = new WeakSet()): unknown 
   if (value === null || typeof value !== 'object') return value
   if (seen.has(value as object)) return '[circular]'
   seen.add(value as object)
+  // Error's message/stack are non-enumerable, so the generic walk below would yield `{}`.
+  if (value instanceof Error) {
+    return { name: value.name, message: value.message, stack: value.stack }
+  }
   if (Array.isArray(value)) return value.map((v) => redact(v, seen))
   const out: Record<string, unknown> = {}
   for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
