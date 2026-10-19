@@ -242,6 +242,149 @@ describe('inferMethods — secret parameter detection', () => {
   })
 })
 
+describe('inferMethods — keyboard-driven forms', () => {
+  const email = () => fillStep('emailInput', 'input', 'email')
+  const password = () => fillStep('passwordInput', 'input', 'password')
+
+  it('a Tab between two fills does not break login detection (click submit)', () => {
+    const methods = inferMethods([
+      email(),
+      keypressStep('Tab'),
+      password(),
+      clickStep('loginButton'),
+    ])
+    expect(methods.map((m) => m.name)).toEqual(['login'])
+    expect(methods[0].params).toEqual(['email', 'password'])
+    expect(methods[0].paramSecret).toEqual([true, true])
+  })
+
+  it('keeps the Tab step inside the method body so replay is unchanged', () => {
+    const methods = inferMethods([
+      email(),
+      keypressStep('Tab'),
+      password(),
+      clickStep('loginButton'),
+    ])
+    expect(methods[0].steps.map((s) => s.action)).toEqual(['fill', 'keypress', 'fill', 'click'])
+  })
+
+  it('fill, Tab, fill, Enter → login (not search on the password field)', () => {
+    const methods = inferMethods([email(), keypressStep('Tab'), password(), keypressStep('Enter')])
+    expect(methods.map((m) => m.name)).toEqual(['login'])
+    expect(methods[0].params).toEqual(['email', 'password'])
+    expect(methods[0].steps.map((s) => s.action)).toEqual(['fill', 'keypress', 'fill', 'keypress'])
+  })
+
+  it('fill, fill, Enter (no Tab) → login', () => {
+    const methods = inferMethods([email(), password(), keypressStep('Enter')])
+    expect(methods.map((m) => m.name)).toEqual(['login'])
+  })
+
+  it('registration context with Enter → register', () => {
+    const methods = inferMethods([
+      fillStep('signUpEmailInput', 'input', 'email'),
+      keypressStep('Tab'),
+      fillStep('signUpPasswordInput', 'input', 'password'),
+      keypressStep('Enter'),
+    ])
+    expect(methods.map((m) => m.name)).toEqual(['register'])
+  })
+
+  it('three fills with Tabs and a click → submitForm', () => {
+    const methods = inferMethods([
+      fillStep('firstNameInput'),
+      keypressStep('Tab'),
+      fillStep('lastNameInput'),
+      keypressStep('Tab'),
+      fillStep('phoneInput'),
+      clickStep('saveBtn'),
+    ])
+    expect(methods.map((m) => m.name)).toEqual(['submitForm'])
+    expect(methods[0].params).toEqual(['firstName', 'lastName', 'phone'])
+  })
+
+  it('three fills with Tabs and Enter → submitForm', () => {
+    const methods = inferMethods([
+      fillStep('firstNameInput'),
+      keypressStep('Tab'),
+      fillStep('lastNameInput'),
+      keypressStep('Tab'),
+      fillStep('phoneInput'),
+      keypressStep('Enter'),
+    ])
+    expect(methods.map((m) => m.name)).toEqual(['submitForm'])
+    expect(methods[0].steps).toHaveLength(6)
+  })
+
+  it('Tabs between fills with no terminator → fillForm', () => {
+    const methods = inferMethods([
+      fillStep('firstNameInput'),
+      keypressStep('Tab'),
+      fillStep('lastNameInput'),
+    ])
+    expect(methods.map((m) => m.name)).toEqual(['fillForm'])
+  })
+
+  it('a Tab between the last fill and the submit click is absorbed', () => {
+    const methods = inferMethods([
+      email(),
+      password(),
+      keypressStep('Tab'),
+      clickStep('loginButton'),
+    ])
+    expect(methods.map((m) => m.name)).toEqual(['login'])
+  })
+
+  it('a lone Tab still yields pressTab', () => {
+    expect(inferMethods([keypressStep('Tab')]).map((m) => m.name)).toEqual(['pressTab'])
+  })
+
+  it('a Tab after a lone fill with no following fill is not swallowed', () => {
+    const methods = inferMethods([fillStep('noteInput'), keypressStep('Tab')])
+    expect(methods.map((m) => m.name)).toEqual(['fillNote', 'pressTab'])
+  })
+
+  it('a Tab before a different action stays a separate pressTab', () => {
+    const methods = inferMethods([
+      keypressStep('Tab'),
+      email(),
+      password(),
+      clickStep('loginButton'),
+    ])
+    expect(methods.map((m) => m.name)).toEqual(['pressTab', 'login'])
+  })
+
+  it('lone non-sensitive fill + Enter still yields search', () => {
+    const methods = inferMethods([fillStep('queryInput'), keypressStep('Enter')])
+    expect(methods.map((m) => m.name)).toEqual(['search'])
+  })
+
+  it('search does not fire on a sensitive field', () => {
+    const methods = inferMethods([password(), keypressStep('Enter')])
+    expect(methods.map((m) => m.name)).toEqual(['fillPassword', 'pressEnter'])
+    expect(methods[0].paramSecret).toEqual([true])
+  })
+
+  it('search does not fire when preceded by another fill in the same form', () => {
+    const methods = inferMethods([
+      fillStep('firstNameInput'),
+      fillStep('queryInput'),
+      keypressStep('Enter'),
+    ])
+    expect(methods.map((m) => m.name)).not.toContain('search')
+    expect(methods.map((m) => m.name)).toEqual(['submitForm'])
+  })
+
+  it('search after an unrelated step is unaffected', () => {
+    const methods = inferMethods([
+      clickStep('openBtn'),
+      fillStep('queryInput'),
+      keypressStep('Enter'),
+    ])
+    expect(methods.map((m) => m.name)).toEqual(['clickOpen', 'search'])
+  })
+})
+
 describe('inferMethods — network steps', () => {
   it('threads network step into the preceding user method without spawning a new one', () => {
     const methods = inferMethods([

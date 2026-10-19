@@ -78,6 +78,74 @@ function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
+function isTab(step: IRStep | undefined): boolean {
+  return step?.action === 'keypress' && step.key === 'Tab'
+}
+
+interface FillRun {
+  fills: IRStep[]
+  /** The fills plus the focus-navigation Tabs between them, in recorded order. */
+  steps: IRStep[]
+  /** Index of the first user step after the run. */
+  end: number
+}
+
+/**
+ * Collects consecutive fills starting at `start`. A Tab keypress between two fills is focus
+ * navigation, not a user action in its own right, so it stays inside the run (and the method
+ * body, keeping replay faithful) instead of splitting the form in two.
+ */
+function collectFillRun(userSteps: IRStep[], start: number): FillRun {
+  const fills: IRStep[] = []
+  const steps: IRStep[] = []
+  let j = start
+  while (userSteps[j]?.action === 'fill') {
+    const fill = userSteps[j]!
+    fills.push(fill)
+    steps.push(fill)
+    j++
+    let k = j
+    while (isTab(userSteps[k])) k++
+    if (k > j && userSteps[k]?.action === 'fill') {
+      steps.push(...userSteps.slice(j, k))
+      j = k
+    }
+  }
+  return { fills, steps, end: j }
+}
+
+function searchDraft(fill: IRStep, terminator: IRStep): MethodDraft {
+  return {
+    name: 'search',
+    params: [paramName(fill.element, 'query')],
+    paramTypes: [paramTypeFor(fill.element)],
+    paramSecret: [isSensitiveField(fill.element)],
+    paramElements: [fill.element],
+    steps: [fill, terminator],
+  }
+}
+
+/** login / register / submitForm naming for a two-field form. */
+function pairFormName(fills: IRStep[], terminator: IRStep): string {
+  const [first, second] = fills
+  if (isRegistrationContext([first?.element, second?.element, terminator.element]))
+    return 'register'
+  return isPasswordField(second?.element) ? 'login' : 'submitForm'
+}
+
+function formDraft(name: string, fills: IRStep[], steps: IRStep[], pair: boolean): MethodDraft {
+  return {
+    name,
+    params: fills.map((s, idx) =>
+      paramName(s.element, pair ? (idx === 0 ? 'email' : 'password') : `field${idx + 1}`),
+    ),
+    paramTypes: fills.map((s) => paramTypeFor(s.element)),
+    paramSecret: fills.map((s) => isSensitiveField(s.element)),
+    paramElements: fills.map((s) => s.element),
+    steps,
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Default method naming for unmatched steps
 // ---------------------------------------------------------------------------
@@ -180,12 +248,15 @@ function insertBeforeTrailingWaits(steps: IRStep[], step: IRStep): void {
  *
  * Patterns (priority order, longest match wins):
  *
- *  1. fill + Enter                                → search(query)
+ *  1. fill + Enter (non-sensitive field)          → search(query)
  *  2. fill + click(submit-like, search-named)     → search(query)
- *  3. 2× fill + click(submit-like)                → login(email, password) /
+ *  3. 2× fill + click(submit-like) | Enter        → login(email, password) /
  *                                                    register(...) when names hint signup
- *  4. N× fill + click                             → submitForm(...)
+ *  4. N× fill + click | Enter (N ≥ 2)             → submitForm(...)
  *  5. N× fill (terminal, no click)                → fillForm(...)
+ *
+ * A Tab between two fills (or between the last fill and the submit click) is focus
+ * navigation: it stays in the method body but never splits a fill run.
  *  6. click(checkbox|radio) + click(submit-like)  → acceptAndSubmit(consent)
  *  7. click(menu-like) + click + navigate         → navigateFromMenu(option)
  *  8. click(menu-like) + click                    → selectFromMenu(option)
@@ -266,16 +337,15 @@ export function inferMethods(steps: IRStep[]): InferredMethod[] {
       continue
     }
 
-    // 1: fill + Enter → search
-    if (s0?.action === 'fill' && s1?.action === 'keypress' && s1.key === 'Enter') {
-      drafts.push({
-        name: 'search',
-        params: [paramName(s0.element, 'query')],
-        paramTypes: [paramTypeFor(s0.element)],
-        paramSecret: [isSensitiveField(s0.element)],
-        paramElements: [s0.element],
-        steps: [s0, s1],
-      })
+    // 1: fill + Enter → search. A secret field (password, email, token…) is never a search
+    // query, and a fill that follows another fill belongs to a form, not a search box.
+    if (
+      s0?.action === 'fill' &&
+      s1?.action === 'keypress' &&
+      s1.key === 'Enter' &&
+      !isSensitiveField(s0.element)
+    ) {
+      drafts.push(searchDraft(s0, s1))
       i += 2
       continue
     }
@@ -287,70 +357,56 @@ export function inferMethods(steps: IRStep[]): InferredMethod[] {
       isSubmitLike(s1.element) &&
       /search|find|lookup/i.test(s0.element?.name ?? '')
     ) {
-      drafts.push({
-        name: 'search',
-        params: [paramName(s0.element, 'query')],
-        paramTypes: [paramTypeFor(s0.element)],
-        paramSecret: [isSensitiveField(s0.element)],
-        paramElements: [s0.element],
-        steps: [s0, s1],
-      })
+      drafts.push(searchDraft(s0, s1))
       i += 2
       continue
     }
 
-    // 3: 2× fill + click(submit-like) → login / register
-    if (
-      s0?.action === 'fill' &&
-      s1?.action === 'fill' &&
-      s2?.action === 'click' &&
-      isSubmitLike(s2.element)
-    ) {
-      const looksLikeLogin = isPasswordField(s1.element)
-      const looksLikeRegister = isRegistrationContext([s0.element, s1.element, s2.element])
-      const name = looksLikeRegister ? 'register' : looksLikeLogin ? 'login' : 'submitForm'
-      drafts.push({
-        name,
-        params: [paramName(s0.element, 'email'), paramName(s1.element, 'password')],
-        paramTypes: [paramTypeFor(s0.element), paramTypeFor(s1.element)],
-        paramSecret: [isSensitiveField(s0.element), isSensitiveField(s1.element)],
-        paramElements: [s0.element, s1.element],
-        steps: [s0, s1, s2],
-      })
-      i += 3
-      continue
-    }
-
-    // 4 / 5: N× fill (+ optional submit click)
+    // 3 / 4 / 5: N× fill (Tab-separated fills count as one run) + optional terminator
+    //   2× fill + click(submit-like)  → login / register / submitForm
+    //   2× fill + Enter               → login / register / submitForm
+    //   N× fill + click               → submitForm
+    //   N× fill + Enter (N ≥ 2)       → submitForm
+    //   N× fill, no terminator        → fillForm
     if (s0?.action === 'fill') {
-      const fillSteps: IRStep[] = []
-      let j = i
-      while (j < userSteps.length && userSteps[j]?.action === 'fill') {
-        fillSteps.push(userSteps[j]!)
-        j++
+      const run = collectFillRun(userSteps, i)
+      const { fills } = run
+      let j = run.end
+      // A Tab that moves focus onto the submit control before it is clicked is still navigation.
+      let k = j
+      while (isTab(userSteps[k])) k++
+      const tabsBeforeClick = userSteps[k]?.action === 'click' ? userSteps.slice(j, k) : []
+      const next = userSteps[j + tabsBeforeClick.length]
+      const formSteps = [...run.steps, ...tabsBeforeClick]
+
+      if (next?.action === 'click') {
+        const isPair = fills.length === 2 && isSubmitLike(next.element)
+        drafts.push(
+          formDraft(
+            isPair ? pairFormName(fills, next) : 'submitForm',
+            fills,
+            [...formSteps, next],
+            isPair,
+          ),
+        )
+        i = j + tabsBeforeClick.length + 1
+        continue
       }
-      const next = userSteps[j]
-      if (fillSteps.length >= 1 && next?.action === 'click') {
-        drafts.push({
-          name: 'submitForm',
-          params: fillSteps.map((s, idx) => paramName(s.element, `field${idx + 1}`)),
-          paramTypes: fillSteps.map((s) => paramTypeFor(s.element)),
-          paramSecret: fillSteps.map((s) => isSensitiveField(s.element)),
-          paramElements: fillSteps.map((s) => s.element),
-          steps: [...fillSteps, next],
-        })
+      if (fills.length >= 2 && next?.action === 'keypress' && next.key === 'Enter') {
+        const isPair = fills.length === 2
+        drafts.push(
+          formDraft(
+            isPair ? pairFormName(fills, next) : 'submitForm',
+            fills,
+            [...run.steps, next],
+            isPair,
+          ),
+        )
         i = j + 1
         continue
       }
-      if (fillSteps.length >= 2) {
-        drafts.push({
-          name: 'fillForm',
-          params: fillSteps.map((s, idx) => paramName(s.element, `field${idx + 1}`)),
-          paramTypes: fillSteps.map((s) => paramTypeFor(s.element)),
-          paramSecret: fillSteps.map((s) => isSensitiveField(s.element)),
-          paramElements: fillSteps.map((s) => s.element),
-          steps: fillSteps,
-        })
+      if (fills.length >= 2) {
+        drafts.push(formDraft('fillForm', fills, run.steps, false))
         i = j
         continue
       }
