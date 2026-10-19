@@ -1,4 +1,3 @@
-import { posix } from 'node:path'
 import type { FrameworkId } from '@shared/types/generated'
 
 /** Folders (relative to the project root) a generated project keeps its files in. */
@@ -30,13 +29,30 @@ export const DEFAULT_OUTPUT_DIRS: Record<FrameworkId, OutputDirs> = {
 export const JAVA_MAIN_ROOT = 'src/main/java'
 export const JAVA_TEST_ROOT = 'src/test/java'
 
+/**
+ * Folds `.`, `..` and empty segments of a relative path. `undefined` when nothing is left or the
+ * path climbs above where it started. Pure string work: this module also ships in the extension,
+ * where `node:path` does not exist.
+ */
+function collapseSegments(path: string): string | undefined {
+  const kept: string[] = []
+  for (const segment of path.split('/')) {
+    if (segment === '' || segment === '.') continue
+    if (segment === '..') {
+      if (kept.pop() === undefined) return undefined
+      continue
+    }
+    kept.push(segment)
+  }
+  return kept.length > 0 ? kept.join('/') : undefined
+}
+
 /** A project-relative folder with forward slashes and no `./` or trailing slash. */
 export function normalizeOutputDir(dir: string): string {
   const unified = dir.trim().replace(/\\/g, '/')
-  const normalized = posix.normalize(unified).replace(/\/+$/, '')
-  const isEscaping = normalized === '..' || normalized.startsWith('../')
   const isAbsolute = unified.startsWith('/') || /^[a-zA-Z]:/.test(unified)
-  if (!normalized || normalized === '.' || isEscaping || isAbsolute) {
+  const normalized = isAbsolute ? undefined : collapseSegments(unified)
+  if (!normalized) {
     throw new Error(
       `Invalid output folder "${dir}": it must be a relative folder inside the project.`,
     )
@@ -63,9 +79,14 @@ export function resolveOutputDirs(
 
 /** `import` specifier for `name` in `toDir`, written from a file that lives in `fromDir`. */
 export function relativeModule(fromDir: string, toDir: string, name: string): string {
-  const relative = posix.relative(fromDir, toDir)
-  const prefix = relative === '' ? '.' : relative.startsWith('.') ? relative : `./${relative}`
-  return `${prefix}/${name}`
+  const from = fromDir.split('/')
+  const to = toDir.split('/')
+  let shared = 0
+  while (shared < from.length && shared < to.length && from[shared] === to[shared]) shared++
+  const climb = from.slice(shared).map(() => '..')
+  const descend = to.slice(shared)
+  const prefix = climb.length > 0 ? [...climb, ...descend] : ['.', ...descend]
+  return `${prefix.join('/')}/${name}`
 }
 
 /** Python import path of a folder: `src/app/pages` → `src.app.pages`. */
