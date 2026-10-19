@@ -1,4 +1,5 @@
 import type { FrameworkId } from '@shared/types/generated'
+import type { OutputDirOverrides } from '@shared/types/generate-options'
 
 /** Folders (relative to the project root) a generated project keeps its files in. */
 export interface OutputDirs {
@@ -7,12 +8,7 @@ export interface OutputDirs {
   features: string
 }
 
-/** The `paths` block of `.recospecrc.json`; every folder is optional. */
-export interface OutputDirOverrides {
-  pagesDir?: string
-  testsDir?: string
-  featuresDir?: string
-}
+export type { OutputDirOverrides }
 
 export const DEFAULT_OUTPUT_DIRS: Record<FrameworkId, OutputDirs> = {
   'playwright-ts': { pages: 'pages', tests: 'tests', features: 'features' },

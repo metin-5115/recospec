@@ -1,19 +1,12 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
-import { normalizeActions } from '@codegen/normalizer/action-normalizer'
-import { groupIntoPages } from '@codegen/planner/page-grouper'
-import { appendFinalStateAssertion } from '@codegen/planner/final-assertion'
-import { withFillVariants } from '@codegen/planner/fill-variants'
-import { applyTemplateModes, applyComposedModes } from '@codegen/planner/template-modes'
-import type { TemplateParamMode } from '@codegen/ir/types'
-import { getAdapter, type RenderOptions } from '@codegen/adapters/registry'
-import { flowSlug } from '@codegen/shared/flow-slug'
-import { recordedOrigin } from '@codegen/shared/scenario-flow'
 import type { FrameworkId, GeneratedFile, OutputSelection } from '@shared/types/generated'
 import { normalizeSelection } from '@shared/types/generated'
+import { generateFromActions } from '@codegen/index'
 import type { JsonExportPayload } from '@codegen/export/json-export'
+import type { GenerateOptions } from '@shared/types/generate-options'
 import { resolveOutputPath } from '@codegen/export/output-path'
-import type { OutputDirOverrides } from '@codegen/export/output-layout'
+import type { OutputDirOverrides } from '@shared/types/generate-options'
 import type { ConflictReporter } from '@codegen/apply/conflict-reporter'
 import { detectFramework } from '../detect-framework'
 import { loadRc } from '../config-loader'
@@ -23,14 +16,20 @@ import { mergePyPageObject } from '../merge/py-page-object'
 import { mergeJavaPageObject } from '../merge/java-page-object'
 import { mergeFeatureFile } from '../merge/feature-file'
 
-// Side-effect imports — every adapter registers itself in ADAPTER_REGISTRY
-// when loaded. The CLI needs all four so `--framework` accepts any of them.
-import '@codegen/adapters/playwright-ts'
-import '@codegen/adapters/cypress'
-import '@codegen/adapters/selenium-py'
-import '@codegen/adapters/selenium-java'
+/** The generation options `add` passes through unchanged; everything else is about the files it writes. */
+type PassThroughOptions = Pick<
+  GenerateOptions,
+  | 'includeMocks'
+  | 'selfHealing'
+  | 'finalStateAssertion'
+  | 'autoWaitEnabled'
+  | 'methodRenames'
+  | 'testData'
+  | 'templateModes'
+  | 'composedModes'
+>
 
-export interface AddOptions {
+export interface AddOptions extends PassThroughOptions {
   /** Absolute or cwd-relative path to a Recospec JSON export. */
   json: string
   /** Project root where the page-object / spec files will be written. */
@@ -43,24 +42,11 @@ export interface AddOptions {
   dryRun?: boolean
   /** Emit Gherkin .feature + step definitions instead of a vanilla spec. */
   bdd?: boolean
-  /** Emit network mocks for captured requests (Playwright / Cypress / notes elsewhere). */
-  includeMocks?: boolean
-  /** Wire fallback locators into the generated code at run time. Defaults to true. */
-  selfHealing?: boolean
-  /** Add a "flow ended on this URL" assertion to a recording with none. Defaults to true. */
-  finalStateAssertion?: boolean
   /**
    * Which file groups to write. `scaffold` is always ignored here — the CLI
    * assumes an existing, configured project. Defaults to page objects + test.
    */
   selection?: Partial<Pick<OutputSelection, 'pageObjects' | 'test'>>
-  /**
-   * Per-template rendering modes keyed by the element's `locatorValue`
-   * (host UIs like the VS Code extension collect these). Defaults to `param`.
-   */
-  templateModes?: Record<string, TemplateParamMode>
-  /** Per-element container-anchor modes (`scoped` | `param`) keyed by `locatorValue`. */
-  composedModes?: Record<string, 'scoped' | 'param'>
 }
 
 interface ResolvedTarget {
@@ -102,45 +88,20 @@ export async function runAdd(opts: AddOptions, reporter?: ConflictReporter): Pro
     `[recospec] session=${payload.session.name} framework=${framework} bdd=${bdd} target=${opts.projectDir}`,
   )
 
-  const normalized = normalizeActions(payload.actions).flatSteps
-  const flatSteps =
-    opts.finalStateAssertion === false ? normalized : appendFinalStateAssertion(normalized)
-  // Before grouping — method inference reads templateParamMode / composedParamMode.
-  applyTemplateModes(flatSteps, opts.templateModes)
-  applyComposedModes(flatSteps, opts.composedModes)
-  const pages = groupIntoPages(flatSteps, payload.session.startUrl)
-  const scenario = { name: payload.session.name, startUrl: payload.session.startUrl, pages }
-
-  const adapter = getAdapter(framework)
-  const renderOptions: RenderOptions = {
+  const code = generateFromActions(payload.session, payload.actions, framework, {
     includeMocks: opts.includeMocks,
-    selfHealing: opts.selfHealing !== false,
-    testData: withFillVariants(undefined, normalized),
+    selfHealing: opts.selfHealing,
+    finalStateAssertion: opts.finalStateAssertion,
+    autoWaitEnabled: opts.autoWaitEnabled,
+    methodRenames: opts.methodRenames,
+    testData: opts.testData,
     bdd,
-    flowSlug: flowSlug(scenario.name),
-    baseUrl: recordedOrigin(scenario),
+    selection,
+    templateModes: opts.templateModes,
+    composedModes: opts.composedModes,
     dirs: rc?.config.paths,
-  }
-  if (bdd && selection.test) {
-    if (!adapter.renderBddFeature || !adapter.renderBddSteps) {
-      throw new Error(
-        `Framework ${framework} does not support BDD output. Drop --bdd or pick a different framework.`,
-      )
-    }
-  }
-
-  const emitted: GeneratedFile[] = []
-  if (selection.pageObjects) {
-    emitted.push(...pages.map((p) => adapter.renderPageObject(p, renderOptions)))
-  }
-  if (selection.test) {
-    if (bdd && adapter.renderBddFeature && adapter.renderBddSteps) {
-      emitted.push(adapter.renderBddFeature(scenario, renderOptions))
-      emitted.push(adapter.renderBddSteps(scenario, renderOptions))
-    } else {
-      emitted.push(adapter.renderScenario(scenario, renderOptions))
-    }
-  }
+  })
+  const emitted: GeneratedFile[] = code.files
 
   // Per spec: SKIP scaffold. The CLI assumes the user's project already has
   // a configured test runner.

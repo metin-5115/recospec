@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { db } from '@storage/db'
 import { appendAction } from '@storage/action-repo'
 import { createSession } from '@storage/session-repo'
-import { generate } from './index'
+import { generateForSession as generate } from '../background/generate-for-session'
 import type { Session } from '@shared/types/session'
 import type { RecordedAction } from '@shared/types/action'
 

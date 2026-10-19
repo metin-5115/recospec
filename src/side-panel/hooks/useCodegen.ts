@@ -1,14 +1,18 @@
-import { useEffect, useCallback, useState } from 'react'
+import { useEffect, useCallback, useMemo, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useSessionStore } from '../sessionStore'
 import { onUIMessage } from '@shared/messaging/listen'
 import { trySendToBackground } from '@shared/messaging/send'
 import { downloadZipExport } from '@codegen/export/zip-export'
-import { generate } from '@codegen/index'
+import { generateForSession } from '@/background/generate-for-session'
 import { isEmptySelection } from '@shared/types/generated'
 import { CODEGEN_MAX_ATTEMPTS, CODEGEN_RETRY_DELAY_MS } from '@shared/constants'
-import type { TestDataConfig, TemplateParamMode } from '@codegen/ir/types'
-import type { ComposedParamMode } from '@codegen/planner/template-modes'
+import type {
+  ComposedParamMode,
+  GenerateOptions,
+  TemplateParamMode,
+  TestDataConfig,
+} from '@shared/types/generate-options'
 
 /** Code generation: framework and output options, the generated code, and ZIP export. */
 export function useCodegen() {
@@ -79,6 +83,35 @@ export function useCodegen() {
     [setGeneratedCode, setCodeGenError],
   )
 
+  // One options object for both the worker request and the ZIP export; the UI state it reads
+  // is the same for either, so the two can never drift apart.
+  const generateOptions = useMemo<GenerateOptions>(
+    () => ({
+      includeMocks,
+      finalStateAssertion,
+      selfHealing,
+      autoWaitEnabled,
+      methodRenames,
+      testData,
+      bdd: bddEnabled,
+      selection: outputSelection,
+      composedModes,
+      templateModes,
+    }),
+    [
+      includeMocks,
+      finalStateAssertion,
+      selfHealing,
+      autoWaitEnabled,
+      methodRenames,
+      testData,
+      bddEnabled,
+      outputSelection,
+      composedModes,
+      templateModes,
+    ],
+  )
+
   const generateCode = useCallback(async () => {
     if (!activeSession) return
     setCodeGenError(null)
@@ -88,16 +121,7 @@ export function useCodegen() {
           type: 'CODE_GENERATE',
           sessionId: activeSession.sessionId,
           framework: selectedFramework,
-          includeMocks,
-          finalStateAssertion,
-          selfHealing,
-          autoWaitEnabled,
-          methodRenames,
-          testData,
-          bdd: bddEnabled,
-          selection: outputSelection,
-          composedModes,
-          templateModes,
+          options: generateOptions,
         })
         return
       } catch {
@@ -110,21 +134,7 @@ export function useCodegen() {
         }
       }
     }
-  }, [
-    activeSession,
-    selectedFramework,
-    includeMocks,
-    finalStateAssertion,
-    selfHealing,
-    autoWaitEnabled,
-    methodRenames,
-    testData,
-    bddEnabled,
-    outputSelection,
-    composedModes,
-    templateModes,
-    setCodeGenError,
-  ])
+  }, [activeSession, selectedFramework, generateOptions, setCodeGenError])
 
   const exportZip = useCallback(
     async (sessionId: string) => {
@@ -135,37 +145,13 @@ export function useCodegen() {
         return
       }
       try {
-        const code = await generate(sessionId, selectedFramework, {
-          includeMocks,
-          finalStateAssertion,
-          selfHealing,
-          methodRenames,
-          autoWaitEnabled,
-          testData,
-          bdd: bddEnabled,
-          selection: outputSelection,
-          composedModes,
-          templateModes,
-        })
+        const code = await generateForSession(sessionId, selectedFramework, generateOptions)
         await downloadZipExport(session, code)
       } catch (err) {
         setCodeGenError(err instanceof Error ? err.message : 'ZIP export failed')
       }
     },
-    [
-      selectedFramework,
-      includeMocks,
-      finalStateAssertion,
-      selfHealing,
-      autoWaitEnabled,
-      methodRenames,
-      testData,
-      bddEnabled,
-      outputSelection,
-      composedModes,
-      templateModes,
-      setCodeGenError,
-    ],
+    [selectedFramework, outputSelection, generateOptions, setCodeGenError],
   )
 
   return {

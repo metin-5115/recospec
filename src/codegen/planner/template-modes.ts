@@ -1,4 +1,5 @@
-import type { IRStep, IRElement, TemplateParamMode } from '../ir/types'
+import type { IRStep } from '../ir/types'
+import type { ComposedParamMode, TemplateParamMode } from '@shared/types/generate-options'
 
 /**
  * Apply user-chosen rendering modes to template elements, keyed by the
@@ -51,7 +52,7 @@ export function collectTemplateOccurrences(steps: IRStep[]): TemplateOccurrence[
   return [...seen.values()]
 }
 
-export type ComposedParamMode = NonNullable<IRElement['composedParamMode']>
+export type { ComposedParamMode }
 
 /**
  * Apply scoped/param rendering modes to container-anchored composed elements,

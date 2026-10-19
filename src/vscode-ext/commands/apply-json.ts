@@ -22,13 +22,8 @@ import { getActiveFramework, frameworkLabel, resolveWorkspace } from '../workspa
 import { showOutputPicker, type PickerChoices } from '../output-picker'
 import type { RecospecStatusBar } from '../status-bar'
 
-// Side-effect imports — the adapters self-register in `ADAPTER_REGISTRY`
-// when the module is loaded. `runAdd` already pulls these in; they are
-// repeated here so registration never depends on that transitive import.
-import '@codegen/adapters/playwright-ts'
-import '@codegen/adapters/cypress'
-import '@codegen/adapters/selenium-py'
-import '@codegen/adapters/selenium-java'
+// Registers the four built-in adapters (`runAdd` needs them to resolve a framework).
+import '@codegen/adapters'
 
 /**
  * Wraps `runAdd` so the user can apply a Recospec JSON export onto the

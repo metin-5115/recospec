@@ -1,70 +1,20 @@
-import { getActionsBySession } from '@storage/action-repo'
-import { getSession } from '@storage/session-repo'
 import { normalizeActions } from './normalizer/action-normalizer'
 import { groupIntoPages } from './planner/page-grouper'
 import { appendFinalStateAssertion } from './planner/final-assertion'
 import { withFillVariants } from './planner/fill-variants'
-import './adapters/playwright-ts'
-import './adapters/cypress'
-import './adapters/selenium-py'
-import './adapters/selenium-java'
+import './adapters'
 import { getAdapter, type RenderOptions } from './adapters/registry'
 import { flowSlug } from './shared/flow-slug'
 import { recordedOrigin } from './shared/scenario-flow'
 import { hasUploadStep } from './shared/upload-fixtures'
-import type { FrameworkId, GeneratedCode, OutputSelection } from '@shared/types/generated'
+import type { FrameworkId, GeneratedCode } from '@shared/types/generated'
+import type { RecordedAction } from '@shared/types/action'
+import type { GenerateOptions } from '@shared/types/generate-options'
 import { normalizeSelection, isEmptySelection } from '@shared/types/generated'
-import type { IRDocument, IRScenario, TestDataConfig, TemplateParamMode } from './ir/types'
-import {
-  applyTemplateModes,
-  applyComposedModes,
-  type ComposedParamMode,
-} from './planner/template-modes'
+import type { IRDocument, IRScenario } from './ir/types'
+import { applyTemplateModes, applyComposedModes } from './planner/template-modes'
 
-export interface GenerateOptions {
-  /** Emit `page.route(...)` mocks for any captured network actions. */
-  includeMocks?: boolean
-  /** Map of `${pageClassName}.${inferredName}` → user-chosen name. */
-  methodRenames?: Record<string, string>
-  /**
-   * When `false`, auto-detected `wait` steps are stripped from the IR before
-   * code generation. Defaults to `true`.
-   */
-  autoWaitEnabled?: boolean
-  /**
-   * User-edited test data config — drives env-var emission for sensitive
-   * fields and which fixture/.env scaffolds adapters render.
-   */
-  testData?: TestDataConfig
-  /**
-   * Append a "the flow ended on this URL" assertion to a recording the user never asserted on.
-   * Defaults to `true`.
-   */
-  finalStateAssertion?: boolean
-  /**
-   * Let the recorded fallback locators take over at run time (Playwright / Cypress only; the
-   * Selenium adapters list them as suggestions). Defaults to `true`.
-   */
-  selfHealing?: boolean
-  /** Emit Gherkin `.feature` + step definitions alongside the page objects. */
-  bdd?: boolean
-  /**
-   * Which file groups to emit. Defaults to all (page objects + test +
-   * scaffold) so existing callers are unaffected. An unselected group is never
-   * rendered.
-   */
-  selection?: Partial<OutputSelection>
-  /**
-   * Per-template rendering modes keyed by the element's `locatorValue`.
-   * Omitted templates default to `param` (parameterized method).
-   */
-  templateModes?: Record<string, TemplateParamMode>
-  /**
-   * Per-element container-anchor modes keyed by `locatorValue`: `scoped`
-   * (default, hardcoded label) or `param` (label becomes a method parameter).
-   */
-  composedModes?: Record<string, ComposedParamMode>
-}
+export type { GenerateOptions }
 
 function applyRenames(
   pages: ReturnType<typeof groupIntoPages>,
@@ -80,19 +30,27 @@ function applyRenames(
   }
 }
 
-export async function generate(
-  sessionId: string,
+/** The parts of a recorded session code generation needs. */
+export interface GenerateSession {
+  sessionId?: string
+  name?: string
+  startUrl?: string
+}
+
+/**
+ * The one way from a recording to code: normalize, plan, render. Pure — it reads nothing from
+ * IndexedDB or the browser, so the side panel, the worker, the CLI and the VS Code extension all
+ * call it with the actions they already hold.
+ */
+export function generateFromActions(
+  session: GenerateSession | undefined,
+  actions: readonly RecordedAction[],
   framework: FrameworkId,
   options: GenerateOptions = {},
-): Promise<GeneratedCode> {
-  const [actions, session] = await Promise.all([
-    getActionsBySession(sessionId),
-    getSession(sessionId),
-  ])
-
+): GeneratedCode {
   const startUrl = session?.startUrl ?? 'about:blank'
   const sourceActions =
-    options.autoWaitEnabled === false ? actions.filter((a) => a.type !== 'wait') : actions
+    options.autoWaitEnabled === false ? actions.filter((a) => a.type !== 'wait') : [...actions]
   const normalized = normalizeActions(sourceActions).flatSteps
   const flatSteps =
     options.finalStateAssertion === false ? normalized : appendFinalStateAssertion(normalized)
@@ -112,7 +70,7 @@ export async function generate(
   }
 
   const doc: IRDocument = {
-    sessionId,
+    sessionId: session?.sessionId ?? '',
     scenario,
     pages,
     generatedAt: Date.now(),
@@ -127,6 +85,7 @@ export async function generate(
     flowSlug: flowSlug(scenario.name),
     baseUrl: recordedOrigin(scenario),
     hasUploads: hasUploadStep(flatSteps),
+    dirs: options.dirs,
   }
 
   const selection = normalizeSelection(options.selection)

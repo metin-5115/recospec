@@ -2,7 +2,7 @@ import type { AssertionSuggestion, ElementSnapshot } from './types/action'
 import { isDynamicValue } from './dynamic-value'
 import { suggestedPattern, stableSubstring } from './assertion-pattern'
 import { slugifyKebab } from './slug'
-import { normalizeUrl } from '@codegen/normalizer/url-normalizer'
+import { normalizeUrl } from './route-normalizer'
 
 /**
  * Value assertions for an element's text. Stable text → exact + contains.

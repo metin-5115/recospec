@@ -24,7 +24,6 @@ import {
   handleValidationResponse,
 } from './locator-validation-controller'
 import { handleIterationAccept, handleIterationDismiss } from './iteration-controller'
-import { handleExportRequest } from './export-handler'
 import { startReplay, abortReplay, handleReplayStepResponse } from './replay-controller'
 import { logger } from '@shared/logger'
 import { broadcastToUI } from '@shared/messaging/send'
@@ -92,18 +91,9 @@ export function initMessageRouter(): void {
         )
 
       case 'CODE_GENERATE':
-        return handleCodeGenerate(message.sessionId, message.framework, {
-          includeMocks: message.includeMocks,
-          selfHealing: message.selfHealing,
-          finalStateAssertion: message.finalStateAssertion,
-          methodRenames: message.methodRenames,
-          autoWaitEnabled: message.autoWaitEnabled,
-          testData: message.testData,
-          bdd: message.bdd,
-          selection: message.selection,
-          composedModes: message.composedModes,
-          templateModes: message.templateModes,
-        }).catch(handleBgError('CODE_GENERATE', message.sessionId))
+        return handleCodeGenerate(message.sessionId, message.framework, message.options).catch(
+          handleBgError('CODE_GENERATE', message.sessionId),
+        )
 
       case 'ACTION_FINGERPRINT':
         return attachFingerprint(message.sessionId, message.eventId, message.fingerprint).catch(
@@ -207,20 +197,6 @@ export function initMessageRouter(): void {
         return handleIterationDismiss(message.sessionId).catch(
           handleBgError('SESSION_ITERATION_DISMISS', message.sessionId),
         )
-
-      // The VS Code host calls `handleExportRequest` directly through the
-      // SW global (`self.__recospecExport`) — see background/index.ts. The
-      // case is wired here for contract symmetry and so future request/
-      // response surfaces can route through the typed message bus.
-      case 'EXPORT_REQUEST':
-        // The current `chrome.runtime.onMessage` plumbing is fire-and-forget
-        // (see `shared/messaging/listen.ts`). The VS Code host bypasses it
-        // and calls `handleExportRequest` directly via `self.__recospecExport`,
-        // so here we just invoke the handler for side effects and drop the
-        // payload to match the void return contract.
-        return handleExportRequest(message.sessionId)
-          .then(() => undefined)
-          .catch(handleBgError('EXPORT_REQUEST', message.sessionId))
     }
   })
 }

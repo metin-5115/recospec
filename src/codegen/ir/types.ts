@@ -1,4 +1,12 @@
 import type {
+  TemplateParamMode,
+  TestDataConfig,
+  TestDataParam,
+} from '@shared/types/generate-options'
+
+export type { TemplateParamMode, TestDataConfig, TestDataParam }
+
+import type {
   ShadowContext,
   FrameContext,
   ComposedSpec,
@@ -40,14 +48,6 @@ export interface IRWaitInfo {
  * pre-formatted label `String`/`str` in the Selenium adapters.
  */
 export type IRParamType = 'string' | 'number' | 'boolean' | 'date'
-
-/**
- * How a template (parameterized data-value) locator is rendered:
- *  - `param`    — page-object accessor takes the value as a method parameter (default)
- *  - `relative` — date templates re-compute the value relative to the run day
- *  - `fixed`    — freeze the value recorded at capture time (legacy behaviour)
- */
-export type TemplateParamMode = 'param' | 'relative' | 'fixed'
 
 /**
  * Per-fallback record carried into the IR so adapters can render each one
@@ -192,34 +192,6 @@ export interface InferredMethod {
    */
   paramSecret?: boolean[]
   steps: IRStep[]
-}
-
-/** A single user-visible test data parameter surfaced in the side panel. */
-export interface TestDataParam {
-  /** Stable parameter id, e.g. `LoginPage.login.password`. */
-  key: string
-  /** Camel-case parameter name as rendered in the method signature. */
-  name: string
-  /** Detected (or user-overridden) sensitive flag. */
-  isSecret: boolean
-  /** Default value substituted at call sites when no env var is set. */
-  defaultValue: string
-  /** When true, adapters emit `process.env.X ?? default` style lookups. */
-  useEnvVar: boolean
-  /** SCREAMING_SNAKE_CASE env var name (without `RECOSPEC_` prefix). */
-  envVarName: string
-  /**
-   * Set on a parameter for a different value typed into the same field (`RECOSPEC_PASSWORD_INVALID`):
-   * the key of the field's regular parameter. The value itself is only kept as a fingerprint.
-   */
-  baseKey?: string
-  /** Fingerprint of the recorded value this variant stands for (see `valueFingerprint`). */
-  valueFingerprint?: string
-}
-
-/** Full test data configuration shipped from the side panel into codegen. */
-export interface TestDataConfig {
-  params: TestDataParam[]
 }
 
 export interface IRPage {

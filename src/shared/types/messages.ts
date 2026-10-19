@@ -1,6 +1,7 @@
 import type { CaptureConfig, Session, SessionMeta } from './session'
 import type { CapturedEvent, RecordedAction, AssertionSuggestion } from './action'
-import type { GeneratedCode, FrameworkId, OutputSelection } from './generated'
+import type { GeneratedCode, FrameworkId } from './generated'
+import type { GenerateOptions } from './generate-options'
 import type {
   ElementFingerprint,
   FrameContext,
@@ -10,9 +11,6 @@ import type {
   ShadowContext,
 } from './locator'
 import type { ElementRect, ElementSnapshot } from './action'
-import type { TestDataConfig, TemplateParamMode } from '@codegen/ir/types'
-import type { ComposedParamMode } from '@codegen/planner/template-modes'
-import type { JsonExportPayload } from '@codegen/export/json-export'
 
 export type StepPatch = Partial<Pick<RecordedAction, 'payload' | 'annotation' | 'target' | 'type'>>
 
@@ -65,34 +63,7 @@ export type UIToBackgroundMessage =
   | { type: 'SESSION_RESUME'; sessionId: string }
   | { type: 'SESSION_DELETE'; sessionId: string }
   | { type: 'SESSION_RENAME'; sessionId: string; name: string }
-  | {
-      type: 'CODE_GENERATE'
-      sessionId: string
-      framework: FrameworkId
-      includeMocks?: boolean
-      /** When false, keep fallback locators as comments instead of wiring them in. Defaults to true. */
-      selfHealing?: boolean
-      /** When false, skip the auto-added "flow ended on this URL" assertion. Defaults to true. */
-      finalStateAssertion?: boolean
-      /** When false, strip auto-detected `wait` steps before codegen. */
-      autoWaitEnabled?: boolean
-      /** Override inferred method names. Keyed by `${pageClassName}.${oldName}`. */
-      methodRenames?: Record<string, string>
-      /** User-edited test data parameters (env-var emission, default values). */
-      testData?: TestDataConfig
-      /** When true, emit Gherkin `.feature` + step definitions alongside the page objects. */
-      bdd?: boolean
-      /** Which file groups to emit (page objects / test / scaffold). Defaults to all. */
-      selection?: OutputSelection
-      /**
-       * Per-element render mode for container-anchored composed locators, keyed
-       * by `locatorValue`: `scoped` (hardcoded label, default) or `param` (label
-       * becomes a `select<Name>(name)` method parameter).
-       */
-      composedModes?: Record<string, ComposedParamMode>
-      /** Per-element render mode for template (data-value) locators, keyed by `locatorValue`. */
-      templateModes?: Record<string, TemplateParamMode>
-    }
+  | { type: 'CODE_GENERATE'; sessionId: string; framework: FrameworkId; options?: GenerateOptions }
   | { type: 'ASSERTION_PROBE_START'; sessionId: string }
   /** The user picked "Screenshot match": capture the (cropped) thumbnail now. */
   | { type: 'ASSERTION_THUMBNAIL_REQUEST'; sessionId: string; elementRect?: ElementRect }
@@ -142,15 +113,6 @@ export type UIToBackgroundMessage =
       type: 'SESSION_ITERATION_DISMISS'
       sessionId: string
     }
-  /**
-   * Out-of-band export request. The VS Code Record flow invokes
-   * `handleExportRequest` directly via the service-worker global
-   * (`self.__recospecExport`) because `chrome.runtime.sendMessage` cannot
-   * deliver to the sender. The case is wired into the message router so
-   * future surfaces (web playground, headless harness) can use the same
-   * typed contract through the message bus.
-   */
-  | { type: 'EXPORT_REQUEST'; sessionId?: string }
 
 export type BackgroundToUIMessage =
   | { type: 'STEP_RECORDED'; sessionId: string; step: RecordedAction }
@@ -202,8 +164,6 @@ export type BackgroundToUIMessage =
       /** Recorded `stoppedAt` (or `startedAt`) of the parent — for "last recorded …". */
       parentTimestamp: number
     }
-  /** Reply to `EXPORT_REQUEST`. `payload === null` means no recording was found. */
-  | { type: 'EXPORT_RESPONSE'; payload: JsonExportPayload | null; error?: string }
   /**
    * Background detected that a Dexie write hit the IndexedDB quota.
    * Side panel surfaces this through the {@link IndexedDBQuotaError} branch

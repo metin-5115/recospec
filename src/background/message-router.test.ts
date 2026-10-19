@@ -14,7 +14,6 @@ const mocks = vi.hoisted(() => ({
   startReplay: vi.fn(async () => undefined),
   abortReplay: vi.fn(),
   handleReplayStepResponse: vi.fn(),
-  handleExportRequest: vi.fn(async () => ({ ok: true })),
 }))
 
 vi.mock('@shared/messaging/listen', () => ({
@@ -58,7 +57,6 @@ vi.mock('./iteration-controller', () => ({
   handleIterationAccept: vi.fn(async () => undefined),
   handleIterationDismiss: vi.fn(async () => undefined),
 }))
-vi.mock('./export-handler', () => ({ handleExportRequest: mocks.handleExportRequest }))
 vi.mock('./replay-controller', () => ({
   startReplay: mocks.startReplay,
   abortReplay: mocks.abortReplay,
@@ -92,27 +90,15 @@ describe('message router — dispatch', () => {
   })
 
   it('forwards every CODE_GENERATE option to the orchestrator', async () => {
-    await dispatch({
-      type: 'CODE_GENERATE',
-      sessionId: 's1',
-      framework: 'cypress',
+    const options = {
       includeMocks: true,
       autoWaitEnabled: false,
       bdd: true,
       finalStateAssertion: false,
       selfHealing: false,
-    })
-    expect(mocks.handleCodeGenerate).toHaveBeenCalledWith(
-      's1',
-      'cypress',
-      expect.objectContaining({
-        includeMocks: true,
-        autoWaitEnabled: false,
-        bdd: true,
-        finalStateAssertion: false,
-        selfHealing: false,
-      }),
-    )
+    }
+    await dispatch({ type: 'CODE_GENERATE', sessionId: 's1', framework: 'cypress', options })
+    expect(mocks.handleCodeGenerate).toHaveBeenCalledWith('s1', 'cypress', options)
   })
 
   it('REPLAY_ABORT is synchronous and returns nothing', () => {
@@ -141,12 +127,6 @@ describe('message router — dispatch', () => {
     const result = dispatch({ type: 'CONTENT_READY' }, {})
     expect(result).toBeUndefined()
     expect(mocks.resumeCaptureOnReady).not.toHaveBeenCalled()
-  })
-
-  it('drops the export payload so the handler resolves to void', async () => {
-    const result = await dispatch({ type: 'EXPORT_REQUEST', sessionId: 's1' })
-    expect(result).toBeUndefined()
-    expect(mocks.handleExportRequest).toHaveBeenCalledWith('s1')
   })
 })
 
