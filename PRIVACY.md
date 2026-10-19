@@ -19,9 +19,14 @@ To generate test code, Recospec processes data **locally, in your browser**:
   generated test. Fields detected as sensitive (password, token, secret, API key,
   email) are automatically replaced with environment-variable placeholders in the
   generated code; their values are not written into the output.
-- **Captured network requests** _(optional)_ — when network capture is on, the
-  method, URL, status, and a size-capped body of `fetch`/`XMLHttpRequest` calls,
-  used only to generate optional mocks.
+- **Captured network requests** — while you record, Recospec records the method, URL,
+  status and a size-capped (50 KB) response body of the page's own `fetch`/`XMLHttpRequest`
+  calls, used to generate optional mocks and to detect waits. This is **on by default** and can
+  be switched off with **Capture network requests** in the side panel's preferences (it applies
+  to the next recording). Only same-origin calls that received a response are kept —
+  third-party requests (analytics, ads) are not. Request bodies and headers are never captured,
+  and secrets in a response (values under keys such as token, jwt, password, secret, api key,
+  authorization, email, plus JWTs and bearer tokens) are masked before anything is stored.
 - **Screenshots** _(optional)_ — when you add a visual-regression assertion, a
   thumbnail of the visible tab is captured for the snapshot baseline.
 
