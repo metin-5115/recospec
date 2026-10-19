@@ -6,6 +6,8 @@ import { DEFAULT_OUTPUT_SELECTION } from '@shared/types/generated'
 import type { ElementFingerprint, ScoredLocator } from '@shared/types/locator'
 import type { StepPatch } from '@shared/types/messages'
 import type { RecospecError } from '@shared/errors'
+import { PREF_KEYS } from '@shared/constants'
+import { isBoolean, readPref, writePref } from './preferences'
 
 export type SidePanelTab = 'recording' | 'history'
 
@@ -82,120 +84,22 @@ interface SessionStore {
   setOutputSelection: (selection: OutputSelection) => void
 }
 
-// UI preferences only (no recorded data). localStorage is used deliberately: the
-// store needs them synchronously to build its initial state, which an async
-// IndexedDB read cannot provide without a flash of default values. All reads
-// and writes are guarded, and recordings themselves live in Dexie.
-const FRAMEWORK_STORAGE_KEY = 'recospec.selectedFramework'
-const AUTO_WAIT_STORAGE_KEY = 'recospec.autoWaitEnabled'
-const BDD_ENABLED_STORAGE_KEY = 'recospec.bddEnabled'
-const INCLUDE_MOCKS_STORAGE_KEY = 'recospec.includeMocks'
-const SELF_HEALING_STORAGE_KEY = 'recospec.selfHealing'
-const FINAL_STATE_ASSERTION_STORAGE_KEY = 'recospec.finalStateAssertion'
-const CAPTURE_NETWORK_STORAGE_KEY = 'recospec.captureNetwork'
-const PIERCE_CLOSED_SHADOW_STORAGE_KEY = 'recospec.pierceClosedShadow'
-const OUTPUT_SELECTION_STORAGE_KEY = 'recospec.outputSelection'
+const FRAMEWORKS: readonly FrameworkId[] = [
+  'playwright-ts',
+  'cypress',
+  'selenium-py',
+  'selenium-java',
+]
 
-function loadInitialAutoWait(): boolean {
-  try {
-    const stored = window.localStorage.getItem(AUTO_WAIT_STORAGE_KEY)
-    if (stored === 'false') return false
-  } catch {
-    /* localStorage unavailable in some test envs */
-  }
-  return true
-}
+const isFrameworkId = (value: unknown): value is FrameworkId =>
+  typeof value === 'string' && (FRAMEWORKS as readonly string[]).includes(value)
 
-function loadInitialBddEnabled(): boolean {
-  try {
-    const stored = window.localStorage.getItem(BDD_ENABLED_STORAGE_KEY)
-    if (stored === 'true') return true
-  } catch {
-    /* localStorage unavailable in some test envs */
-  }
-  return false
-}
-
-function loadInitialIncludeMocks(): boolean {
-  try {
-    const stored = window.localStorage.getItem(INCLUDE_MOCKS_STORAGE_KEY)
-    if (stored === 'true') return true
-  } catch {
-    /* localStorage unavailable in some test envs */
-  }
-  return false
-}
-
-function loadInitialSelfHealing(): boolean {
-  try {
-    if (window.localStorage.getItem(SELF_HEALING_STORAGE_KEY) === 'false') return false
-  } catch {
-    /* localStorage unavailable in some test envs */
-  }
-  return true
-}
-
-function loadInitialFinalStateAssertion(): boolean {
-  try {
-    if (window.localStorage.getItem(FINAL_STATE_ASSERTION_STORAGE_KEY) === 'false') return false
-  } catch {
-    /* localStorage unavailable in some test envs */
-  }
-  return true
-}
-
-function loadInitialCaptureNetwork(): boolean {
-  try {
-    if (window.localStorage.getItem(CAPTURE_NETWORK_STORAGE_KEY) === 'false') return false
-  } catch {
-    /* localStorage unavailable in some test envs */
-  }
-  return true
-}
-
-function loadInitialPierceClosedShadow(): boolean {
-  try {
-    return window.localStorage.getItem(PIERCE_CLOSED_SHADOW_STORAGE_KEY) === 'true'
-  } catch {
-    /* localStorage unavailable in some test envs */
-  }
-  return false
-}
-
-function loadInitialOutputSelection(): OutputSelection {
-  try {
-    const stored = window.localStorage.getItem(OUTPUT_SELECTION_STORAGE_KEY)
-    if (stored) {
-      const parsed = JSON.parse(stored) as Partial<OutputSelection>
-      if (
-        typeof parsed.pageObjects === 'boolean' &&
-        typeof parsed.test === 'boolean' &&
-        typeof parsed.scaffold === 'boolean'
-      ) {
-        return { pageObjects: parsed.pageObjects, test: parsed.test, scaffold: parsed.scaffold }
-      }
-    }
-  } catch {
-    /* malformed JSON or localStorage unavailable → fall back to default */
-  }
-  return { ...DEFAULT_OUTPUT_SELECTION }
-}
-
-function loadInitialFramework(): FrameworkId {
-  try {
-    const stored = window.localStorage.getItem(FRAMEWORK_STORAGE_KEY)
-    if (
-      stored === 'cypress' ||
-      stored === 'playwright-ts' ||
-      stored === 'selenium-py' ||
-      stored === 'selenium-java'
-    )
-      return stored
-  } catch {
-    /* localStorage unavailable in some test envs */
-  }
-  return 'playwright-ts'
-}
+const isOutputSelection = (value: unknown): value is OutputSelection =>
+  typeof value === 'object' &&
+  value !== null &&
+  typeof (value as OutputSelection).pageObjects === 'boolean' &&
+  typeof (value as OutputSelection).test === 'boolean' &&
+  typeof (value as OutputSelection).scaffold === 'boolean'
 
 function arrayMove<T>(items: T[], from: number, to: number): T[] {
   const next = items.slice()
@@ -211,15 +115,17 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
   codeGenError: null,
   stepsDirty: false,
   sessions: [],
-  selectedFramework: loadInitialFramework(),
-  autoWaitEnabled: loadInitialAutoWait(),
-  bddEnabled: loadInitialBddEnabled(),
-  includeMocks: loadInitialIncludeMocks(),
-  finalStateAssertion: loadInitialFinalStateAssertion(),
-  selfHealing: loadInitialSelfHealing(),
-  pierceClosedShadow: loadInitialPierceClosedShadow(),
-  captureNetwork: loadInitialCaptureNetwork(),
-  outputSelection: loadInitialOutputSelection(),
+  selectedFramework: readPref(PREF_KEYS.selectedFramework, isFrameworkId, 'playwright-ts'),
+  autoWaitEnabled: readPref(PREF_KEYS.autoWaitEnabled, isBoolean, true),
+  bddEnabled: readPref(PREF_KEYS.bddEnabled, isBoolean, false),
+  includeMocks: readPref(PREF_KEYS.includeMocks, isBoolean, false),
+  finalStateAssertion: readPref(PREF_KEYS.finalStateAssertion, isBoolean, true),
+  selfHealing: readPref(PREF_KEYS.selfHealing, isBoolean, true),
+  pierceClosedShadow: readPref(PREF_KEYS.pierceClosedShadow, isBoolean, false),
+  captureNetwork: readPref(PREF_KEYS.captureNetwork, isBoolean, true),
+  outputSelection: readPref(PREF_KEYS.outputSelection, isOutputSelection, {
+    ...DEFAULT_OUTPUT_SELECTION,
+  }),
   activeTab: 'recording',
   asyncError: null,
   setActiveSession: (session) => set({ activeSession: session }),
@@ -330,75 +236,39 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
   removeSession: (sessionId) =>
     set((state) => ({ sessions: state.sessions.filter((s) => s.sessionId !== sessionId) })),
   setSelectedFramework: (framework) => {
-    try {
-      window.localStorage.setItem(FRAMEWORK_STORAGE_KEY, framework)
-    } catch {
-      /* localStorage unavailable */
-    }
+    writePref(PREF_KEYS.selectedFramework, framework)
     set({ selectedFramework: framework })
   },
   setAutoWaitEnabled: (enabled) => {
-    try {
-      window.localStorage.setItem(AUTO_WAIT_STORAGE_KEY, enabled ? 'true' : 'false')
-    } catch {
-      /* localStorage unavailable */
-    }
+    writePref(PREF_KEYS.autoWaitEnabled, enabled)
     set({ autoWaitEnabled: enabled })
   },
   setBddEnabled: (enabled) => {
-    try {
-      window.localStorage.setItem(BDD_ENABLED_STORAGE_KEY, enabled ? 'true' : 'false')
-    } catch {
-      /* localStorage unavailable */
-    }
+    writePref(PREF_KEYS.bddEnabled, enabled)
     set({ bddEnabled: enabled })
   },
   setIncludeMocks: (enabled) => {
-    try {
-      window.localStorage.setItem(INCLUDE_MOCKS_STORAGE_KEY, enabled ? 'true' : 'false')
-    } catch {
-      /* localStorage unavailable */
-    }
+    writePref(PREF_KEYS.includeMocks, enabled)
     set({ includeMocks: enabled })
   },
   setSelfHealing: (enabled) => {
-    try {
-      window.localStorage.setItem(SELF_HEALING_STORAGE_KEY, enabled ? 'true' : 'false')
-    } catch {
-      /* localStorage unavailable */
-    }
+    writePref(PREF_KEYS.selfHealing, enabled)
     set({ selfHealing: enabled })
   },
   setFinalStateAssertion: (enabled) => {
-    try {
-      window.localStorage.setItem(FINAL_STATE_ASSERTION_STORAGE_KEY, enabled ? 'true' : 'false')
-    } catch {
-      /* localStorage unavailable */
-    }
+    writePref(PREF_KEYS.finalStateAssertion, enabled)
     set({ finalStateAssertion: enabled })
   },
   setCaptureNetwork: (enabled) => {
-    try {
-      window.localStorage.setItem(CAPTURE_NETWORK_STORAGE_KEY, enabled ? 'true' : 'false')
-    } catch {
-      /* localStorage unavailable */
-    }
+    writePref(PREF_KEYS.captureNetwork, enabled)
     set({ captureNetwork: enabled })
   },
   setPierceClosedShadow: (enabled) => {
-    try {
-      window.localStorage.setItem(PIERCE_CLOSED_SHADOW_STORAGE_KEY, enabled ? 'true' : 'false')
-    } catch {
-      /* localStorage unavailable */
-    }
+    writePref(PREF_KEYS.pierceClosedShadow, enabled)
     set({ pierceClosedShadow: enabled })
   },
   setOutputSelection: (selection) => {
-    try {
-      window.localStorage.setItem(OUTPUT_SELECTION_STORAGE_KEY, JSON.stringify(selection))
-    } catch {
-      /* localStorage unavailable */
-    }
+    writePref(PREF_KEYS.outputSelection, selection)
     set({ outputSelection: selection })
   },
 }))

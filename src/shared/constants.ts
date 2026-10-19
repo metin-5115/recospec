@@ -363,3 +363,16 @@ export const THUMBNAIL_JPEG_QUALITY = 0.7 as const
 
 /** Longest the fingerprint of a recorded element may wait for an idle moment before it is computed. */
 export const FINGERPRINT_IDLE_TIMEOUT_MS = 500 as const
+
+/** localStorage keys of the side panel's persisted UI preferences (read synchronously at startup). */
+export const PREF_KEYS = {
+  selectedFramework: 'recospec.selectedFramework',
+  autoWaitEnabled: 'recospec.autoWaitEnabled',
+  bddEnabled: 'recospec.bddEnabled',
+  includeMocks: 'recospec.includeMocks',
+  selfHealing: 'recospec.selfHealing',
+  finalStateAssertion: 'recospec.finalStateAssertion',
+  captureNetwork: 'recospec.captureNetwork',
+  pierceClosedShadow: 'recospec.pierceClosedShadow',
+  outputSelection: 'recospec.outputSelection',
+} as const
