@@ -153,7 +153,7 @@ function countTemplateSiblings(el: Element): number {
   const classes = [...el.classList].sort().join(' ')
   const ownText = (el.textContent ?? '').replace(/\s+/g, ' ').trim()
   let count = 0
-  for (const sibling of Array.from(parent.children)) {
+  for (let sibling = parent.firstElementChild; sibling; sibling = sibling.nextElementSibling) {
     if (sibling === el) continue
     if (sibling.tagName !== el.tagName) continue
     if ([...sibling.classList].sort().join(' ') !== classes) continue

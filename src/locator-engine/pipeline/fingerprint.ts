@@ -31,12 +31,34 @@ function neighborText(el: Element | null): string | null {
   return isDynamicValue(clipped) ? MASK : clipped
 }
 
+const HEADING_TAGS: ReadonlySet<string> = new Set([
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'legend',
+  'caption',
+])
+
+/**
+ * First direct child that titles its parent. Walks siblings instead of a
+ * `:scope > …` query (scans the whole subtree) or the `children` collection
+ * (slow to enumerate in jsdom): on `<body>` or a long list either costs tens
+ * of milliseconds per click.
+ */
+function directHeadingChild(parent: Element): Element | undefined {
+  for (let child = parent.firstElementChild; child; child = child.nextElementSibling) {
+    if (HEADING_TAGS.has(child.localName) || child.getAttribute('role') === 'heading') return child
+  }
+  return undefined
+}
+
 function nearestHeadingText(el: Element): string | null {
   let current: Element | null = el.parentElement
   while (current) {
-    const heading = current.querySelector(
-      ':scope > h1, :scope > h2, :scope > h3, :scope > h4, :scope > h5, :scope > h6, :scope > legend, :scope > caption, :scope > [role="heading"]',
-    )
+    const heading = directHeadingChild(current)
     const text = heading?.textContent?.replace(/\s+/g, ' ').trim()
     if (text) return text.slice(0, NEIGHBOR_TEXT_MAX)
     current = current.parentElement

@@ -52,6 +52,22 @@ function stableAncestorXPath(el: Element, doc: Document): string | null {
   return null
 }
 
+/**
+ * 1-based position of `el` among its same-tag siblings plus their count. Walks
+ * siblings rather than the `children` collection, which is slow to enumerate
+ * on long lists (jsdom).
+ */
+function sameTagPosition(el: Element, parent: Element): { count: number; position: number } {
+  let count = 0
+  let position = 0
+  for (let sibling = parent.firstElementChild; sibling; sibling = sibling.nextElementSibling) {
+    if (sibling.tagName !== el.tagName) continue
+    count++
+    if (sibling === el) position = count
+  }
+  return { count, position }
+}
+
 function buildXPath(el: Element, doc: Document): { xpath: string; isAbsolute: boolean } {
   const tag = el.tagName.toLowerCase()
 
@@ -69,10 +85,8 @@ function buildXPath(el: Element, doc: Document): { xpath: string; isAbsolute: bo
     if (!parentEl) break
 
     const t = current.tagName.toLowerCase()
-    const siblings = Array.from<Element>(parentEl.children).filter(
-      (sibling) => sibling.tagName === current!.tagName,
-    )
-    const segment = siblings.length > 1 ? `${t}[${siblings.indexOf(current) + 1}]` : t
+    const { count, position } = sameTagPosition(current, parentEl)
+    const segment = count > 1 ? `${t}[${position}]` : t
     segments.unshift(segment)
 
     const parentId = parentEl.getAttribute('id')
