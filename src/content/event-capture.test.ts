@@ -13,7 +13,11 @@ vi.mock('./spinner-detector', () => ({
   observeForSpinner: vi.fn(async () => null),
 }))
 
-import { NETWORK_CAPTURE_FLAG_KEY, PIERCE_CLOSED_SHADOW_FLAG_KEY } from '@shared/constants'
+import {
+  NETWORK_CAPTURE_EVENT_NAME,
+  NETWORK_CAPTURE_FLAG_KEY,
+  PIERCE_CLOSED_SHADOW_FLAG_KEY,
+} from '@shared/constants'
 import { startCapture, stopCapture } from './event-capture'
 
 function types(): string[] {
@@ -155,5 +159,38 @@ describe('event-capture — file upload', () => {
     document.querySelector('input')!.click()
 
     expect(types()).toEqual([])
+  })
+})
+
+describe('event-capture — network capture setting', () => {
+  function emitNetwork(url: string, status?: number): void {
+    window.dispatchEvent(
+      new CustomEvent(NETWORK_CAPTURE_EVENT_NAME, { detail: { method: 'GET', url, status } }),
+    )
+  }
+
+  it('records same-origin calls that got a response', () => {
+    emitNetwork(`${location.origin}/api/items`, 200)
+    expect(types()).toEqual(['network'])
+  })
+
+  it('ignores third-party calls and calls without a status', () => {
+    emitNetwork('https://analytics.example/collect', 204)
+    emitNetwork(`${location.origin}/api/items`)
+    expect(types()).toEqual([])
+  })
+
+  it('leaves the page flag down and records nothing when network capture is off', () => {
+    stopCapture()
+    startCapture('sess-2', { captureNetwork: false })
+    expect(window.localStorage.getItem(NETWORK_CAPTURE_FLAG_KEY)).toBeNull()
+    emitNetwork(`${location.origin}/api/items`, 200)
+    expect(types()).toEqual([])
+  })
+
+  it('captures network by default when the setting is absent', () => {
+    stopCapture()
+    startCapture('sess-3', {})
+    expect(window.localStorage.getItem(NETWORK_CAPTURE_FLAG_KEY)).toBe('true')
   })
 })

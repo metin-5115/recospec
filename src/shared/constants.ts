@@ -311,3 +311,25 @@ export const ERROR_ELEMENT_NAME_PATTERN = /error|alert|invalid|failure|warning/i
 
 /** First HTTP status that counts as a failed request. */
 export const HTTP_ERROR_STATUS_MIN = 400 as const
+
+/** What a masked secret is replaced with in logs and captured network bodies. */
+export const REDACTED_PLACEHOLDER = '***' as const
+
+/** Property names whose values are secrets (logger output, captured network bodies). */
+export const SENSITIVE_KEY_PATTERNS: readonly RegExp[] = [
+  /password/i,
+  /passwd/i,
+  /pwd/i,
+  /secret/i,
+  /token/i,
+  /jwt/i,
+  /api[-_]?key/i,
+  /authorization/i,
+  /e-?mail/i,
+]
+
+/** A JSON Web Token (`header.payload.signature`, each part base64url). */
+export const JWT_PATTERN = /\beyJ[\w-]{4,}\.[\w-]{4,}\.[\w-]*/g
+
+/** The credential part of an `Authorization: Bearer …` value. */
+export const BEARER_TOKEN_PATTERN = /\b(Bearer\s+)[\w.~+/=-]+/gi

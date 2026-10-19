@@ -38,6 +38,7 @@ import type {
 import type { JsonExportPayload } from './json-export'
 import type { ElementFingerprint } from '@shared/types/locator'
 import type { FrameworkId, LlmContextTask } from '@shared/types/generated'
+import { isRecordableNetworkCall } from '@shared/network-filter'
 import type { IRElement, IRFallback, IRNetworkInfo, IRPage, IRStep } from '../ir/types'
 
 export { LLM_CONTEXT_VERSION }
@@ -187,13 +188,7 @@ function abbreviateContentType(contentType: string | undefined): string | undefi
 
 /** Same-origin calls with a real status; third-party beacons and opaque (status 0) calls are noise. */
 function isListableRequest(network: IRNetworkInfo, base: string): boolean {
-  if (!network.status || network.status <= 0) return false
-  if (!base) return true
-  try {
-    return new URL(network.url, base).origin === base
-  } catch {
-    return false
-  }
+  return isRecordableNetworkCall(network, base)
 }
 
 /** Distinct listable requests in first-seen order; repeats are folded into `count`. */

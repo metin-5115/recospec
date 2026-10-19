@@ -1,6 +1,7 @@
 import type { IRNetworkInfo, IRStep } from '../../ir/types'
 import { jsSingleQuoted } from '@shared/selector-escape'
 import type { RenderOptions } from '../registry'
+import { redactNetworkBody } from '@shared/network-redaction'
 
 const DEFAULT_CONTENT_TYPE = 'application/json'
 const DEFAULT_STATUS = 200
@@ -28,7 +29,7 @@ function matcherFor(net: IRNetworkInfo): RouteMatcher | null {
 
 /** A JSON body is emitted as a live literal; anything else as a string literal. */
 function bodyExpression(net: IRNetworkInfo, contentType: string): string {
-  const raw = net.responseBody ?? ''
+  const raw = net.responseBody === undefined ? '' : redactNetworkBody(net.responseBody, contentType)
   if (contentType.includes('json')) {
     const trimmed = raw.trim()
     if (trimmed.startsWith('{') || trimmed.startsWith('[')) {

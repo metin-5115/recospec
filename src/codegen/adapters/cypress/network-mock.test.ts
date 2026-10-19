@@ -57,7 +57,7 @@ describe('cypress adapter — network mocks', () => {
     expect(out).toContain(`query: { remember: '1' }`)
     expect(out).toContain('statusCode: 201')
     expect(out).toContain(`'content-type': 'application/json'`)
-    expect(out).toContain('body: {"token":"abc","user":{"id":1}}')
+    expect(out).toContain('body: {"token":"***","user":{"id":1}}')
   })
 
   it('registers the mock BEFORE the inline steps that trigger the request', () => {
@@ -109,6 +109,12 @@ describe('cypress adapter — network mocks', () => {
     }
     const out = renderPageObject(page([truncated]), { includeMocks: true })
     expect(out).toContain('body: "{\\"items\\":[1,2,"')
+  })
+
+  it('never writes a secret from the response into the mock', () => {
+    const out = renderPageObject(page(steps), { includeMocks: true })
+    expect(out).toContain('intercept')
+    expect(out).not.toContain('abc')
   })
 
   it('emits a single intercept for repeated identical requests', () => {

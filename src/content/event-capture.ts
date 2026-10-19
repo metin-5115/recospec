@@ -25,6 +25,7 @@ import { setPageFlag } from './page-flag'
 import { normalizeClickTarget, ancestorsFromComposedPath } from './normalize-click-target'
 import { sendToBackground } from '@shared/messaging/send'
 import { logger } from '@shared/logger'
+import { isRecordableNetworkCall } from '@shared/network-filter'
 import {
   AUTO_WAIT_DEFAULT_TIMEOUT_MS,
   AUTO_WAIT_NETWORK_DEBOUNCE_MS,
@@ -330,6 +331,7 @@ function onNetworkCapture(e: Event): void {
   // Bump the counter regardless of whether the user wants mocks — the wait
   // watcher needs to know there *was* network activity within the window.
   networkActivityCounter += 1
+  if (!isRecordableNetworkCall(detail, location.origin)) return
   const sessionId = activeSessionId
   const event: CapturedEvent = {
     type: 'network',
@@ -343,9 +345,16 @@ function onNetworkCapture(e: Event): void {
   )
 }
 
-export function startCapture(sessionId: string): void {
+/** The part of the session's capture config the content script acts on. */
+export interface CaptureOptions {
+  captureNetwork?: boolean
+}
+
+export function startCapture(sessionId: string, config: CaptureOptions = {}): void {
   activeSessionId = sessionId
-  setPageFlag(NETWORK_CAPTURE_FLAG_KEY, true)
+  // Capturing network traffic is a setting; absent means the default (on).
+  const captureNetwork = config.captureNetwork !== false
+  setPageFlag(NETWORK_CAPTURE_FLAG_KEY, captureNetwork)
   startTextMutationTracking()
   startHoverTracking()
   document.addEventListener('mouseover', onMouseoverCapture, { capture: true })
@@ -354,7 +363,9 @@ export function startCapture(sessionId: string): void {
   document.addEventListener('dblclick', onDblclickCapture, { capture: true })
   document.addEventListener('keydown', onKeydownCapture, { capture: true })
   document.addEventListener('focusin', onFocusinCapture, { capture: true })
-  window.addEventListener(NETWORK_CAPTURE_EVENT_NAME, onNetworkCapture as EventListener)
+  if (captureNetwork) {
+    window.addEventListener(NETWORK_CAPTURE_EVENT_NAME, onNetworkCapture as EventListener)
+  }
   logger.info('[CS] Capture started', sessionId)
 }
 

@@ -4,6 +4,7 @@ import type {
   AssertionType,
   NetworkPayload,
 } from '@shared/types/action'
+import { redactNetworkBody } from '@shared/network-redaction'
 import type { Locator, ShadowContext, FrameContext } from '@shared/types/locator'
 import type {
   IRStep,
@@ -299,7 +300,11 @@ export function normalizeActions(actions: RecordedAction[]): NormalizedActions {
         url: np.url,
         status: np.status,
         contentType: np.contentType,
-        responseBody: np.responseBody,
+        // Recordings made before capture-time masking may still hold secrets.
+        responseBody:
+          np.responseBody === undefined
+            ? undefined
+            : redactNetworkBody(np.responseBody, np.contentType),
       }
       steps.push({ id, action: 'network', network, annotation })
       continue

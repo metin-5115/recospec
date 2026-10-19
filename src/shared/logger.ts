@@ -1,17 +1,9 @@
+import { REDACTED_PLACEHOLDER, SENSITIVE_KEY_PATTERNS } from './constants'
+
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 
 const PREFIX = '[Recospec]'
 const IS_DEV = import.meta.env.DEV
-
-const REDACTED = '***'
-const SENSITIVE_KEY_PATTERNS: readonly RegExp[] = [
-  /password/i,
-  /passwd/i,
-  /pwd/i,
-  /secret/i,
-  /token/i,
-  /api[-_]?key/i,
-]
 
 /** Returns true when a property name suggests its value is a secret. */
 function isSensitiveKey(key: string): boolean {
@@ -33,7 +25,7 @@ function redact(value: unknown, seen: WeakSet<object> = new WeakSet()): unknown 
   if (Array.isArray(value)) return value.map((v) => redact(v, seen))
   const out: Record<string, unknown> = {}
   for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-    out[k] = isSensitiveKey(k) ? REDACTED : redact(v, seen)
+    out[k] = isSensitiveKey(k) ? REDACTED_PLACEHOLDER : redact(v, seen)
   }
   return out
 }

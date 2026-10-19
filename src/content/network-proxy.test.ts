@@ -331,3 +331,20 @@ describe('network-proxy — XMLHttpRequest', () => {
     expect(events).toHaveLength(0)
   })
 })
+
+describe('network-proxy — redaction', () => {
+  it('masks secrets in the response body before it leaves the page', async () => {
+    baseFetch.mockResolvedValue(
+      new Response('{"token":"abc","user":{"email":"ada@example.com","id":7}}', {
+        headers: { 'content-type': 'application/json' },
+      }),
+    )
+    await installProxy()
+    await window.fetch('https://api.test/login')
+    await vi.waitFor(() => expect(events).toHaveLength(1))
+    const body = events[0].responseBody ?? ''
+    expect(body).not.toContain('abc')
+    expect(body).not.toContain('ada@example.com')
+    expect(JSON.parse(body).user.id).toBe(7)
+  })
+})

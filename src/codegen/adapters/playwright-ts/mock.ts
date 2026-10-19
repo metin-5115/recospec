@@ -1,4 +1,5 @@
 import type { IRNetworkInfo } from '../../ir/types'
+import { redactNetworkBody } from '@shared/network-redaction'
 
 function urlPattern(rawUrl: string): string {
   try {
@@ -28,9 +29,12 @@ export function renderMockBlock(net: IRNetworkInfo, indent: string): string {
   const status = net.status ?? 200
   const contentType = net.contentType ?? 'application/json'
   const isJson = contentType.includes('json')
+  // A mock is committed to the test project, so secrets never go into it.
+  const responseBody =
+    net.responseBody === undefined ? undefined : redactNetworkBody(net.responseBody, contentType)
   const bodyExpr = isJson
-    ? `JSON.stringify(${safeJsonExpression(net.responseBody)})`
-    : JSON.stringify(net.responseBody ?? '')
+    ? `JSON.stringify(${safeJsonExpression(responseBody)})`
+    : JSON.stringify(responseBody ?? '')
   return `${indent}await page.route(${JSON.stringify(pattern)}, (route) => route.fulfill({
 ${indent}  status: ${status},
 ${indent}  contentType: ${JSON.stringify(contentType)},

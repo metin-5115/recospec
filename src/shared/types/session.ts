@@ -16,6 +16,11 @@ export interface CaptureConfig {
    * page-origin localStorage flag the proxy reads at `document_start`.
    */
   pierceClosedShadow?: boolean
+  /**
+   * Record the page's fetch/XHR traffic (used for mocks and wait detection). Default on when
+   * absent, so sessions stored before the setting existed behave as before.
+   */
+  captureNetwork?: boolean
 }
 
 export interface Session {

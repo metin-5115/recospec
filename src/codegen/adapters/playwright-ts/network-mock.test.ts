@@ -64,8 +64,9 @@ describe('playwright adapter — network mock generation', () => {
     expect(out).toContain('this.page.route("**/login"')
     expect(out).toContain('status: 200')
     expect(out).toContain('contentType: "application/json"')
-    // Body is preserved as live JSON, not stringified
-    expect(out).toContain('JSON.stringify({"token":"abc"')
+    // Body is preserved as live JSON, not stringified — with its secrets masked
+    expect(out).toContain('JSON.stringify({"token":"***","user":{"id":1}})')
+    expect(out).not.toContain('"abc"')
   })
 
   it('keeps the mock inside the page-object method the spec calls', () => {

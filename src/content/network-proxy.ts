@@ -20,6 +20,7 @@ import {
   NETWORK_CAPTURE_FLAG_KEY,
   NETWORK_URL_BLOCKLIST,
 } from '@shared/constants'
+import { redactNetworkBody } from '@shared/network-redaction'
 import { isPageFlagSet } from './page-flag'
 
 interface NetworkDetail {
@@ -77,8 +78,13 @@ async function readCapped(body: ReadableStream<Uint8Array>): Promise<string> {
 }
 
 function dispatch(detail: NetworkDetail): void {
+  // Secrets are masked here, before the body leaves the page's own context.
+  const safe: NetworkDetail =
+    detail.responseBody === undefined
+      ? detail
+      : { ...detail, responseBody: redactNetworkBody(detail.responseBody, detail.contentType) }
   try {
-    window.dispatchEvent(new CustomEvent(NETWORK_CAPTURE_EVENT_NAME, { detail }))
+    window.dispatchEvent(new CustomEvent(NETWORK_CAPTURE_EVENT_NAME, { detail: safe }))
   } catch {
     // ignore — proxy failures must never break the page
   }

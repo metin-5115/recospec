@@ -17,7 +17,7 @@ onContentMessage((message) => {
     // proxy reads at document_start on the NEXT navigation (it cannot reach
     // chrome.storage). Writing it now covers SPA-attached roots immediately.
     setPageFlag(PIERCE_CLOSED_SHADOW_FLAG_KEY, message.config.pierceClosedShadow === true)
-    startCapture(message.sessionId)
+    startCapture(message.sessionId, { captureNetwork: message.config.captureNetwork })
     mountBadge()
   } else if (message.type === 'STOP_CAPTURE') {
     stopCapture()

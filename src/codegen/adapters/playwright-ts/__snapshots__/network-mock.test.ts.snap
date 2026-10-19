@@ -20,7 +20,7 @@ export class LoginPage {
     await this.page.route("**/login", (route) => route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({"token":"abc","user":{"id":1}}),
+      body: JSON.stringify({"token":"***","user":{"id":1}}),
     }));
     await this.emailInput.fill(email);
     await this.passwordInput.fill(password);
