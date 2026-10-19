@@ -1,0 +1,65 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`recorded Enter and hover reach every adapter > cypress 1`] = `
+[
+  "searchInput() { return cy.get("[data-testid=\\"search-input\\"]"); }",
+  "search(search) {",
+  "this.searchInput().clear().type(search);",
+  "cy.focused().type("{enter}");",
+  "hoverProductsMenu() {",
+  "this.productsMenu().trigger('mouseover');",
+  "describe('Search shop', () => {",
+  "shopPage.search("shoes");",
+  "shopPage.hoverProductsMenu();",
+]
+`;
+
+exports[`recorded Enter and hover reach every adapter > playwright-ts 1`] = `
+[
+  "get searchInput() { return this.page.getByTestId("search-input"); }",
+  "async search(search: string) {",
+  "await this.searchInput.fill(search);",
+  "await this.page.keyboard.press("Enter");",
+  "async hoverProductsMenu() {",
+  "await this.productsMenu.hover();",
+  "test.describe('Search shop', () => {",
+  "await shopPage.search("shoes");",
+  "await shopPage.hoverProductsMenu();",
+]
+`;
+
+exports[`recorded Enter and hover reach every adapter > selenium-java (and the output has balanced brackets) 1`] = `
+[
+  "import org.openqa.selenium.interactions.Actions;",
+  "@FindBy(css = "[data-testid=\\"search-input\\"]")",
+  "private WebElement searchInput;",
+  "public void search(String search) {",
+  "wait.until(ExpectedConditions.visibilityOf(searchInput));",
+  "searchInput.clear();",
+  "searchInput.sendKeys(search);",
+  "driver.switchTo().activeElement().sendKeys(Keys.ENTER);",
+  "public void hoverProductsMenu() {",
+  "new Actions(driver).moveToElement(this.productsMenu).perform();",
+  "public class SearchShopTest {",
+  "public void searchShop() {",
+  "shopPage.search("shoes");",
+  "shopPage.hoverProductsMenu();",
+]
+`;
+
+exports[`recorded Enter and hover reach every adapter > selenium-py (and the output parses as Python) 1`] = `
+[
+  "from selenium.webdriver.common.action_chains import ActionChains",
+  "SEARCH_INPUT = (By.CSS_SELECTOR, '[data-testid="search-input"]')",
+  "def search(self, search: str):",
+  "_el = self.wait.until(EC.visibility_of_element_located(self.SEARCH_INPUT))",
+  "_el.send_keys(search)",
+  "self.driver.switch_to.active_element.send_keys(Keys.ENTER)",
+  "def hover_products_menu(self):",
+  "ActionChains(self.driver).move_to_element(_el).perform()",
+  "def test_search_shop(driver):",
+  """"Search shop."""",
+  "shop_page.search('shoes')",
+  "shop_page.hover_products_menu()",
+]
+`;
