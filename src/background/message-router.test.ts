@@ -101,6 +101,11 @@ describe('message router — dispatch', () => {
     expect(mocks.handleCodeGenerate).toHaveBeenCalledWith('s1', 'cypress', options)
   })
 
+  it('ignores a message type this build does not know instead of throwing', () => {
+    expect(() => dispatch({ type: 'FROM_A_NEWER_BUILD' })).not.toThrow()
+    expect(dispatch({ type: 'FROM_A_NEWER_BUILD' })).toBeUndefined()
+  })
+
   it('REPLAY_ABORT is synchronous and returns nothing', () => {
     const result = dispatch({ type: 'REPLAY_ABORT', sessionId: 's1' })
     expect(result).toBeUndefined()

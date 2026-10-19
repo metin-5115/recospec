@@ -28,6 +28,7 @@ import { startReplay, abortReplay, handleReplayStepResponse } from './replay-con
 import { logger } from '@shared/logger'
 import { broadcastToUI } from '@shared/messaging/send'
 import { IndexedDBQuotaError, isQuotaExceededError } from '@shared/errors'
+import { assertNever } from '@shared/assert-never'
 
 /**
  * Wrap a handler's catch path. If the rejection originated from an
@@ -197,6 +198,9 @@ export function initMessageRouter(): void {
         return handleIterationDismiss(message.sessionId).catch(
           handleBgError('SESSION_ITERATION_DISMISS', message.sessionId),
         )
+
+      default:
+        return assertNever(message, 'BG router')
     }
   })
 }
