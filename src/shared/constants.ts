@@ -170,6 +170,15 @@ export const CHARS_PER_TOKEN_ESTIMATE = 4 as const
 /** Maximum number of locators evaluated in a single live "Test on Page" run. */
 export const LOCATOR_VALIDATION_MAX_TARGETS = 100 as const
 
+/** Times the side panel tries to hand `CODE_GENERATE` to the background worker before reporting failure. */
+export const CODEGEN_MAX_ATTEMPTS = 3 as const
+
+/** Pause between two `CODE_GENERATE` hand-off attempts, in milliseconds. */
+export const CODEGEN_RETRY_DELAY_MS = 600 as const
+
+/** How long a freshly recorded step stays highlighted in the step list, in milliseconds. */
+export const STEP_FLASH_DURATION_MS = 800 as const
+
 /**
  * Stability score (0–100) at or above which a primary locator is considered
  * acceptable. A captured step whose primary scores below this is flagged
