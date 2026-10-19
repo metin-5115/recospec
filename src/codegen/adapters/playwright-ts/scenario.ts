@@ -9,7 +9,8 @@ import {
 import { dateCtorFromIso } from '../../shared/date-literal'
 import { resolveTestData } from '../../planner/test-data-resolver'
 import { renderStepInSpec } from './step'
-import { getTestData, renderFillValueExpr } from './state'
+import { renderFillValueExpr } from './fill-value'
+import type { RenderOptions } from '../registry'
 
 const INDENT = '    '
 
@@ -17,9 +18,9 @@ function toVarName(className: string): string {
   return className.charAt(0).toLowerCase() + className.slice(1)
 }
 
-function renderArg(arg: FlowArg): string {
-  if (arg.fromFill && resolveTestData(arg.element, arg.value, getTestData()).useEnvVar) {
-    return renderFillValueExpr(arg.element, arg.value)
+function renderArg(arg: FlowArg, options: RenderOptions): string {
+  if (arg.fromFill && resolveTestData(arg.element, arg.value, options.testData).useEnvVar) {
+    return renderFillValueExpr(arg.element, arg.value, options.testData)
   }
   switch (arg.type) {
     case 'boolean':
@@ -33,24 +34,24 @@ function renderArg(arg: FlowArg): string {
   }
 }
 
-function renderInline(page: IRPage): string[] {
-  return page.steps.map((step) => renderStepInSpec(step, INDENT)).filter(Boolean)
+function renderInline(page: IRPage, options: RenderOptions): string[] {
+  return page.steps.map((step) => renderStepInSpec(step, INDENT, options)).filter(Boolean)
 }
 
-function renderItem(item: FlowItem): string[] {
+function renderItem(item: FlowItem, options: RenderOptions): string[] {
   switch (item.kind) {
     case 'visit':
       return [`${INDENT}await page.goto(${JSON.stringify(item.url)});`]
     case 'call': {
-      const args = item.args.map(renderArg).join(', ')
+      const args = item.args.map((a) => renderArg(a, options)).join(', ')
       return [`${INDENT}await ${toVarName(item.page.className)}.${item.method.name}(${args});`]
     }
     case 'inline':
-      return renderInline(item.page)
+      return renderInline(item.page, options)
   }
 }
 
-export function renderScenario(scenario: IRScenario): string {
+export function renderScenario(scenario: IRScenario, options: RenderOptions = {}): string {
   const flow = buildScenarioFlow(scenario)
   const used = pagesUsed(flow)
 
@@ -61,7 +62,11 @@ export function renderScenario(scenario: IRScenario): string {
   const pageObjects = used.map(
     (p) => `${INDENT}const ${toVarName(p.className)} = new ${p.className}(page);`,
   )
-  const body = [...opening, ...pageObjects, ...flow.flatMap(renderItem)].join('\n')
+  const body = [
+    ...opening,
+    ...pageObjects,
+    ...flow.flatMap((item) => renderItem(item, options)),
+  ].join('\n')
 
   const header = ["import { test, expect } from '@playwright/test';", ...imports].join('\n')
 

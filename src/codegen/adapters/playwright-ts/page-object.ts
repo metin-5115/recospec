@@ -2,6 +2,7 @@ import type { IRPage, InferredMethod } from '../../ir/types'
 import { dateFnsLocaleImportName } from '@shared/date-template'
 import { isContainerParam, renderElementGetter } from './locator'
 import { renderStepInMethod } from './step'
+import type { RenderOptions } from '../registry'
 
 const PARAM_SUFFIX_REGEX = /Input$|Button$|Btn$|Link$|Select$|Field$|Box$|Toggle$|Checkbox$|Radio$/
 
@@ -14,7 +15,7 @@ function tsType(t: string | undefined): string {
   return t === 'date' ? 'Date' : (t ?? 'string')
 }
 
-function renderInferredMethod(method: InferredMethod): string {
+function renderInferredMethod(method: InferredMethod, options: RenderOptions): string {
   const types = method.paramTypes ?? method.params.map(() => 'string')
   const paramList = method.params.map((p, i) => `${p}: ${tsType(types[i])}`).join(', ')
   const bodyLines = method.steps
@@ -60,7 +61,7 @@ function renderInferredMethod(method: InferredMethod): string {
           return `    await this.${s.element.name}.setChecked(${method.params[paramIdx]});`
         }
       }
-      return renderStepInMethod(s, '    ')
+      return renderStepInMethod(s, '    ', options)
     })
     .filter(Boolean)
     .join('\n')
@@ -94,7 +95,7 @@ function renderDateFnsImports(page: IRPage): string {
   return `import { ${fnList} } from 'date-fns';\nimport { ${localeList} } from 'date-fns/locale';\n`
 }
 
-export function renderPageObject(page: IRPage): string {
+export function renderPageObject(page: IRPage, options: RenderOptions = {}): string {
   const elementGetters = page.elements.map(renderElementGetter).join('\n\n')
 
   const gotoStep = page.steps.find((s) => s.action === 'navigate')
@@ -102,11 +103,12 @@ export function renderPageObject(page: IRPage): string {
 
   let methodsBlock = ''
   if (page.inferredMethods?.length) {
-    methodsBlock = '\n' + page.inferredMethods.map(renderInferredMethod).join('\n\n')
+    methodsBlock =
+      '\n' + page.inferredMethods.map((m) => renderInferredMethod(m, options)).join('\n\n')
   } else {
     const stepLines = page.steps
       .filter((s) => s.action !== 'navigate')
-      .map((s) => renderStepInMethod(s, '    '))
+      .map((s) => renderStepInMethod(s, '    ', options))
       .filter(Boolean)
       .join('\n')
     if (stepLines) {

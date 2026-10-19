@@ -2,7 +2,8 @@ import type { IRStep } from '../../ir/types'
 import { renderLocator, memberExpr } from './locator'
 import { renderAssertionMatcher } from './assertion'
 import { renderMockBlock } from './mock'
-import { getRenderMocks, renderFillValueExpr } from './state'
+import { renderFillValueExpr } from './fill-value'
+import type { RenderOptions } from '../registry'
 
 /** IR action → Playwright locator method for the element-targeted interactions. */
 const INTERACTION_CALLS: Partial<Record<IRStep['action'], string>> = {
@@ -13,7 +14,11 @@ const INTERACTION_CALLS: Partial<Record<IRStep['action'], string>> = {
   dblclick: 'dblclick',
 }
 
-export function renderStepInMethod(step: IRStep, indent: string): string {
+export function renderStepInMethod(
+  step: IRStep,
+  indent: string,
+  options: RenderOptions = {},
+): string {
   if (step.action === 'navigate' && step.url) {
     return `${indent}await this.page.goto(${JSON.stringify(step.url)});`
   }
@@ -21,7 +26,7 @@ export function renderStepInMethod(step: IRStep, indent: string): string {
     return `${indent}await ${memberExpr(step.element)}.click();`
   }
   if (step.action === 'fill' && step.element) {
-    const expr = renderFillValueExpr(step.element, step.value ?? '')
+    const expr = renderFillValueExpr(step.element, step.value ?? '', options.testData)
     return `${indent}await this.${step.element.name}.fill(${expr});`
   }
   if (step.element && INTERACTION_CALLS[step.action]) {
@@ -42,7 +47,7 @@ export function renderStepInMethod(step: IRStep, indent: string): string {
     return `${indent}// assert: ${step.annotation ?? ''}`
   }
   if (step.action === 'network' && step.network) {
-    if (!getRenderMocks()) return ''
+    if (!options.includeMocks) return ''
     // Page-object methods receive `this.page`; rewrite the helper accordingly.
     return renderMockBlock(step.network, indent).replace(/\bpage\.route\(/g, 'this.page.route(')
   }
@@ -98,7 +103,11 @@ function renderWaitInMethod(step: IRStep, indent: string): string {
   return ''
 }
 
-export function renderStepInSpec(step: IRStep, indent: string): string {
+export function renderStepInSpec(
+  step: IRStep,
+  indent: string,
+  options: RenderOptions = {},
+): string {
   if (step.action === 'navigate' && step.url) {
     return `${indent}await page.goto(${JSON.stringify(step.url)});`
   }
@@ -106,7 +115,7 @@ export function renderStepInSpec(step: IRStep, indent: string): string {
     return `${indent}await ${renderLocator(step.element)}.click();`
   }
   if (step.action === 'fill' && step.element) {
-    const expr = renderFillValueExpr(step.element, step.value ?? '')
+    const expr = renderFillValueExpr(step.element, step.value ?? '', options.testData)
     return `${indent}await ${renderLocator(step.element)}.fill(${expr});`
   }
   if (step.element && INTERACTION_CALLS[step.action]) {
@@ -127,7 +136,7 @@ export function renderStepInSpec(step: IRStep, indent: string): string {
     return `${indent}// assert: ${step.annotation ?? ''}`
   }
   if (step.action === 'network' && step.network) {
-    if (!getRenderMocks()) return ''
+    if (!options.includeMocks) return ''
     return renderMockBlock(step.network, indent)
   }
   if (step.action === 'wait' && step.wait) {

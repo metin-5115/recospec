@@ -1,16 +1,16 @@
 import type { GeneratedFile } from '../../ir/types'
 import { PLAYWRIGHT_SELF_HEALING_TS } from '../../scaffold/self-healing'
-import { getTestData } from './state'
+import type { RenderOptions } from '../registry'
 
-function renderEnvExample(): GeneratedFile | null {
-  const params = getTestData()?.params.filter((p) => p.useEnvVar) ?? []
+function renderEnvExample(options: RenderOptions): GeneratedFile | null {
+  const params = options.testData?.params.filter((p) => p.useEnvVar) ?? []
   if (!params.length) return null
   const header = '# Recospec — copy to .env and fill in your test data values.\n'
   const body = params.map((p) => `${p.envVarName}=${p.isSecret ? '' : p.defaultValue}`).join('\n')
   return { filename: '.env.example', content: `${header}${body}\n` }
 }
 
-export function renderScaffold(): GeneratedFile[] {
+export function renderScaffold(options: RenderOptions = {}): GeneratedFile[] {
   const packageJson = JSON.stringify(
     {
       name: 'recospec-generated-tests',
@@ -76,7 +76,7 @@ export default defineConfig({
     { filename: 'utils/locator.ts', content: PLAYWRIGHT_SELF_HEALING_TS },
     { filename: 'tests/scenario.spec.ts-snapshots/.gitkeep', content: '' },
   ]
-  const envExample = renderEnvExample()
+  const envExample = renderEnvExample(options)
   if (envExample) files.push(envExample)
   return files
 }

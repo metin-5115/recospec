@@ -1,6 +1,5 @@
 import { registerAdapter, type FrameworkAdapter } from '../registry'
 import { renderFeatureFile, renderStepsFile, renderBddScaffoldFiles } from './bdd'
-import { setRenderMocks, setTestData } from './state'
 import { renderPageObject } from './page-object'
 import { renderScenario } from './scenario'
 import { renderScaffold } from './scaffold'
@@ -18,18 +17,14 @@ export const playwrightTsAdapter: FrameworkAdapter = {
     testRunner: '@playwright/test',
     packageName: '@playwright/test',
   },
-  applyOptions(options) {
-    setRenderMocks(Boolean(options.includeMocks))
-    setTestData(options.testData)
+  renderPageObject(page, options) {
+    return { filename: `${page.className}.ts`, content: renderPageObject(page, options) }
   },
-  renderPageObject(page) {
-    return { filename: `${page.className}.ts`, content: renderPageObject(page) }
+  renderScenario(scenario, options) {
+    return { filename: 'scenario.spec.ts', content: renderScenario(scenario, options) }
   },
-  renderScenario(scenario) {
-    return { filename: 'scenario.spec.ts', content: renderScenario(scenario) }
-  },
-  renderScaffold() {
-    return renderScaffold()
+  renderScaffold(options) {
+    return renderScaffold(options)
   },
   renderBddFeature(scenario) {
     return { filename: 'scenario.feature', content: renderFeatureFile(scenario) }

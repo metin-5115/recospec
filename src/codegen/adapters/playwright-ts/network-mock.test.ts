@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { renderPageObject, renderScenario, playwrightTsAdapter } from './index'
+import { describe, it, expect } from 'vitest'
+import { renderPageObject, renderScenario } from './index'
 import { inferMethods } from '../../planner/method-inferer'
 import type { IRPage, IRScenario, IRElement, IRNetworkInfo } from '../../ir/types'
 
@@ -52,22 +52,15 @@ const pageWithLoginAndMock: IRPage = {
 }
 
 describe('playwright adapter — network mock generation', () => {
-  beforeEach(() => {
-    // Reset to default off between tests so other suites stay deterministic.
-    playwrightTsAdapter.applyOptions?.({ includeMocks: false })
-  })
-
   it('omits mocks when includeMocks=false', () => {
-    playwrightTsAdapter.applyOptions?.({ includeMocks: false })
-    const out = renderPageObject(pageWithLoginAndMock)
+    const out = renderPageObject(pageWithLoginAndMock, { includeMocks: false })
     expect(out).not.toContain('page.route(')
     // Inferred login() should still be present
     expect(out).toContain('async login(')
   })
 
   it('emits page.route fulfill block when includeMocks=true', () => {
-    playwrightTsAdapter.applyOptions?.({ includeMocks: true })
-    const out = renderPageObject(pageWithLoginAndMock)
+    const out = renderPageObject(pageWithLoginAndMock, { includeMocks: true })
     expect(out).toContain('this.page.route("**/login"')
     expect(out).toContain('status: 200')
     expect(out).toContain('contentType: "application/json"')
@@ -76,27 +69,23 @@ describe('playwright adapter — network mock generation', () => {
   })
 
   it('keeps the mock inside the page-object method the spec calls', () => {
-    playwrightTsAdapter.applyOptions?.({ includeMocks: true })
     const scenario: IRScenario = { name: 'Login flow', pages: [pageWithLoginAndMock] }
-    const out = renderScenario(scenario)
+    const out = renderScenario(scenario, { includeMocks: true })
     expect(out).toContain('await loginPage.login(')
     expect(out).not.toContain('page.route(')
   })
 
   it('infers login() with email/password param types', () => {
-    playwrightTsAdapter.applyOptions?.({ includeMocks: false })
-    const out = renderPageObject(pageWithLoginAndMock)
+    const out = renderPageObject(pageWithLoginAndMock, { includeMocks: false })
     expect(out).toMatch(/async login\(email: string, password: string\)/)
   })
 
   it('matches snapshot with mocks enabled', () => {
-    playwrightTsAdapter.applyOptions?.({ includeMocks: true })
-    const out = renderPageObject(pageWithLoginAndMock)
+    const out = renderPageObject(pageWithLoginAndMock, { includeMocks: true })
     expect(out).toMatchSnapshot()
   })
 
   it('handles non-JSON responses by quoting body as a string literal', () => {
-    playwrightTsAdapter.applyOptions?.({ includeMocks: true })
     const textSteps = [
       { id: 's0', action: 'navigate' as const, url: '/status' },
       { id: 's1', action: 'click' as const, element: submitElement },
@@ -120,7 +109,7 @@ describe('playwright adapter — network mock generation', () => {
       steps: textSteps,
       inferredMethods: inferMethods(textSteps),
     }
-    const out = renderPageObject(textPage)
+    const out = renderPageObject(textPage, { includeMocks: true })
     expect(out).toContain('contentType: "text/plain"')
     expect(out).toContain('body: "OK"')
   })

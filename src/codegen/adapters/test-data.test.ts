@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import type { IRElement, IRPage, IRScenario, TestDataConfig } from '../ir/types'
+import type { RenderOptions } from './registry'
 import { playwrightTsAdapter } from './playwright-ts'
 import { cypressAdapter } from './cypress'
 import { seleniumPyAdapter } from './selenium-py'
@@ -51,10 +52,6 @@ const scenario: IRScenario = { name: 'Login flow', pages: [loginPage] }
 // ---------------------------------------------------------------------------
 
 describe('test-data parameterization — playwright-ts', () => {
-  beforeEach(() => {
-    playwrightTsAdapter.applyOptions?.({ testData: undefined })
-  })
-
   it('renders process.env.X ?? default for password fields by default', () => {
     const out = playwrightTsAdapter.renderScenario(scenario)
     expect(out.content).toContain(`process.env.RECOSPEC_PASSWORD ?? "change-me"`)
@@ -79,17 +76,16 @@ describe('test-data parameterization — playwright-ts', () => {
         },
       ],
     }
-    playwrightTsAdapter.applyOptions?.({ testData: cfg })
-    const out = playwrightTsAdapter.renderScenario(scenario)
+    const out = playwrightTsAdapter.renderScenario(scenario, { testData: cfg })
     expect(out.content).toContain(`process.env.RECOSPEC_PASSWORD ?? "demo123"`)
   })
 
   it('emits .env.example only when env-var params exist', () => {
-    playwrightTsAdapter.applyOptions?.({ testData: { params: [] } })
-    expect(playwrightTsAdapter.renderScaffold().some((f) => f.filename === '.env.example')).toBe(
-      false,
-    )
-    playwrightTsAdapter.applyOptions?.({
+    const noParams: RenderOptions = { testData: { params: [] } }
+    expect(
+      playwrightTsAdapter.renderScaffold(noParams).some((f) => f.filename === '.env.example'),
+    ).toBe(false)
+    const withSecret: RenderOptions = {
       testData: {
         params: [
           {
@@ -102,8 +98,10 @@ describe('test-data parameterization — playwright-ts', () => {
           },
         ],
       },
-    })
-    const env = playwrightTsAdapter.renderScaffold().find((f) => f.filename === '.env.example')
+    }
+    const env = playwrightTsAdapter
+      .renderScaffold(withSecret)
+      .find((f) => f.filename === '.env.example')
     expect(env?.content).toContain('RECOSPEC_PASSWORD=')
   })
 })
