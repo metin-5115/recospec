@@ -178,6 +178,20 @@ export const LOCATOR_VALIDATION_MAX_TARGETS = 100 as const
  */
 export const LOCATOR_WEAK_SCORE_THRESHOLD = 50 as const
 
+/**
+ * Distinct healthy flat survivors (score >= LOCATOR_WEAK_SCORE_THRESHOLD, not
+ * positional) at which the engine stops building the XPath candidate: a primary
+ * plus one healthy fallback already give self-healing a real second chance.
+ */
+export const XPATH_GATE_MIN_HEALTHY_SURVIVORS = 2 as const
+
+/**
+ * Best flat-survivor score at which an XPath can no longer outrank it. The
+ * XPath strategy tops out at 65 (base 50 + attribute tier 1), so a survivor at
+ * or above this keeps the primary identical with or without the XPath.
+ */
+export const XPATH_GATE_PRIMARY_SAFE_SCORE = 65 as const
+
 /** Duration (ms) to flash the on-page overlay when the user clicks "Show me". */
 export const LOCATOR_VALIDATION_HIGHLIGHT_DURATION_MS = 1000 as const
 

@@ -34,6 +34,11 @@ import type { ResolvedCandidate } from './pipeline/constraints'
 import { buildFingerprint } from './pipeline/fingerprint'
 import type { LocatorStrategy } from './strategies/base'
 import { detectEdgeCases, isCanvasLikeElement } from './edge-cases'
+import {
+  LOCATOR_WEAK_SCORE_THRESHOLD,
+  XPATH_GATE_MIN_HEALTHY_SURVIVORS,
+  XPATH_GATE_PRIMARY_SAFE_SCORE,
+} from '@shared/constants'
 
 export interface EvaluateOptions {
   shadowContext?: ShadowContext
@@ -78,6 +83,32 @@ function buildCanvasLocator(el: Element, doc: Document): ScoredLocator {
       seleniumPy: `driver.find_element(By.CSS_SELECTOR, ${JSON.stringify(selector)})`,
     },
   }
+}
+
+function selectorKey(loc: Locator): string {
+  return typeof loc.selector === 'string' ? loc.selector : JSON.stringify(loc.selector)
+}
+
+/** A flat survivor good enough to carry a bundle slot: not weak, not positional. */
+function isHealthySurvivor(loc: ScoredLocator): boolean {
+  return (
+    loc.score >= LOCATOR_WEAK_SCORE_THRESHOLD &&
+    loc.features?.hasPositionalIndex !== true &&
+    loc.warning !== 'absolute-xpath'
+  )
+}
+
+/**
+ * The XPath candidate is the costliest to build and resolve, and it is the
+ * last-resort strategy. Skip it once the flat survivors already give a strong
+ * primary and a healthy second option; otherwise (too few healthy survivors,
+ * or the best one is weak enough for an attribute XPath to outrank it) keep it.
+ */
+function needsXPath(passed: readonly ScoredLocator[]): boolean {
+  const healthy = passed.filter(isHealthySurvivor)
+  if (new Set(healthy.map(selectorKey)).size < XPATH_GATE_MIN_HEALTHY_SURVIVORS) return true
+  const best = healthy.reduce((max, c) => Math.max(max, c.score), 0)
+  return best < XPATH_GATE_PRIMARY_SAFE_SCORE
 }
 
 function scoreCandidate(loc: Locator, matches: Element[]): ScoredLocator {
@@ -172,8 +203,10 @@ export class LocatorEngine {
     new NameAttributeStrategy(),
     new HrefStrategy(),
     new CssStrategy(),
-    new XPathStrategy(),
   ]
+
+  /** Evaluated only when `needsXPath` opens the gate. */
+  private readonly xpathStrategy = new XPathStrategy()
 
   /**
    * Three-stage pipeline:
@@ -237,6 +270,19 @@ export class LocatorEngine {
 
     // Stage A — hard constraints.
     let { passed, diagnostics } = applyConstraints(resolved, element)
+
+    if (needsXPath(passed)) {
+      const locator = this.xpathStrategy.evaluate(element, doc)
+      if (locator) {
+        const matches = resolveLocator(locator, doc)
+        const candidate = scoreCandidate(locator, matches)
+        resolutionOf.set(candidate, matches)
+        resolved.push({ candidate, matches })
+        const result = applyConstraints([{ candidate, matches }], element)
+        passed = [...passed, ...result.passed]
+        diagnostics = [...diagnostics, ...result.diagnostics]
+      }
+    }
 
     // Structured production: when no flat survivor is healthy, try a template
     // (parameterized data value — the date/data answer) and a composed
