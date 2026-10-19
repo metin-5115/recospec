@@ -36,8 +36,8 @@ export const playwrightTsAdapter: FrameworkAdapter = {
   renderBddSteps(scenario) {
     return { filename: `${flowSlug(scenario.name)}.steps.ts`, content: renderStepsFile(scenario) }
   },
-  renderBddScaffold() {
-    return renderBddScaffoldFiles()
+  renderBddScaffold(options) {
+    return renderBddScaffoldFiles(options)
   },
 }
 

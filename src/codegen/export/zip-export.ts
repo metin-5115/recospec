@@ -5,6 +5,21 @@ import { slugifyFilename } from '@shared/slug'
 import { resolveOutputPath } from './output-path'
 import { flowSlug } from '../shared/flow-slug'
 
+function originOf(url: string): string {
+  try {
+    return new URL(url).origin
+  } catch {
+    return url
+  }
+}
+
+function baseUrlRunCommand(framework: string): string {
+  if (framework === 'cypress') return 'npx cypress run'
+  if (framework === 'selenium-py') return 'pytest'
+  if (framework === 'selenium-java') return 'mvn test'
+  return 'npx playwright test'
+}
+
 const README_TEMPLATE = (session: Session, framework: string) => {
   const snapshotsDir = `tests/${flowSlug(session.name)}.spec.ts-snapshots/`
   const isCypress = framework === 'cypress'
@@ -60,6 +75,14 @@ Start URL: ${session.startUrl}
 ## How to run
 
 ${runCommand}
+
+## Target environment
+
+Every test opens pages relative to one base URL — by default the origin the flow was recorded on (${originOf(session.startUrl)}). Point the suite at another deployment with the \`BASE_URL\` environment variable:
+
+\`\`\`bash
+BASE_URL=https://staging.example.com ${baseUrlRunCommand(framework)}
+\`\`\`
 
 ## Project structure
 

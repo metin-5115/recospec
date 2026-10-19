@@ -67,6 +67,19 @@ describe('buildZipExport', () => {
     expect(paths).toContain('tsconfig.json')
   })
 
+  it('documents how to override the base URL and where the flow snapshots live', async () => {
+    const session = makeSession({
+      name: 'Checkout flow',
+      startUrl: 'https://shop.example.com/cart',
+    })
+    const blob = await buildZipExport(session, makeCode([]))
+    const readme = await readZipFile(blob, 'README.md')
+    expect(readme).toContain('(https://shop.example.com)')
+    expect(readme).toContain('BASE_URL=https://staging.example.com npx playwright test')
+    expect(readme).toContain('tests/checkout-flow.spec.ts-snapshots/')
+    expect(readme).not.toContain('scenario.spec.ts')
+  })
+
   it('always includes README.md at root', async () => {
     const blob = await buildZipExport(makeSession(), makeCode([]))
     const paths = await listZipPaths(blob)

@@ -76,7 +76,7 @@ describe('cypress renderScenario', () => {
       pages: [{ ...loginPage, steps, inferredMethods: inferMethods(steps) }],
     }
     const out = renderScenario(scenario)
-    expect(out.indexOf('cy.visit("http://localhost:4500/login");')).toBeGreaterThan(-1)
+    expect(out.indexOf('cy.visit("/login");')).toBeGreaterThan(-1)
     expect(out.indexOf('cy.visit(')).toBeLessThan(out.indexOf('loginPage.'))
   })
 

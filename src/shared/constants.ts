@@ -260,3 +260,9 @@ export const SESSIONS_GITIGNORE_CONTENT =
 
 /** Start URLs a generated test can open; about:blank and chrome: pages are not worth navigating to. */
 export const NAVIGABLE_URL_PATTERN = /^(https?|file):/i
+
+/** Environment variable that points a generated test project at another deployment. */
+export const BASE_URL_ENV_VAR = 'BASE_URL' as const
+
+/** Base URL written into a generated project config when the recording had no http(s) origin. */
+export const DEFAULT_BASE_URL = 'http://localhost:3000' as const

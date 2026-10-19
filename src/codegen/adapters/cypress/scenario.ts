@@ -11,6 +11,8 @@ import {
   buildScenarioFlow,
   initialUrl,
   pagesUsed,
+  recordedOrigin,
+  routeWithin,
   type FlowArg,
   type FlowItem,
 } from '../../shared/scenario-flow'
@@ -93,7 +95,7 @@ function renderArg(arg: FlowArg, options: RenderOptions): string {
 function renderItem(item: FlowItem, options: RenderOptions): string[] {
   switch (item.kind) {
     case 'visit':
-      return [`${INDENT}cy.visit(${JSON.stringify(item.url)});`]
+      return [`${INDENT}cy.visit(${JSON.stringify(routeWithin(options.baseUrl, item.url))});`]
     case 'call': {
       const args = item.args.map((a) => renderArg(a, options)).join(', ')
       return [`${INDENT}${toVarName(item.page.className)}.${item.method.name}(${args});`]
@@ -103,7 +105,9 @@ function renderItem(item: FlowItem, options: RenderOptions): string[] {
   }
 }
 
-export function renderScenario(scenario: IRScenario, options: RenderOptions = {}): string {
+export function renderScenario(scenario: IRScenario, given: RenderOptions = {}): string {
+  // Routes are written relative to the origin the flow was recorded on, unless the caller pinned one.
+  const options: RenderOptions = { ...given, baseUrl: given.baseUrl ?? recordedOrigin(scenario) }
   const flow = buildScenarioFlow(scenario)
   const used = pagesUsed(flow)
 
@@ -116,7 +120,9 @@ export function renderScenario(scenario: IRScenario, options: RenderOptions = {}
   const inlineSteps = flow.flatMap((item) => (item.kind === 'inline' ? item.page.steps : []))
   const mocks = renderCypressMocks(inlineSteps, INDENT, options)
   const start = initialUrl(scenario, flow)
-  const opening = start ? [`${INDENT}cy.visit(${JSON.stringify(start)});`] : []
+  const opening = start
+    ? [`${INDENT}cy.visit(${JSON.stringify(routeWithin(options.baseUrl, start))});`]
+    : []
   const pageObjects = used.map(
     (p) => `${INDENT}const ${toVarName(p.className)} = new ${p.className}();`,
   )

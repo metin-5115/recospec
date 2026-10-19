@@ -1,4 +1,4 @@
-import type { IRScenario, IRStep } from '../../ir/types'
+import type { IRPage, IRScenario, IRStep } from '../../ir/types'
 import { renderLocatorTuple, pyStr } from './locator'
 import { renderPyInteraction, pyInteractionImports } from './interaction'
 import { renderPyAssertion } from './assertion'
@@ -20,11 +20,15 @@ import type { RenderOptions } from '../registry'
 import {
   buildScenarioFlow,
   initialUrl,
+  navigationTarget,
   pagesUsed,
+  recordedOrigin,
+  routeWithin,
   type FlowArg,
   type FlowItem,
 } from '../../shared/scenario-flow'
 import { toPyIdentifier, toSnakeCase } from './naming'
+import { pyUrlExpr } from './base-url'
 
 export { toSnakeCase }
 
@@ -53,9 +57,14 @@ function renderWait(step: IRStep, indent: string): string {
   return ''
 }
 
-function renderStepInTest(step: IRStep, indent: string, options: RenderOptions): string {
+function renderStepInTest(
+  step: IRStep,
+  page: IRPage,
+  indent: string,
+  options: RenderOptions,
+): string {
   if (step.action === 'navigate' && step.url) {
-    return `${indent}driver.get(${pyStr(step.url)})`
+    return `${indent}driver.get(${pyUrlExpr('driver', options.baseUrl, navigationTarget(options.baseUrl, page, step.url))})`
   }
   if (step.action === 'click' && step.element) {
     const tuple = renderLocatorTuple(step.element)
@@ -136,7 +145,9 @@ function renderItem(
 ): string[] {
   switch (item.kind) {
     case 'visit':
-      return [`${indent}driver.get(${pyStr(item.url)})`]
+      return [
+        `${indent}driver.get(${pyUrlExpr('driver', options.baseUrl, routeWithin(options.baseUrl, item.url))})`,
+      ]
     case 'call': {
       const args = item.args.map((a) => renderArg(a, options)).join(', ')
       const receiver = toSnakeCase(item.page.className)
@@ -147,7 +158,7 @@ function renderItem(
         .map((step) =>
           wrapStepContext(
             step,
-            renderStepInTest(step, indent, options),
+            renderStepInTest(step, item.page, indent, options),
             indent,
             contextState,
             'test',
@@ -157,7 +168,9 @@ function renderItem(
   }
 }
 
-export function renderScenario(scenario: IRScenario, options: RenderOptions = {}): string {
+export function renderScenario(scenario: IRScenario, given: RenderOptions = {}): string {
+  // Routes are written relative to the origin the flow was recorded on, unless the caller pinned one.
+  const options: RenderOptions = { ...given, baseUrl: given.baseUrl ?? recordedOrigin(scenario) }
   const flow = buildScenarioFlow(scenario)
   const used = pagesUsed(flow)
   const inlineSteps = flow.flatMap((item) => (item.kind === 'inline' ? item.page.steps : []))
@@ -169,7 +182,11 @@ export function renderScenario(scenario: IRScenario, options: RenderOptions = {}
 
   const indent = '    '
   const start = initialUrl(scenario, flow)
-  const opening = start ? [`${indent}driver.get(${pyStr(start)})`] : []
+  const opening = start
+    ? [
+        `${indent}driver.get(${pyUrlExpr('driver', options.baseUrl, routeWithin(options.baseUrl, start))})`,
+      ]
+    : []
   const pageObjects = used.map(
     (p) => `${indent}${toSnakeCase(p.className)} = ${p.className}(driver)`,
   )

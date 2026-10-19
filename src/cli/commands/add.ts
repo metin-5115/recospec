@@ -6,6 +6,7 @@ import { applyTemplateModes, applyComposedModes } from '@codegen/planner/templat
 import type { TemplateParamMode } from '@codegen/ir/types'
 import { getAdapter, type RenderOptions } from '@codegen/adapters/registry'
 import { flowSlug } from '@codegen/shared/flow-slug'
+import { recordedOrigin } from '@codegen/shared/scenario-flow'
 import type { FrameworkId, GeneratedFile, OutputSelection } from '@shared/types/generated'
 import { normalizeSelection } from '@shared/types/generated'
 import type { JsonExportPayload } from '@codegen/export/json-export'
@@ -106,6 +107,7 @@ export async function runAdd(opts: AddOptions, reporter?: ConflictReporter): Pro
     includeMocks: opts.includeMocks,
     bdd,
     flowSlug: flowSlug(scenario.name),
+    baseUrl: recordedOrigin(scenario),
   }
   if (bdd && selection.test) {
     if (!adapter.renderBddFeature || !adapter.renderBddSteps) {

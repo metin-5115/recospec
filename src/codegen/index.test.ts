@@ -72,7 +72,7 @@ describe('generate() output selection', () => {
       selection: { pageObjects: false, test: true, scaffold: false },
     })
     const spec = code.files.find((f) => f.filename.endsWith('.spec.ts'))
-    expect(spec?.content).toContain('await page.goto("https://example.com/login");')
+    expect(spec?.content).toContain('await page.goto("/login");')
   })
 
   it('page-objects-only emits no test and no scaffold', async () => {

@@ -5,6 +5,7 @@ import { renderInteraction, renderToggleByParam } from './interaction'
 import { renderCypressMocks } from './mock'
 import { renderFillValueExpr } from './fill-value'
 import type { RenderOptions } from '../registry'
+import { navigationTarget } from '../../shared/scenario-flow'
 import { dateCtorFromIso } from '../../shared/date-literal'
 import { dateFnsLocaleImportName } from '@shared/date-template'
 
@@ -242,7 +243,7 @@ export function renderPageObject(page: IRPage, options: RenderOptions = {}): str
   const elementGetters = page.elements.map(renderElementGetter).join('\n\n')
 
   const gotoStep = page.steps.find((s) => s.action === 'navigate')
-  const gotoUrl = gotoStep?.url ?? page.normalizedUrl
+  const gotoUrl = navigationTarget(options.baseUrl, page, gotoStep?.url ?? page.normalizedUrl)
 
   let methodsBlock = ''
   if (page.inferredMethods?.length) {

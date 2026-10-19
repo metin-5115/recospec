@@ -57,6 +57,12 @@ function projectLayout(files: GeneratedFile[], framework: FrameworkId): Record<s
   return Object.fromEntries(files.map((f) => [resolveOutputPath(f.filename, framework), f.content]))
 }
 
+/** The path the recording started on — specs open it relative to the configured base URL. */
+function startRouteOf(recording: unknown): string {
+  const url = new URL(startUrlOf(recording))
+  return `${url.pathname}${url.search}${url.hash}`
+}
+
 function startUrlOf(recording: unknown): string {
   return (JSON.parse(JSON.stringify(recording)) as JsonExportPayload).session.startUrl
 }
@@ -258,7 +264,7 @@ describe.each(Object.entries(RECORDINGS))('real %s recording', (_label, recordin
       const body = spec().content.split("test('full flow'")[1] as string
       const firstStatement = body.split('\n').find((l) => l.includes('await '))
       expect(firstStatement?.trim()).toBe(
-        `await page.goto(${JSON.stringify(startUrlOf(recording))});`,
+        `await page.goto(${JSON.stringify(startRouteOf(recording))});`,
       )
     })
 
@@ -312,7 +318,7 @@ describe.each(Object.entries(RECORDINGS))('real %s recording', (_label, recordin
     it('opens the recorded start URL first', () => {
       const body = spec.content.split("it('full flow'")[1] as string
       const first = body.split('\n').find((l) => l.includes('cy.'))
-      expect(first?.trim()).toBe(`cy.visit(${JSON.stringify(startUrlOf(recording))});`)
+      expect(first?.trim()).toBe(`cy.visit(${JSON.stringify(startRouteOf(recording))});`)
     })
 
     it('points each page object at the route it was recorded on', () => {
@@ -391,15 +397,21 @@ describe.each(Object.entries(RECORDINGS))('real %s recording', (_label, recordin
     it('opens the recorded start URL first', () => {
       const body = spec().content.split(/^def test_\w+\(driver\):$/m)[1] as string
       const first = body.split('\n').find((l) => /^ {4}[a-z_]/.test(l) && !l.includes('"""'))
-      expect(first?.trim()).toBe(`driver.get('${startUrlOf(recording)}')`)
+      expect(first?.trim()).toBe(
+        `driver.get(getattr(driver, 'base_url', '${new URL(startUrlOf(recording)).origin}') + '${startRouteOf(recording)}')`,
+      )
     })
 
-    it('points each page object at the absolute URL of its route', () => {
+    it('points each page object at its route under the driver base URL', () => {
       const origin = new URL(startUrlOf(recording)).origin
-      const gotos = pageFiles().map(
-        (f) => f.content.match(/def goto\(self\):\s*self\.driver\.get\('([^']*)'\)/)?.[1],
+      const gotos = pageFiles().map((f) =>
+        f.content
+          .match(
+            /def goto\(self\):\s*self\.driver\.get\(getattr\(self\.driver, 'base_url', '([^']*)'\) \+ '([^']*)'\)/,
+          )
+          ?.slice(1),
       )
-      expect(gotos).toEqual(recordedRoutes(recording).map((route) => `${origin}${route}`))
+      expect(gotos).toEqual(recordedRoutes(recording).map((route) => [origin, route]))
     })
   })
 
@@ -429,16 +441,22 @@ describe.each(Object.entries(RECORDINGS))('real %s recording', (_label, recordin
     it('opens the recorded start URL first', () => {
       const body = spec.content.split(/@Test\s+public void \w+\(\) \{/)[1] as string
       const first = body.split('\n').find((l) => l.includes('driver.'))
-      expect(first?.trim()).toBe(`driver.get(${JSON.stringify(startUrlOf(recording))});`)
+      expect(first?.trim()).toBe(
+        `driver.get(System.getenv().getOrDefault("BASE_URL", "${new URL(startUrlOf(recording)).origin}") + ${JSON.stringify(startRouteOf(recording))});`,
+      )
     })
 
-    it('points each page object at the absolute URL of its route', () => {
+    it('points each page object at its route under BASE_URL', () => {
       const origin = new URL(startUrlOf(recording)).origin
-      const gotos = pageFiles.map(
-        (f) => f.content.match(/void goTo\(\) \{\s*driver\.get\(("[^"]*")\)/)?.[1],
+      const gotos = pageFiles.map((f) =>
+        f.content
+          .match(
+            /void goTo\(\) \{\s*driver\.get\(System\.getenv\(\)\.getOrDefault\("BASE_URL", ("[^"]*")\) \+ ("[^"]*")\)/,
+          )
+          ?.slice(1),
       )
-      expect(gotos.map((g) => g && JSON.parse(g))).toEqual(
-        recordedRoutes(recording).map((route) => `${origin}${route}`),
+      expect(gotos.map((g) => g?.map((s) => JSON.parse(s)))).toEqual(
+        recordedRoutes(recording).map((route) => [origin, route]),
       )
     })
 

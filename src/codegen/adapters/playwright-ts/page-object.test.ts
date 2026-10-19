@@ -79,7 +79,7 @@ describe('renderScenario', () => {
       pages: [{ ...loginPage, steps, inferredMethods: inferMethods(steps) }],
     }
     const output = renderScenario(scenario)
-    expect(output.indexOf('await page.goto("http://localhost:4500/login");')).toBeGreaterThan(-1)
+    expect(output.indexOf('await page.goto("/login");')).toBeGreaterThan(-1)
     expect(output.indexOf('page.goto(')).toBeLessThan(output.indexOf('loginPage.submitForm'))
   })
 

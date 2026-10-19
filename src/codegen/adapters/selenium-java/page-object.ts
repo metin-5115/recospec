@@ -28,7 +28,8 @@ import {
 } from './context'
 import { renderFillValueExpr } from './fill-value'
 import type { RenderOptions } from '../registry'
-import { absoluteUrl } from '../../shared/scenario-flow'
+import { navigationTarget } from '../../shared/scenario-flow'
+import { javaUrlExpr } from './base-url'
 
 // ---------------------------------------------------------------------------
 // Naming helpers
@@ -390,8 +391,8 @@ export function renderPageObject(page: IRPage, options: RenderOptions = {}): str
   const fieldDecls = page.elements.map(renderElementField).join('\n\n')
 
   const gotoStep = page.steps.find((s) => s.action === 'navigate')
-  // Selenium has no base URL, so the route is completed with the origin the session ran on.
-  const gotoUrl = absoluteUrl(page.baseUrl, gotoStep?.url ?? page.normalizedUrl)
+  const gotoUrl = navigationTarget(options.baseUrl, page, gotoStep?.url ?? page.normalizedUrl)
+  const gotoExpr = javaUrlExpr(options.baseUrl ?? page.baseUrl, gotoUrl)
 
   const templateAccessors = page.elements
     .filter(
@@ -452,7 +453,7 @@ ${fieldsBlock}    public ${page.className}(WebDriver driver) {
     }
 
     public void goTo() {
-        driver.get(${javaStr(gotoUrl)});
+        driver.get(${gotoExpr});
     }${accessorsBlock}${methodsBlock}${contextHelpers}
 }
 `

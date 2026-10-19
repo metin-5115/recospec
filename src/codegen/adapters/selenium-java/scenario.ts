@@ -1,4 +1,4 @@
-import type { IRScenario, IRStep, AssertionDetail, IRElement } from '../../ir/types'
+import type { IRPage, IRScenario, IRStep, AssertionDetail, IRElement } from '../../ir/types'
 import { renderByExpression, javaStr } from './locator'
 import { renderJavaInteraction, javaInteractionImports } from './interaction'
 import { renderNetworkNote } from './network-note'
@@ -12,11 +12,15 @@ import {
 } from './context'
 import { resolveTestData } from '../../planner/test-data-resolver'
 import { renderFillValueExpr } from './fill-value'
+import { javaUrlExpr } from './base-url'
 import type { RenderOptions } from '../registry'
 import {
   buildScenarioFlow,
   initialUrl,
+  navigationTarget,
   pagesUsed,
+  recordedOrigin,
+  routeWithin,
   type FlowArg,
   type FlowItem,
 } from '../../shared/scenario-flow'
@@ -108,9 +112,14 @@ function renderWait(step: IRStep, indent: string): string {
   return ''
 }
 
-function renderStepInTest(step: IRStep, indent: string, options: RenderOptions): string {
+function renderStepInTest(
+  step: IRStep,
+  page: IRPage,
+  indent: string,
+  options: RenderOptions,
+): string {
   if (step.action === 'navigate' && step.url) {
-    return `${indent}driver.get(${javaStr(step.url)});`
+    return `${indent}driver.get(${javaUrlExpr(options.baseUrl, navigationTarget(options.baseUrl, page, step.url))});`
   }
   if (step.action === 'click' && step.element) {
     const byExpr = renderByExpression(step.element)
@@ -182,7 +191,9 @@ function renderItem(
 ): string[] {
   switch (item.kind) {
     case 'visit':
-      return [`${INDENT}driver.get(${javaStr(item.url)});`]
+      return [
+        `${INDENT}driver.get(${javaUrlExpr(options.baseUrl, routeWithin(options.baseUrl, item.url))});`,
+      ]
     case 'call': {
       const args = item.args.map((a) => renderArg(a, options)).join(', ')
       return [`${INDENT}${toVarName(item.page.className)}.${item.method.name}(${args});`]
@@ -190,7 +201,7 @@ function renderItem(
     case 'inline':
       return item.page.steps
         .map((step) => {
-          const rendered = renderStepInTest(step, INDENT, options)
+          const rendered = renderStepInTest(step, item.page, INDENT, options)
           if (!rendered) return ''
           return [...frameStatements(step, INDENT, contextState), rendered].join('\n')
         })
@@ -198,7 +209,9 @@ function renderItem(
   }
 }
 
-export function renderScenario(scenario: IRScenario, options: RenderOptions = {}): string {
+export function renderScenario(scenario: IRScenario, given: RenderOptions = {}): string {
+  // Routes are written relative to the origin the flow was recorded on, unless the caller pinned one.
+  const options: RenderOptions = { ...given, baseUrl: given.baseUrl ?? recordedOrigin(scenario) }
   const flow = buildScenarioFlow(scenario)
   const used = pagesUsed(flow)
   const inlineSteps = flow.flatMap((item) => (item.kind === 'inline' ? item.page.steps : []))
@@ -209,7 +222,9 @@ export function renderScenario(scenario: IRScenario, options: RenderOptions = {}
     (p) => `${INDENT}${p.className} ${toVarName(p.className)} = new ${p.className}(driver);`,
   )
   const start = initialUrl(scenario, flow)
-  const opening = start ? [`${INDENT}driver.get(${javaStr(start)});`] : []
+  const opening = start
+    ? [`${INDENT}driver.get(${javaUrlExpr(options.baseUrl, routeWithin(options.baseUrl, start))});`]
+    : []
   const contextState = newContextState()
   const stepLines = [
     ...opening,

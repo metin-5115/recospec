@@ -3,6 +3,8 @@ import {
   buildScenarioFlow,
   initialUrl,
   pagesUsed,
+  recordedOrigin,
+  routeWithin,
   type FlowArg,
   type FlowItem,
 } from '../../shared/scenario-flow'
@@ -44,7 +46,9 @@ function renderInline(page: IRPage, options: RenderOptions): string[] {
 function renderItem(item: FlowItem, options: RenderOptions): string[] {
   switch (item.kind) {
     case 'visit':
-      return [`${INDENT}await page.goto(${JSON.stringify(item.url)});`]
+      return [
+        `${INDENT}await page.goto(${JSON.stringify(routeWithin(options.baseUrl, item.url))});`,
+      ]
     case 'call': {
       const args = item.args.map((a) => renderArg(a, options)).join(', ')
       return [`${INDENT}await ${toVarName(item.page.className)}.${item.method.name}(${args});`]
@@ -54,14 +58,18 @@ function renderItem(item: FlowItem, options: RenderOptions): string[] {
   }
 }
 
-export function renderScenario(scenario: IRScenario, options: RenderOptions = {}): string {
+export function renderScenario(scenario: IRScenario, given: RenderOptions = {}): string {
+  // Routes are written relative to the origin the flow was recorded on, unless the caller pinned one.
+  const options: RenderOptions = { ...given, baseUrl: given.baseUrl ?? recordedOrigin(scenario) }
   const flow = buildScenarioFlow(scenario)
   const used = pagesUsed(flow)
 
   // The spec lives in tests/ and the page objects in pages/ (see resolveOutputPath).
   const imports = used.map((p) => `import { ${p.className} } from '../pages/${p.className}';`)
   const start = initialUrl(scenario, flow)
-  const opening = start ? [`${INDENT}await page.goto(${JSON.stringify(start)});`] : []
+  const opening = start
+    ? [`${INDENT}await page.goto(${JSON.stringify(routeWithin(options.baseUrl, start))});`]
+    : []
   const pageObjects = used.map(
     (p) => `${INDENT}const ${toVarName(p.className)} = new ${p.className}(page);`,
   )

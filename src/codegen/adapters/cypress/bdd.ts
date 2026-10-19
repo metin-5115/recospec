@@ -1,5 +1,7 @@
 import type { GeneratedFile } from '@shared/types/generated'
 import type { IRScenario, IRPage } from '../../ir/types'
+import type { RenderOptions } from '../registry'
+import { nodeBaseUrlExpr } from '../../shared/base-url'
 import { mapScenarioToGherkin, literalArgsFor, type GherkinStep } from '../../bdd/gherkin-mapper'
 
 export { renderFeatureFile } from '../../bdd/feature-file'
@@ -133,7 +135,8 @@ ${stepDefs.join('\n\n')}
 // BDD-specific scaffold (overrides cypress.config.js + package.json)
 // ---------------------------------------------------------------------------
 
-const CYPRESS_BDD_CONFIG = `import { defineConfig } from 'cypress';
+function renderBddCypressConfig(options: RenderOptions): string {
+  return `import { defineConfig } from 'cypress';
 import createBundler from '@bahmutov/cypress-esbuild-preprocessor';
 import { addCucumberPreprocessorPlugin } from '@badeball/cypress-cucumber-preprocessor';
 import { createEsbuildPlugin } from '@badeball/cypress-cucumber-preprocessor/esbuild';
@@ -141,7 +144,7 @@ import { addMatchImageSnapshotPlugin } from 'cypress-image-snapshot/plugin';
 
 export default defineConfig({
   e2e: {
-    baseUrl: 'http://localhost:3000',
+    baseUrl: ${nodeBaseUrlExpr(options.baseUrl)},
     supportFile: 'cypress/support/e2e.js',
     specPattern: 'cypress/e2e/**/*.feature',
     async setupNodeEvents(on, config) {
@@ -158,6 +161,7 @@ export default defineConfig({
   },
 });
 `
+}
 
 function renderBddPackageJson(): string {
   return JSON.stringify(
@@ -186,9 +190,9 @@ function renderBddPackageJson(): string {
   )
 }
 
-export function renderBddScaffoldFiles(): GeneratedFile[] {
+export function renderBddScaffoldFiles(options: RenderOptions = {}): GeneratedFile[] {
   return [
     { filename: 'package.json', content: renderBddPackageJson() },
-    { filename: 'cypress.config.js', content: CYPRESS_BDD_CONFIG },
+    { filename: 'cypress.config.js', content: renderBddCypressConfig(options) },
   ]
 }

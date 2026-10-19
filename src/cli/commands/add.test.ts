@@ -135,7 +135,7 @@ describe('runAdd output selection', () => {
   it('writes a spec that opens the start URL and imports the page object it was written next to', async () => {
     await runAdd({ json: jsonPath, projectDir: tmp, framework: 'playwright-ts' }, failingReporter)
     const spec = readFileSync(join(tmp, 'tests', specFile), 'utf8')
-    expect(spec).toContain('await page.goto("https://example.com/login");')
+    expect(spec).toContain('await page.goto("/login");')
     const imported = spec.match(/from '(\.\.\/pages\/\w+)'/)?.[1]
     expect(imported).toBeDefined()
     expect(existsSync(join(tmp, 'tests', `${imported}.ts`))).toBe(true)

@@ -78,7 +78,9 @@ describe('selenium-py renderScenario', () => {
       pages: [{ ...loginPage, steps, inferredMethods: inferMethods(steps) }],
     }
     const out = renderScenario(scenario)
-    expect(out.indexOf("driver.get('http://localhost:4500/login')")).toBeGreaterThan(-1)
+    expect(
+      out.indexOf("driver.get(getattr(driver, 'base_url', 'http://localhost:4500') + '/login')"),
+    ).toBeGreaterThan(-1)
     expect(out.indexOf('driver.get(')).toBeLessThan(out.indexOf('login_page.'))
   })
 

@@ -2,6 +2,7 @@ import type { GeneratedFile } from '../../ir/types'
 import { PLAYWRIGHT_SELF_HEALING_TS } from '../../scaffold/self-healing'
 import type { RenderOptions } from '../registry'
 import { FLOW_SLUG_FALLBACK } from '../../shared/flow-slug'
+import { nodeBaseUrlExpr } from '../../shared/base-url'
 
 function renderEnvExample(options: RenderOptions): GeneratedFile | null {
   const params = options.testData?.params.filter((p) => p.useEnvVar) ?? []
@@ -40,7 +41,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: ${nodeBaseUrlExpr(options.baseUrl)},
     trace: 'on-first-retry',
   },
   projects: [

@@ -10,7 +10,8 @@ import {
 } from './screenshot'
 import { renderFillValueExpr } from './fill-value'
 import type { RenderOptions } from '../registry'
-import { absoluteUrl } from '../../shared/scenario-flow'
+import { navigationTarget } from '../../shared/scenario-flow'
+import { pyUrlExpr } from './base-url'
 import { toPyIdentifier } from './naming'
 
 // ---------------------------------------------------------------------------
@@ -246,8 +247,8 @@ export function renderPageObject(page: IRPage, options: RenderOptions = {}): str
   const constants = page.elements.map(renderLocatorConstant).join('\n\n')
 
   const gotoStep = page.steps.find((s) => s.action === 'navigate')
-  // Selenium has no base URL, so the route is completed with the origin the session ran on.
-  const gotoUrl = absoluteUrl(page.baseUrl, gotoStep?.url ?? page.normalizedUrl)
+  const gotoUrl = navigationTarget(options.baseUrl, page, gotoStep?.url ?? page.normalizedUrl)
+  const gotoExpr = pyUrlExpr('self.driver', options.baseUrl ?? page.baseUrl, gotoUrl)
 
   const templateAccessors = page.elements
     .filter(
@@ -317,6 +318,6 @@ ${collisionComment}${constantsBlock}    def __init__(self, driver):
         self.wait = WebDriverWait(driver, 10)
 
     def goto(self):
-        self.driver.get(${pyStr(gotoUrl)})${contextHelpers}${accessorsBlock}${methodsBlock}
+        self.driver.get(${gotoExpr})${contextHelpers}${accessorsBlock}${methodsBlock}
 `
 }

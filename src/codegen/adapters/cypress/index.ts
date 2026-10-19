@@ -5,6 +5,7 @@ import { renderPageObject } from './page-object'
 import { renderScenario } from './scenario'
 import { renderLocator } from './locator'
 import { flowSlug } from '../../shared/flow-slug'
+import { nodeBaseUrlExpr } from '../../shared/base-url'
 import { CYPRESS_SELF_HEALING_JS } from '../../scaffold/self-healing'
 import { renderFeatureFile, renderStepsFile, renderBddScaffoldFiles } from './bdd'
 
@@ -37,7 +38,7 @@ import { addMatchImageSnapshotPlugin } from 'cypress-image-snapshot/plugin';
 
 export default defineConfig({
   e2e: {
-    baseUrl: 'http://localhost:3000',
+    baseUrl: ${nodeBaseUrlExpr(options.baseUrl)},
     supportFile: 'cypress/support/e2e.js',
     specPattern: 'cypress/e2e/**/*.cy.js',
     setupNodeEvents(on, config) {
@@ -106,8 +107,8 @@ export const cypressAdapter: FrameworkAdapter = {
   renderBddSteps(scenario) {
     return { filename: `${flowSlug(scenario.name)}.steps.js`, content: renderStepsFile(scenario) }
   },
-  renderBddScaffold() {
-    return renderBddScaffoldFiles()
+  renderBddScaffold(options) {
+    return renderBddScaffoldFiles(options)
   },
 }
 

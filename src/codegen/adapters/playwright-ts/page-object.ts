@@ -3,6 +3,7 @@ import { dateFnsLocaleImportName } from '@shared/date-template'
 import { isContainerParam, renderElementGetter } from './locator'
 import { mocksFirst, renderStepInMethod } from './step'
 import type { RenderOptions } from '../registry'
+import { navigationTarget } from '../../shared/scenario-flow'
 
 const PARAM_SUFFIX_REGEX = /Input$|Button$|Btn$|Link$|Select$|Field$|Box$|Toggle$|Checkbox$|Radio$/
 
@@ -97,7 +98,7 @@ export function renderPageObject(page: IRPage, options: RenderOptions = {}): str
   const elementGetters = page.elements.map(renderElementGetter).join('\n\n')
 
   const gotoStep = page.steps.find((s) => s.action === 'navigate')
-  const gotoUrl = gotoStep?.url ?? page.normalizedUrl
+  const gotoUrl = navigationTarget(options.baseUrl, page, gotoStep?.url ?? page.normalizedUrl)
 
   let methodsBlock = ''
   if (page.inferredMethods?.length) {

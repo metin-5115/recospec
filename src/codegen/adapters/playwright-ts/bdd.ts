@@ -1,5 +1,7 @@
 import type { GeneratedFile } from '@shared/types/generated'
 import type { IRScenario, IRPage } from '../../ir/types'
+import type { RenderOptions } from '../registry'
+import { nodeBaseUrlExpr } from '../../shared/base-url'
 import { mapScenarioToGherkin, literalArgsFor, type GherkinStep } from '../../bdd/gherkin-mapper'
 
 export { renderFeatureFile } from '../../bdd/feature-file'
@@ -133,7 +135,8 @@ ${stepDefs.join('\n\n')}
 // BDD-specific scaffold (overrides package.json + playwright.config.ts)
 // ---------------------------------------------------------------------------
 
-const PLAYWRIGHT_CONFIG_WITH_BDD = `import { defineConfig, devices } from '@playwright/test';
+function renderBddPlaywrightConfig(options: RenderOptions): string {
+  return `import { defineConfig, devices } from '@playwright/test';
 import { defineBddConfig } from 'playwright-bdd';
 
 const testDir = defineBddConfig({
@@ -147,7 +150,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: ${nodeBaseUrlExpr(options.baseUrl)},
     trace: 'on-first-retry',
   },
   projects: [
@@ -158,6 +161,7 @@ export default defineConfig({
   ],
 });
 `
+}
 
 function renderBddPackageJson(): string {
   return JSON.stringify(
@@ -181,9 +185,9 @@ function renderBddPackageJson(): string {
   )
 }
 
-export function renderBddScaffoldFiles(): GeneratedFile[] {
+export function renderBddScaffoldFiles(options: RenderOptions = {}): GeneratedFile[] {
   return [
     { filename: 'package.json', content: renderBddPackageJson() },
-    { filename: 'playwright.config.ts', content: PLAYWRIGHT_CONFIG_WITH_BDD },
+    { filename: 'playwright.config.ts', content: renderBddPlaywrightConfig(options) },
   ]
 }

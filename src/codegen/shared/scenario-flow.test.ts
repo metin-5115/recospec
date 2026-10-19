@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { absoluteUrl, buildScenarioFlow, initialUrl } from './scenario-flow'
+import {
+  absoluteUrl,
+  buildScenarioFlow,
+  initialUrl,
+  recordedOrigin,
+  routeWithin,
+} from './scenario-flow'
 import { groupIntoPages } from '../planner/page-grouper'
 import type { IRElement, IRScenario, IRStep } from '../ir/types'
 
@@ -118,5 +124,67 @@ describe('initialUrl', () => {
     expect(initialUrl(blank, buildScenarioFlow(blank))).toBeUndefined()
     const none: IRScenario = { ...blank, startUrl: undefined }
     expect(initialUrl(none, buildScenarioFlow(none))).toBeUndefined()
+  })
+})
+
+describe('recordedOrigin', () => {
+  it('is the origin of the page the recording started on', () => {
+    expect(recordedOrigin(scenarioOf([], 'https://shop.example.com:8443/login?next=%2F'))).toBe(
+      'https://shop.example.com:8443',
+    )
+  })
+
+  it('falls back to the first page that has an http(s) origin', () => {
+    const scenario: IRScenario = {
+      name: 'Flow',
+      startUrl: 'about:blank',
+      pages: [
+        {
+          name: 'A',
+          className: 'APage',
+          normalizedUrl: '/',
+          baseUrl: 'http://a.test',
+          steps: [],
+          elements: [],
+        },
+      ],
+    }
+    expect(recordedOrigin(scenario)).toBe('http://a.test')
+  })
+
+  it('is undefined for a recording with no http(s) page', () => {
+    expect(recordedOrigin(scenarioOf([], 'file:///tmp/index.html'))).toBeUndefined()
+  })
+})
+
+describe('routeWithin', () => {
+  const base = 'https://shop.example.com'
+
+  it.each([
+    ['https://shop.example.com/login', '/login'],
+    ['https://shop.example.com/search?q=a#top', '/search?q=a#top'],
+    ['https://shop.example.com', '/'],
+    ['https://shop.example.com?x=1', '/?x=1'],
+    ['/cart', '/cart'],
+  ])('turns %s into %s', (url, expected) => {
+    expect(routeWithin(base, url)).toBe(expected)
+  })
+
+  it('keeps a URL on another origin absolute', () => {
+    expect(routeWithin(base, 'https://pay.example.com/checkout')).toBe(
+      'https://pay.example.com/checkout',
+    )
+  })
+
+  it('does not mistake a longer host for the same origin', () => {
+    expect(routeWithin(base, 'https://shop.example.com.evil.test/x')).toBe(
+      'https://shop.example.com.evil.test/x',
+    )
+  })
+
+  it('leaves the URL alone without a base', () => {
+    expect(routeWithin(undefined, 'https://shop.example.com/login')).toBe(
+      'https://shop.example.com/login',
+    )
   })
 })

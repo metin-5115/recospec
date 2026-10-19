@@ -167,3 +167,48 @@ export function initialUrl(scenario: IRScenario, flow: FlowItem[]): string | und
   if (first?.kind === 'inline' && first.page.steps[0]?.action === 'navigate') return undefined
   return url
 }
+
+/** Origin of an http(s) URL; `undefined` for file:, about:blank and unparseable input. */
+function httpOrigin(rawUrl: string): string | undefined {
+  try {
+    const url = new URL(rawUrl)
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url.origin : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/**
+ * The origin a recording started on — the single place generated projects point their base URL
+ * at. A start page without one (`about:blank`) defers to the first page that has an origin.
+ */
+export function recordedOrigin(scenario: IRScenario): string | undefined {
+  const fromStart = scenario.startUrl ? httpOrigin(scenario.startUrl) : undefined
+  return fromStart ?? scenario.pages.find((page) => page.baseUrl)?.baseUrl
+}
+
+/**
+ * `url` as a route under `baseUrl` (`https://shop.test/cart?x=1` → `/cart?x=1`), so specs and page
+ * objects stay relative and the base URL lives in one config. A URL on another origin, or any URL
+ * when there is no base, is returned untouched.
+ */
+export function routeWithin(baseUrl: string | undefined, url: string): string {
+  if (!baseUrl || !url.startsWith(baseUrl)) return url
+  const rest = url.slice(baseUrl.length)
+  if (rest === '') return '/'
+  if (rest.startsWith('/')) return rest
+  if (rest.startsWith('?') || rest.startsWith('#')) return `/${rest}`
+  return url
+}
+
+/**
+ * Where a page-object `goto()` should send the browser: the route the page was recorded on,
+ * relative to `baseUrl` when it lives there.
+ */
+export function navigationTarget(
+  baseUrl: string | undefined,
+  page: Pick<IRPage, 'baseUrl'>,
+  route: string,
+): string {
+  return routeWithin(baseUrl ?? page.baseUrl, absoluteUrl(page.baseUrl, route))
+}

@@ -90,7 +90,11 @@ describe('selenium-java renderScenario', () => {
       pages: [{ ...loginPage, steps, inferredMethods: inferMethods(steps) }],
     }
     const out = renderScenario(scenario)
-    expect(out.indexOf('driver.get("http://localhost:4500/login");')).toBeGreaterThan(-1)
+    expect(
+      out.indexOf(
+        'driver.get(System.getenv().getOrDefault("BASE_URL", "http://localhost:4500") + "/login");',
+      ),
+    ).toBeGreaterThan(-1)
     expect(out.indexOf('driver.get(')).toBeLessThan(out.indexOf('loginPage.'))
   })
 

@@ -8,6 +8,7 @@ import './adapters/selenium-py'
 import './adapters/selenium-java'
 import { getAdapter, type RenderOptions } from './adapters/registry'
 import { flowSlug } from './shared/flow-slug'
+import { recordedOrigin } from './shared/scenario-flow'
 import type { FrameworkId, GeneratedCode, OutputSelection } from '@shared/types/generated'
 import { normalizeSelection, isEmptySelection } from '@shared/types/generated'
 import type { IRDocument, IRScenario, TestDataConfig, TemplateParamMode } from './ir/types'
@@ -108,6 +109,7 @@ export async function generate(
     testData: options.testData,
     bdd: options.bdd,
     flowSlug: flowSlug(scenario.name),
+    baseUrl: recordedOrigin(scenario),
   }
 
   const selection = normalizeSelection(options.selection)
