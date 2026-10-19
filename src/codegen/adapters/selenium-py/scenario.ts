@@ -1,4 +1,4 @@
-import type { IRScenario, IRStep, IRElement, TestDataConfig } from '../../ir/types'
+import type { IRScenario, IRStep } from '../../ir/types'
 import { renderLocatorTuple, pyStr } from './locator'
 import { renderPyInteraction, pyInteractionImports } from './interaction'
 import { renderPyAssertion } from './assertion'
@@ -15,6 +15,8 @@ import {
   screenshotThirdPartyImports,
 } from './screenshot'
 import { resolveTestData } from '../../planner/test-data-resolver'
+import { renderFillValueExpr } from './fill-value'
+import type { RenderOptions } from '../registry'
 import {
   buildScenarioFlow,
   initialUrl,
@@ -23,17 +25,6 @@ import {
   type FlowItem,
 } from '../../shared/scenario-flow'
 import { toPyIdentifier, toSnakeCase } from './naming'
-
-let TEST_DATA: TestDataConfig | undefined
-export function setSeleniumPyTestData(value: TestDataConfig | undefined): void {
-  TEST_DATA = value
-}
-
-function renderFillValueExpr(el: IRElement | undefined, recordedValue: string): string {
-  const r = resolveTestData(el, recordedValue, TEST_DATA)
-  if (!r.useEnvVar) return pyStr(r.literal)
-  return `os.environ.get(${pyStr(r.envVarName)}, ${pyStr(r.defaultValue)})`
-}
 
 export { toSnakeCase }
 
@@ -62,7 +53,7 @@ function renderWait(step: IRStep, indent: string): string {
   return ''
 }
 
-function renderStepInTest(step: IRStep, indent: string): string {
+function renderStepInTest(step: IRStep, indent: string, options: RenderOptions): string {
   if (step.action === 'navigate' && step.url) {
     return `${indent}driver.get(${pyStr(step.url)})`
   }
@@ -72,7 +63,7 @@ function renderStepInTest(step: IRStep, indent: string): string {
   }
   if (step.action === 'fill' && step.element) {
     const tuple = renderLocatorTuple(step.element)
-    const expr = renderFillValueExpr(step.element, step.value ?? '')
+    const expr = renderFillValueExpr(step.element, step.value ?? '', options.testData)
     return [
       `${indent}_el = WebDriverWait(driver, 10).until(EC.visibility_of_element_located(${tuple}))`,
       `${indent}_el.clear()`,
@@ -122,9 +113,9 @@ function docstringSafe(value: string): string {
   return value.replace(/"""/g, '\\"\\"\\"')
 }
 
-function renderArg(arg: FlowArg): string {
-  if (arg.fromFill && resolveTestData(arg.element, arg.value, TEST_DATA).useEnvVar) {
-    return renderFillValueExpr(arg.element, arg.value)
+function renderArg(arg: FlowArg, options: RenderOptions): string {
+  if (arg.fromFill && resolveTestData(arg.element, arg.value, options.testData).useEnvVar) {
+    return renderFillValueExpr(arg.element, arg.value, options.testData)
   }
   switch (arg.type) {
     case 'boolean':
@@ -137,25 +128,36 @@ function renderArg(arg: FlowArg): string {
   }
 }
 
-function renderItem(item: FlowItem, indent: string, contextState: PyContextState): string[] {
+function renderItem(
+  item: FlowItem,
+  indent: string,
+  contextState: PyContextState,
+  options: RenderOptions,
+): string[] {
   switch (item.kind) {
     case 'visit':
       return [`${indent}driver.get(${pyStr(item.url)})`]
     case 'call': {
-      const args = item.args.map(renderArg).join(', ')
+      const args = item.args.map((a) => renderArg(a, options)).join(', ')
       const receiver = toSnakeCase(item.page.className)
       return [`${indent}${receiver}.${toPyIdentifier(item.method.name)}(${args})`]
     }
     case 'inline':
       return item.page.steps
         .map((step) =>
-          wrapStepContext(step, renderStepInTest(step, indent), indent, contextState, 'test'),
+          wrapStepContext(
+            step,
+            renderStepInTest(step, indent, options),
+            indent,
+            contextState,
+            'test',
+          ),
         )
         .filter(Boolean)
   }
 }
 
-export function renderScenario(scenario: IRScenario): string {
+export function renderScenario(scenario: IRScenario, options: RenderOptions = {}): string {
   const flow = buildScenarioFlow(scenario)
   const used = pagesUsed(flow)
   const inlineSteps = flow.flatMap((item) => (item.kind === 'inline' ? item.page.steps : []))
@@ -175,7 +177,7 @@ export function renderScenario(scenario: IRScenario): string {
   const body = [
     ...opening,
     ...pageObjects,
-    ...flow.flatMap((item) => renderItem(item, indent, contextState)),
+    ...flow.flatMap((item) => renderItem(item, indent, contextState, options)),
   ].join('\n')
 
   const helpers = [renderTestContextHelpers(inlineSteps), renderScreenshotHelper(inlineSteps)]
@@ -186,6 +188,7 @@ export function renderScenario(scenario: IRScenario): string {
   const networkNote = renderNetworkNote(
     scenario.pages.flatMap((p) => p.steps),
     indent,
+    options,
   )
   const safeBody = (networkNote + body).trimEnd() || '    pass'
   const slug = testNameSlug(scenario.name)

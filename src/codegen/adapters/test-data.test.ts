@@ -136,17 +136,13 @@ describe('test-data parameterization — cypress', () => {
 })
 
 describe('test-data parameterization — selenium-py', () => {
-  beforeEach(() => {
-    seleniumPyAdapter.applyOptions?.({ testData: undefined })
-  })
-
   it('renders os.environ.get(VAR, default) for password fields', () => {
     const out = seleniumPyAdapter.renderScenario(scenario)
     expect(out.content).toContain(`os.environ.get('RECOSPEC_PASSWORD', 'change-me')`)
   })
 
   it('inserts `import os` only when env-var lookups are present', () => {
-    seleniumPyAdapter.applyOptions?.({
+    const options: RenderOptions = {
       testData: {
         params: [
           {
@@ -159,13 +155,13 @@ describe('test-data parameterization — selenium-py', () => {
           },
         ],
       },
-    })
-    const out = seleniumPyAdapter.renderScenario(scenario)
+    }
+    const out = seleniumPyAdapter.renderScenario(scenario, options)
     expect(out.content).toContain('import os')
   })
 
   it('emits .env.example when env-var params exist', () => {
-    seleniumPyAdapter.applyOptions?.({
+    const options: RenderOptions = {
       testData: {
         params: [
           {
@@ -178,8 +174,8 @@ describe('test-data parameterization — selenium-py', () => {
           },
         ],
       },
-    })
-    const env = seleniumPyAdapter.renderScaffold().find((f) => f.filename === '.env.example')
+    }
+    const env = seleniumPyAdapter.renderScaffold(options).find((f) => f.filename === '.env.example')
     expect(env?.content).toContain('RECOSPEC_PASSWORD=')
   })
 })

@@ -1,11 +1,4 @@
-import type {
-  IRPage,
-  IRElement,
-  IRStep,
-  InferredMethod,
-  IRParamType,
-  TestDataConfig,
-} from '../../ir/types'
+import type { IRPage, IRElement, IRStep, InferredMethod, IRParamType } from '../../ir/types'
 import { renderLocatorTuple, renderFallbackTuple, pyStr } from './locator'
 import { renderPyInteraction, pyInteractionImports } from './interaction'
 import { renderPyAssertion } from './assertion'
@@ -15,20 +8,10 @@ import {
   screenshotStdlibImports,
   screenshotThirdPartyImports,
 } from './screenshot'
-import { resolveTestData } from '../../planner/test-data-resolver'
+import { renderFillValueExpr } from './fill-value'
+import type { RenderOptions } from '../registry'
 import { absoluteUrl } from '../../shared/scenario-flow'
 import { toPyIdentifier } from './naming'
-
-let TEST_DATA: TestDataConfig | undefined
-export function setSeleniumPyPageObjectTestData(value: TestDataConfig | undefined): void {
-  TEST_DATA = value
-}
-
-function renderFillValueExpr(el: IRElement | undefined, recordedValue: string): string {
-  const r = resolveTestData(el, recordedValue, TEST_DATA)
-  if (!r.useEnvVar) return pyStr(r.literal)
-  return `os.environ.get(${pyStr(r.envVarName)}, ${pyStr(r.defaultValue)})`
-}
 
 // ---------------------------------------------------------------------------
 // Naming helpers
@@ -127,7 +110,7 @@ function renderLocatorConstant(el: IRElement): string {
 // Step rendering
 // ---------------------------------------------------------------------------
 
-function renderStepInMethod(step: IRStep, indent: string): string {
+function renderStepInMethod(step: IRStep, indent: string, options: RenderOptions): string {
   if (step.action === 'navigate' && step.url) {
     return `${indent}self.driver.get(${pyStr(step.url)})`
   }
@@ -138,7 +121,7 @@ function renderStepInMethod(step: IRStep, indent: string): string {
   if (step.action === 'fill' && step.element) {
     const ref = `self.${toConstName(step.element.name)}`
     const elField = `self.wait.until(EC.visibility_of_element_located(${ref}))`
-    const expr = renderFillValueExpr(step.element, step.value ?? '')
+    const expr = renderFillValueExpr(step.element, step.value ?? '', options.testData)
     return `${indent}_el = ${elField}\n${indent}_el.clear()\n${indent}_el.send_keys(${expr})`
   }
   if (step.element) {
@@ -191,7 +174,7 @@ function visibleElementExpr(el: IRElement): string {
 // Inferred methods
 // ---------------------------------------------------------------------------
 
-function renderInferredMethod(inferred: InferredMethod): string {
+function renderInferredMethod(inferred: InferredMethod, options: RenderOptions): string {
   const method: InferredMethod = {
     ...inferred,
     name: toPyIdentifier(inferred.name),
@@ -245,7 +228,7 @@ function renderInferredMethod(inferred: InferredMethod): string {
         })
       }
     }
-    return renderStepInMethod(s, '        ')
+    return renderStepInMethod(s, '        ', options)
   }
   const body = method.steps
     .map((s) => wrapStepContext(s, renderOne(s), '        ', contextState, 'page'))
@@ -259,7 +242,7 @@ function renderInferredMethod(inferred: InferredMethod): string {
 // Page Object class
 // ---------------------------------------------------------------------------
 
-export function renderPageObject(page: IRPage): string {
+export function renderPageObject(page: IRPage, options: RenderOptions = {}): string {
   const constants = page.elements.map(renderLocatorConstant).join('\n\n')
 
   const gotoStep = page.steps.find((s) => s.action === 'navigate')
@@ -278,13 +261,20 @@ export function renderPageObject(page: IRPage): string {
 
   let methodsBlock = ''
   if (page.inferredMethods?.length) {
-    methodsBlock = '\n\n' + page.inferredMethods.map(renderInferredMethod).join('\n\n')
+    methodsBlock =
+      '\n\n' + page.inferredMethods.map((m) => renderInferredMethod(m, options)).join('\n\n')
   } else {
     const contextState = newContextState()
     const stepLines = page.steps
       .filter((s) => s.action !== 'navigate')
       .map((s) =>
-        wrapStepContext(s, renderStepInMethod(s, '        '), '        ', contextState, 'page'),
+        wrapStepContext(
+          s,
+          renderStepInMethod(s, '        ', options),
+          '        ',
+          contextState,
+          'page',
+        ),
       )
       .filter(Boolean)
       .join('\n')

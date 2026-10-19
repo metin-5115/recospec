@@ -1,10 +1,5 @@
 import type { GeneratedFile } from '@shared/types/generated'
-import type { TestDataConfig } from '../../ir/types'
-
-let TEST_DATA: TestDataConfig | undefined
-export function setSeleniumPyScaffoldTestData(value: TestDataConfig | undefined): void {
-  TEST_DATA = value
-}
+import type { RenderOptions } from '../registry'
 
 const REQUIREMENTS_TXT = `selenium>=4.15.0
 pytest>=7.4.0
@@ -55,7 +50,7 @@ python_files = test_*.py
 addopts = -v --html=report.html --self-contained-html
 `
 
-export function renderScaffold(): GeneratedFile[] {
+export function renderScaffold(options: RenderOptions = {}): GeneratedFile[] {
   const files: GeneratedFile[] = [
     { filename: 'requirements.txt', content: REQUIREMENTS_TXT },
     { filename: 'conftest.py', content: CONFTEST_PY },
@@ -63,7 +58,7 @@ export function renderScaffold(): GeneratedFile[] {
     { filename: 'pages/__init__.py', content: '' },
     { filename: 'tests/__init__.py', content: '' },
   ]
-  const params = TEST_DATA?.params.filter((p) => p.useEnvVar) ?? []
+  const params = options.testData?.params.filter((p) => p.useEnvVar) ?? []
   if (params.length) {
     const header = '# Recospec — copy to .env and fill in your test data values.\n'
     const body = params.map((p) => `${p.envVarName}=${p.isSecret ? '' : p.defaultValue}`).join('\n')
