@@ -266,3 +266,20 @@ export const BASE_URL_ENV_VAR = 'BASE_URL' as const
 
 /** Base URL written into a generated project config when the recording had no http(s) origin. */
 export const DEFAULT_BASE_URL = 'http://localhost:3000' as const
+
+/** Keys recorded as `keypress` steps; every other key's effect already arrives through `change`. */
+export const RECORDED_KEYS = ['Enter', 'Tab', 'Escape'] as const
+
+/** Input types where Enter activates the control, so the resulting click is the recorded step. */
+export const ENTER_ACTIVATED_INPUT_TYPES = [
+  'button',
+  'submit',
+  'reset',
+  'image',
+  'checkbox',
+  'radio',
+  'file',
+] as const
+
+/** How long after a hover a DOM mutation still counts as the hover revealing something. */
+export const HOVER_DOM_CHANGE_WINDOW_MS = 1000 as const
