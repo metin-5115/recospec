@@ -295,3 +295,19 @@ export const URL_PATH_END_REGEX_SOURCE = '(?:[?#]|$)' as const
 
 /** Id of the assertion the generator appends when the recording contains none. */
 export const FINAL_STATE_ASSERTION_ID = 'final-state-url' as const
+
+/** Parameters whose recorded value can be the wrong one in a failed-login flow. */
+export const INVALID_ELIGIBLE_PARAM_NAMES = ['password', 'oneTimeCode'] as const
+
+/** Env var suffix of the value a failing flow typed (`RECOSPEC_PASSWORD_INVALID`). */
+export const INVALID_VALUE_ENV_SUFFIX = 'INVALID' as const
+
+/** Text that marks a message as an error (English and Turkish). */
+export const ERROR_TEXT_PATTERN =
+  /error|invalid|incorrect|wrong|failed|failure|denied|unauthori[sz]ed|try again|hata|geçersiz|yanlış|başarısız/i
+
+/** Element names that hold an error message (`loginError`, `alertBanner`). */
+export const ERROR_ELEMENT_NAME_PATTERN = /error|alert|invalid|failure|warning/i
+
+/** First HTTP status that counts as a failed request. */
+export const HTTP_ERROR_STATUS_MIN = 400 as const

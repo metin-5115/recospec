@@ -1,6 +1,7 @@
 import type { IRElement, TestDataConfig, TestDataParam } from '../ir/types'
 import { isSensitiveField, getParameterName, getEnvVarName } from './sensitive-detector'
 import { SECRET_PARAM_DEFAULT_VALUE } from '@shared/constants'
+import { valueFingerprint } from '../shared/value-fingerprint'
 
 /**
  * Per-element resolution telling adapters how to render a value substitution.
@@ -28,11 +29,16 @@ export function testDataKey(element: IRElement | undefined): string | undefined 
 function findParam(
   config: TestDataConfig | undefined,
   element: IRElement | undefined,
+  recordedValue: string,
 ): TestDataParam | undefined {
   if (!config?.params?.length || !element) return undefined
   const k = testDataKey(element)
   if (!k) return undefined
-  return config.params.find((p) => p.key === k)
+  const fingerprint = valueFingerprint(recordedValue)
+  return (
+    config.params.find((p) => p.baseKey === k && p.valueFingerprint === fingerprint) ??
+    config.params.find((p) => p.key === k)
+  )
 }
 
 /**
@@ -50,7 +56,7 @@ export function resolveTestData(
   recordedValue: string,
   config?: TestDataConfig,
 ): ResolvedValue {
-  const override = findParam(config, element)
+  const override = findParam(config, element, recordedValue)
   const detectedSecret = isSensitiveField(element)
   const isSecret = override?.isSecret ?? detectedSecret
 

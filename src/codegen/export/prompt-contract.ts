@@ -1,5 +1,6 @@
 import { getEnvVarName } from '../planner/sensitive-detector'
-import type { IRPage, IRParamType } from '../ir/types'
+import type { InferredMethod, IRPage, IRParamType } from '../ir/types'
+import { deriveFillVariants, fillEnvVarName, type FillVariant } from '../planner/fill-variants'
 
 /** Minimum raw value length worth masking; shorter strings would mangle unrelated text. */
 const MIN_REDACTABLE_LENGTH = 4
@@ -33,8 +34,25 @@ export function slugifyFlow(name: string): string {
   return slug || 'flow'
 }
 
+/** Variants of sensitive fields across the whole recording (a different value gets its own env var). */
+export function fillVariantsOf(pages: IRPage[]): FillVariant[] {
+  return deriveFillVariants(pages.flatMap((p) => p.steps))
+}
+
+/** Env var a sensitive method parameter reads — the same name the generated code uses. */
+export function methodParamEnvVar(
+  variants: readonly FillVariant[],
+  method: InferredMethod,
+  paramIndex: number,
+  paramName: string,
+): string {
+  const fill = method.steps.filter((s) => s.action === 'fill')[paramIndex]
+  return fillEnvVarName(variants, fill?.element, fill?.value ?? '') ?? getEnvVarName(paramName)
+}
+
 export function collectContractRows(pages: IRPage[]): ContractRow[] {
   const rows: ContractRow[] = []
+  const variants = fillVariantsOf(pages)
   for (const page of pages) {
     for (const method of page.inferredMethods ?? []) {
       const fillSteps = method.steps.filter((s) => s.action === 'fill')
@@ -48,7 +66,7 @@ export function collectContractRows(pages: IRPage[]): ContractRow[] {
           paramName,
           paramType,
           isSecret,
-          envVarName: isSecret ? getEnvVarName(paramName) : undefined,
+          envVarName: isSecret ? methodParamEnvVar(variants, method, idx, paramName) : undefined,
           rawValue: fill?.value ?? '',
         })
       })

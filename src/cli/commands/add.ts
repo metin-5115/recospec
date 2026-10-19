@@ -3,6 +3,7 @@ import { dirname, resolve } from 'node:path'
 import { normalizeActions } from '@codegen/normalizer/action-normalizer'
 import { groupIntoPages } from '@codegen/planner/page-grouper'
 import { appendFinalStateAssertion } from '@codegen/planner/final-assertion'
+import { withFillVariants } from '@codegen/planner/fill-variants'
 import { applyTemplateModes, applyComposedModes } from '@codegen/planner/template-modes'
 import type { TemplateParamMode } from '@codegen/ir/types'
 import { getAdapter, type RenderOptions } from '@codegen/adapters/registry'
@@ -111,6 +112,7 @@ export async function runAdd(opts: AddOptions, reporter?: ConflictReporter): Pro
   const adapter = getAdapter(framework)
   const renderOptions: RenderOptions = {
     includeMocks: opts.includeMocks,
+    testData: withFillVariants(undefined, normalized),
     bdd,
     flowSlug: flowSlug(scenario.name),
     baseUrl: recordedOrigin(scenario),

@@ -3,6 +3,7 @@ import { getSession } from '@storage/session-repo'
 import { normalizeActions } from './normalizer/action-normalizer'
 import { groupIntoPages } from './planner/page-grouper'
 import { appendFinalStateAssertion } from './planner/final-assertion'
+import { withFillVariants } from './planner/fill-variants'
 import './adapters/playwright-ts'
 import './adapters/cypress'
 import './adapters/selenium-py'
@@ -115,7 +116,7 @@ export async function generate(
   const adapter = getAdapter(framework)
   const renderOptions: RenderOptions = {
     includeMocks: options.includeMocks,
-    testData: options.testData,
+    testData: withFillVariants(options.testData, normalized),
     bdd: options.bdd,
     flowSlug: flowSlug(scenario.name),
     baseUrl: recordedOrigin(scenario),

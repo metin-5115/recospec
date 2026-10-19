@@ -1,6 +1,6 @@
 import { normalizeActions } from '../normalizer/action-normalizer'
 import { groupIntoPages } from '../planner/page-grouper'
-import { getEnvVarName } from '../planner/sensitive-detector'
+import type { FillVariant } from '../planner/fill-variants'
 import {
   PROMPT_ELEMENT_TEXT_PREVIEW_MAX,
   PROMPT_STRIPPED_HEADERS,
@@ -12,6 +12,8 @@ import {
   buildRedactionMap,
   buildRedactor,
   collectContractRows,
+  fillVariantsOf,
+  methodParamEnvVar,
   slugifyFlow,
   type ContractRow,
   type PromptRedaction,
@@ -258,7 +260,7 @@ function buildElement(el: IRElement, redact: Redact): string {
   )
 }
 
-function buildMethods(page: IRPage): string | undefined {
+function buildMethods(page: IRPage, variants: readonly FillVariant[]): string | undefined {
   const methods = page.inferredMethods ?? []
   if (methods.length === 0) return undefined
   return xmlBlock(
@@ -274,7 +276,7 @@ function buildMethods(page: IRPage): string | undefined {
             name: param,
             type: method.paramTypes?.[idx] ?? 'string',
             sensitive: sensitive ? true : undefined,
-            env_var: sensitive ? getEnvVarName(param) : undefined,
+            env_var: sensitive ? methodParamEnvVar(variants, method, idx, param) : undefined,
           })
         }),
       ),
@@ -283,6 +285,7 @@ function buildMethods(page: IRPage): string | undefined {
 }
 
 function buildPages(pages: IRPage[], redact: Redact): string {
+  const variants = fillVariantsOf(pages)
   if (pages.length === 0) return xmlBlock('pages', { empty: true })
   return xmlBlock(
     'pages',
@@ -295,7 +298,7 @@ function buildPages(pages: IRPage[], redact: Redact): string {
           page.elements.map((el) => buildElement(el, redact)),
         ),
       ]
-      const methods = buildMethods(page)
+      const methods = buildMethods(page, variants)
       if (methods) children.push(methods)
       return xmlBlock(
         'page',

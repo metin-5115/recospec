@@ -208,6 +208,13 @@ export interface TestDataParam {
   useEnvVar: boolean
   /** SCREAMING_SNAKE_CASE env var name (without `RECOSPEC_` prefix). */
   envVarName: string
+  /**
+   * Set on a parameter for a different value typed into the same field (`RECOSPEC_PASSWORD_INVALID`):
+   * the key of the field's regular parameter. The value itself is only kept as a fingerprint.
+   */
+  baseKey?: string
+  /** Fingerprint of the recorded value this variant stands for (see `valueFingerprint`). */
+  valueFingerprint?: string
 }
 
 /** Full test data configuration shipped from the side panel into codegen. */
