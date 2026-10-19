@@ -120,7 +120,11 @@ export function renderPageObject(page: IRPage, options: RenderOptions = {}): str
     ? `  // WARNING: Multiple pages share this URL pattern (${page.normalizedUrl}) with different titles.\n`
     : ''
 
-  return `import { type Page } from '@playwright/test';
+  const playwrightImport = /\bexpect\(/.test(methodsBlock)
+    ? "import { expect, type Page } from '@playwright/test';"
+    : "import { type Page } from '@playwright/test';"
+
+  return `${playwrightImport}
 ${renderDateFnsImports(page)}
 export class ${page.className} {
   constructor(private readonly page: Page) {}

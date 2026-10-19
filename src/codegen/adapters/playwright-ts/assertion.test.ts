@@ -123,6 +123,24 @@ describe('assertion codegen — renderPageObject', () => {
   })
 })
 
+describe('assertion codegen — page object imports', () => {
+  it('imports expect when a method body asserts', () => {
+    expect(renderPageObject(pageWithAssertions)).toContain(
+      "import { expect, type Page } from '@playwright/test';",
+    )
+  })
+
+  it('keeps the Page-only import when nothing asserts', () => {
+    const page: IRPage = {
+      ...pageWithAssertions,
+      steps: [{ id: 's1', action: 'navigate', url: '/' }],
+    }
+    const out = renderPageObject(page)
+    expect(out).toContain("import { type Page } from '@playwright/test';")
+    expect(out).not.toContain('expect')
+  })
+})
+
 describe('assertion codegen — screenshot', () => {
   const screenshotPage: IRPage = {
     name: 'Home',
