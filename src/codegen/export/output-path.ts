@@ -1,5 +1,11 @@
 import type { FrameworkId } from '@shared/types/generated'
 
+/** A flow's test class is `<Flow>Test.java`; `Test<Flow>.java` is the older spelling. */
+function isJavaTestClass(filename: string): boolean {
+  if (!filename.endsWith('.java') || filename.endsWith('Page.java')) return false
+  return filename.endsWith('Test.java') || filename.startsWith('Test')
+}
+
 /**
  * Where a generated file lives in a project, relative to its root. The ZIP export and the CLI
  * both write through this table, so an import path in a spec resolves the same way in either.
@@ -42,8 +48,7 @@ export function resolveOutputPath(filename: string, framework: FrameworkId | str
     if (filename === 'junit-platform.properties') return `src/test/resources/${filename}`
     if (filename === 'StepDefinitions.java') return `src/test/java/steps/${filename}`
     if (filename === 'CucumberRunner.java') return `src/test/java/runners/${filename}`
-    if (filename.startsWith('Test') && filename.endsWith('.java'))
-      return `src/test/java/tests/${filename}`
+    if (isJavaTestClass(filename)) return `src/test/java/tests/${filename}`
     if (filename.endsWith('.java')) return `src/main/java/pages/${filename}`
     return filename
   }

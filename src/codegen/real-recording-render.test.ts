@@ -225,13 +225,13 @@ describe.each(Object.entries(RECORDINGS))('real %s recording', (_label, recordin
     const files = render(recording, 'playwright-ts')
     expect(source(files)).not.toMatch(/getByRole\((?!["'])/)
     const layout = projectLayout(files, 'playwright-ts')
-    expect(Object.keys(layout)).toContain('tests/scenario.spec.ts')
+    expect(Object.keys(layout).some((p) => /^tests\/[\w-]+\.spec\.ts$/.test(p))).toBe(true)
     expect(typeErrors(layout)).toEqual([])
   }, 30_000)
 
   describe('Playwright scenario', () => {
     const files = () => render(recording, 'playwright-ts')
-    const spec = () => files().find((f) => f.filename === 'scenario.spec.ts') as GeneratedFile
+    const spec = () => files().at(-1) as GeneratedFile
 
     it('imports page objects from where the project layout puts them', () => {
       const imports = [...spec().content.matchAll(/from '([^']+)'/g)].map((m) => m[1])
@@ -264,7 +264,7 @@ describe.each(Object.entries(RECORDINGS))('real %s recording', (_label, recordin
 
     it('points each page object at the route it was recorded on', () => {
       const gotos = files()
-        .filter((f) => f.filename !== 'scenario.spec.ts')
+        .slice(0, -1)
         .map((f) => f.content.match(/async goto\(\) \{\s*await this\.page\.goto\(("[^"]*")\)/)?.[1])
       expect(gotos.map((g) => g && JSON.parse(g))).toEqual(recordedRoutes(recording))
     })
@@ -293,7 +293,7 @@ describe.each(Object.entries(RECORDINGS))('real %s recording', (_label, recordin
 
   describe('Cypress scenario', () => {
     const rendered = render(recording, 'cypress')
-    const spec = rendered.find((f) => f.filename === 'scenario.cy.js') as GeneratedFile
+    const spec = rendered.at(-1) as GeneratedFile
     const signature = /^ {2}(\w+)\(([^)]*)\) \{/gm
 
     it('imports page objects that sit where the project layout puts them', () => {
@@ -343,7 +343,7 @@ describe.each(Object.entries(RECORDINGS))('real %s recording', (_label, recordin
   describe('Selenium Python scenario', () => {
     const rendered = render(recording, 'selenium-py')
     const files = () => rendered
-    const spec = () => rendered.find((f) => f.filename === 'test_scenario.py') as GeneratedFile
+    const spec = () => rendered.at(-1) as GeneratedFile
     const pageFiles = () => rendered.filter((f) => f !== spec())
 
     it('uses snake_case for every method and parameter', () => {
@@ -405,7 +405,7 @@ describe.each(Object.entries(RECORDINGS))('real %s recording', (_label, recordin
 
   describe('Selenium Java scenario', () => {
     const rendered = render(recording, 'selenium-java')
-    const spec = rendered.find((f) => f.filename.startsWith('Test')) as GeneratedFile
+    const spec = rendered.at(-1) as GeneratedFile
     const pageFiles = rendered.filter((f) => f !== spec)
     const signature = /^ {4}public (?:void|\w+) (\w+)\(([^)]*)\)/gm
 

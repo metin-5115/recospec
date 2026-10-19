@@ -4,6 +4,7 @@ import { mapScenarioToGherkin, literalArgsFor, type GherkinStep } from '../../bd
 
 export { renderFeatureFile } from '../../bdd/feature-file'
 import { toPyIdentifier, toSnakeCase } from './naming'
+import { flowSlug } from '../../shared/flow-slug'
 
 // ---------------------------------------------------------------------------
 // Cucumber pattern → pytest-bdd `parse` / `cfparse` pattern
@@ -196,11 +197,11 @@ export function renderStepsFile(scenario: IRScenario): string {
   }
 
   // Layout (matches zip-export routing):
-  //   features/scenario.feature
-  //   tests/test_scenario.py    ← this file
+  //   features/<slug>.feature
+  //   tests/test_<slug>.py      ← this file
   //   pages/<snake>.py
-  // From tests/test_scenario.py:
-  //   ../features/scenario.feature
+  // From tests/test_<slug>.py:
+  //   ../features/<slug>.feature
   //   ../pages/<snake>
   const importLines: string[] = ['from pytest_bdd import scenarios, given, when, then, parsers']
   importLines.push('from selenium.webdriver.common.by import By')
@@ -219,7 +220,7 @@ export function renderStepsFile(scenario: IRScenario): string {
   }
 
   const head = importLines.join('\n')
-  const scenariosLine = `scenarios('../features/scenario.feature')`
+  const scenariosLine = `scenarios('../features/${flowSlug(scenario.name)}.feature')`
 
   return `${head}
 

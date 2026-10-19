@@ -3,8 +3,10 @@ import type { GeneratedCode } from '@shared/types/generated'
 import type { Session } from '@shared/types/session'
 import { slugifyFilename } from '@shared/slug'
 import { resolveOutputPath } from './output-path'
+import { flowSlug } from '../shared/flow-slug'
 
 const README_TEMPLATE = (session: Session, framework: string) => {
+  const snapshotsDir = `tests/${flowSlug(session.name)}.spec.ts-snapshots/`
   const isCypress = framework === 'cypress'
   const isSeleniumPy = framework === 'selenium-py'
   const isSeleniumJava = framework === 'selenium-java'
@@ -21,7 +23,7 @@ const README_TEMPLATE = (session: Session, framework: string) => {
       ? '```\npages/         Page Object Model classes (one file per recorded page)\ntests/         Pytest test scenarios\nconftest.py    Chrome WebDriver fixture (headless by default; --headed flag)\npytest.ini     Pytest config + HTML report\nrequirements.txt\n```'
       : isSeleniumJava
         ? '```\nsrc/main/java/pages/   Page Object Model classes (PageFactory + @FindBy)\nsrc/test/java/tests/   TestNG test classes (@BeforeMethod / @Test / @AfterMethod)\npom.xml                Maven build (selenium-java, testng, webdrivermanager)\ntestng.xml             TestNG suite config\n```'
-        : '```\npages/                              Page Object Model classes (one file per page)\ntests/                              Test scenarios\ntests/scenario.spec.ts-snapshots/   Visual regression baselines (committed)\nutils/                              selfHealingLocator helper\nplaywright.config.ts\npackage.json\n```'
+        : `\`\`\`\npages/                              Page Object Model classes (one file per page)\ntests/                              Test scenarios\n${snapshotsDir}   Visual regression baselines (committed)\nutils/                              selfHealingLocator helper\nplaywright.config.ts\npackage.json\n\`\`\``
 
   const selfHealingNote = isCypress
     ? '`cypress/support/locator.js` registers `cy.selfHealing([...])` — pass the primary selector and recorded fallbacks; the first one that matches wins.'
@@ -41,7 +43,7 @@ npx cypress run --env updateSnapshots=true
       ? `Selenium has no built-in visual matcher, so screenshot assertions call a small \`_assert_screenshot()\` helper (Pillow, listed in \`requirements.txt\`). The first run records a baseline under \`screenshots/\` — commit it. Later runs fail when more than the allowed ratio of pixels differ (default \`0.02\`). Delete a baseline to re-record it.`
       : isSeleniumJava
         ? `Selenium has no built-in visual matcher, so screenshot assertions call a small \`assertScreenshot()\` helper (JDK \`ImageIO\` only — no extra dependency). The first run records a baseline under \`screenshots/\` — commit it. Later runs fail when more than the allowed ratio of pixels differ (default \`0.02\`). Delete a baseline to re-record it.`
-        : `Generated tests use Playwright's built-in \`toHaveScreenshot()\` matcher. The first run produces baselines under \`tests/scenario.spec.ts-snapshots/\` — commit them. Later runs compare pixel-by-pixel; the default \`threshold\` is \`0.2\` (20% per-pixel allowance). Update baselines with:
+        : `Generated tests use Playwright's built-in \`toHaveScreenshot()\` matcher. The first run produces baselines under \`${snapshotsDir}\` — commit them. Later runs compare pixel-by-pixel; the default \`threshold\` is \`0.2\` (20% per-pixel allowance). Update baselines with:
 
 \`\`\`bash
 npx playwright test --update-snapshots

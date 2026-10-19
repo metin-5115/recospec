@@ -564,7 +564,7 @@ describe('renderPromptMarkdown — XML structure', () => {
     [
       'selenium-java',
       'src/main/java/pages/LoginPage.java',
-      'src/test/java/tests/TestLoginFlow.java',
+      'src/test/java/tests/LoginFlowTest.java',
     ],
   ] as const)(
     'lists %s deliverables at framework-idiomatic paths',

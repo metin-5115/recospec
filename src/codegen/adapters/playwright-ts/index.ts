@@ -3,6 +3,7 @@ import { renderFeatureFile, renderStepsFile, renderBddScaffoldFiles } from './bd
 import { renderPageObject } from './page-object'
 import { renderScenario } from './scenario'
 import { renderScaffold } from './scaffold'
+import { flowSlug } from '../../shared/flow-slug'
 
 // Public surface kept stable for tests and callers that import from the adapter root.
 export { renderLocator } from './locator'
@@ -21,16 +22,19 @@ export const playwrightTsAdapter: FrameworkAdapter = {
     return { filename: `${page.className}.ts`, content: renderPageObject(page, options) }
   },
   renderScenario(scenario, options) {
-    return { filename: 'scenario.spec.ts', content: renderScenario(scenario, options) }
+    return {
+      filename: `${flowSlug(scenario.name)}.spec.ts`,
+      content: renderScenario(scenario, options),
+    }
   },
   renderScaffold(options) {
     return renderScaffold(options)
   },
   renderBddFeature(scenario) {
-    return { filename: 'scenario.feature', content: renderFeatureFile(scenario) }
+    return { filename: `${flowSlug(scenario.name)}.feature`, content: renderFeatureFile(scenario) }
   },
   renderBddSteps(scenario) {
-    return { filename: 'scenario.steps.ts', content: renderStepsFile(scenario) }
+    return { filename: `${flowSlug(scenario.name)}.steps.ts`, content: renderStepsFile(scenario) }
   },
   renderBddScaffold() {
     return renderBddScaffoldFiles()

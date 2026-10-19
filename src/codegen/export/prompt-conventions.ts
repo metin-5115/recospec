@@ -67,7 +67,7 @@ export const FRAMEWORK_CONVENTIONS: Record<FrameworkId, FrameworkConvention> = {
     runCommand: 'mvn test',
     envLookup: 'System.getenv().getOrDefault("X", "change-me")',
     pageObjectPath: (className) => `src/main/java/pages/${className}.java`,
-    scenarioPath: (slug) => `src/test/java/tests/Test${pascalCase(slug)}.java`,
+    scenarioPath: (slug) => `src/test/java/tests/${pascalCase(slug)}Test.java`,
     rules: [
       'Page objects use `@FindBy` fields initialised with `PageFactory.initElements(driver, this)`.',
       'Tests are TestNG classes with `@BeforeMethod`/`@Test`/`@AfterMethod`; use `WebDriverWait`, never `Thread.sleep`.',

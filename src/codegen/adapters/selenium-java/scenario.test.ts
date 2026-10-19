@@ -42,7 +42,7 @@ describe('selenium-java renderScenario', () => {
   it('emits a TestNG test class with the scenario method', () => {
     const scenario: IRScenario = { name: 'Login flow', pages: [loginPage] }
     const out = renderScenario(scenario)
-    expect(out).toContain('public class TestLoginFlow {')
+    expect(out).toContain('public class LoginFlowTest {')
     expect(out).toContain('@Test')
     expect(out).toContain('public void loginFlow() {')
   })

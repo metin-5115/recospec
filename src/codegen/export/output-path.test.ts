@@ -16,6 +16,7 @@ describe('resolveOutputPath', () => {
     ['selenium-py', 'conftest.py', 'conftest.py'],
     ['selenium-java', 'ShopPage.java', 'src/main/java/pages/ShopPage.java'],
     ['selenium-java', 'TestCheckoutFlow.java', 'src/test/java/tests/TestCheckoutFlow.java'],
+    ['selenium-java', 'CheckoutFlowTest.java', 'src/test/java/tests/CheckoutFlowTest.java'],
     ['selenium-java', 'pom.xml', 'pom.xml'],
     ['cypress', 'cypress/support/e2e.js', 'cypress/support/e2e.js'],
   ] as const)('routes %s %s to %s', (framework, filename, expected) => {

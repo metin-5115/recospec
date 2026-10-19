@@ -4,6 +4,7 @@ import { registerAdapter, type FrameworkAdapter, type RenderOptions } from '../r
 import { renderPageObject } from './page-object'
 import { renderScenario } from './scenario'
 import { renderLocator } from './locator'
+import { flowSlug } from '../../shared/flow-slug'
 import { CYPRESS_SELF_HEALING_JS } from '../../scaffold/self-healing'
 import { renderFeatureFile, renderStepsFile, renderBddScaffoldFiles } from './bdd'
 
@@ -91,16 +92,19 @@ export const cypressAdapter: FrameworkAdapter = {
     return { filename: `${page.className}.js`, content: renderPageObject(page, options) }
   },
   renderScenario(scenario: IRScenario, options?: RenderOptions): GeneratedFile {
-    return { filename: 'scenario.cy.js', content: renderScenario(scenario, options) }
+    return {
+      filename: `${flowSlug(scenario.name)}.cy.js`,
+      content: renderScenario(scenario, options),
+    }
   },
   renderScaffold(options) {
     return renderScaffold(options)
   },
   renderBddFeature(scenario) {
-    return { filename: 'scenario.feature', content: renderFeatureFile(scenario) }
+    return { filename: `${flowSlug(scenario.name)}.feature`, content: renderFeatureFile(scenario) }
   },
   renderBddSteps(scenario) {
-    return { filename: 'scenario.steps.js', content: renderStepsFile(scenario) }
+    return { filename: `${flowSlug(scenario.name)}.steps.js`, content: renderStepsFile(scenario) }
   },
   renderBddScaffold() {
     return renderBddScaffoldFiles()

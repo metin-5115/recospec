@@ -95,9 +95,9 @@ describe('renderStepsFile (Selenium-py BDD)', () => {
 
   it('wires @scenarios to the relative feature path', () => {
     const content = renderStepsFile(scenario)
-    // step file lives at tests/test_scenario.py, feature lives at
-    // features/scenario.feature → relative path is ../features/scenario.feature
-    expect(content).toContain(`scenarios('../features/scenario.feature')`)
+    // step file lives at tests/test_<slug>.py, feature lives at
+    // features/<slug>.feature → relative path is ../features/<slug>.feature
+    expect(content).toContain(`scenarios('../features/user-can-log-in.feature')`)
   })
 
   it('converts {string} → "{argN}" and registers as parsers.parse', () => {

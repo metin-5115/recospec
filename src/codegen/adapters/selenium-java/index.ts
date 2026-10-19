@@ -4,6 +4,7 @@ import { registerAdapter, type FrameworkAdapter, type RenderOptions } from '../r
 import { renderPageObject } from './page-object'
 import { renderScenario, toJavaMethodName } from './scenario'
 import { renderScaffold } from './scaffold'
+import { flowPascalName, flowSlug } from '../../shared/flow-slug'
 import { renderFeatureFile, renderStepsFile, renderBddScaffoldFiles } from './bdd'
 
 export { renderPageObject, renderScenario, renderScaffold, toJavaMethodName }
@@ -30,15 +31,14 @@ export const seleniumJavaAdapter: FrameworkAdapter = {
     }
   },
   renderScenario(scenario: IRScenario, options?: RenderOptions): GeneratedFile {
-    const suffix = toJavaMethodName(scenario.name)
-    const className = `Test${suffix.charAt(0).toUpperCase() + suffix.slice(1)}`
+    const className = `${flowPascalName(scenario.name)}Test`
     return { filename: `${className}.java`, content: renderScenario(scenario, options) }
   },
   renderScaffold(options) {
     return renderScaffold(options)
   },
   renderBddFeature(scenario) {
-    return { filename: 'scenario.feature', content: renderFeatureFile(scenario) }
+    return { filename: `${flowSlug(scenario.name)}.feature`, content: renderFeatureFile(scenario) }
   },
   renderBddSteps(scenario) {
     return { filename: 'StepDefinitions.java', content: renderStepsFile(scenario) }

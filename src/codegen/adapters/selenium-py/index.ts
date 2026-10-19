@@ -4,6 +4,7 @@ import { registerAdapter, type FrameworkAdapter, type RenderOptions } from '../r
 import { renderPageObject } from './page-object'
 import { renderScenario, toSnakeCase } from './scenario'
 import { renderScaffold } from './scaffold'
+import { flowSlug, flowSnakeSlug } from '../../shared/flow-slug'
 import { renderFeatureFile, renderStepsFile, renderBddScaffoldFiles } from './bdd'
 
 export { renderPageObject, renderScenario, renderScaffold, toSnakeCase }
@@ -24,17 +25,23 @@ export const seleniumPyAdapter: FrameworkAdapter = {
     }
   },
   renderScenario(scenario: IRScenario, options?: RenderOptions): GeneratedFile {
-    return { filename: 'test_scenario.py', content: renderScenario(scenario, options) }
+    return {
+      filename: `test_${flowSnakeSlug(scenario.name)}.py`,
+      content: renderScenario(scenario, options),
+    }
   },
   renderScaffold(options) {
     return renderScaffold(options)
   },
   renderBddFeature(scenario) {
-    return { filename: 'scenario.feature', content: renderFeatureFile(scenario) }
+    return { filename: `${flowSlug(scenario.name)}.feature`, content: renderFeatureFile(scenario) }
   },
   renderBddSteps(scenario) {
     // `test_*.py` so zip-export routes it into `tests/` alongside conftest.py.
-    return { filename: 'test_scenario.py', content: renderStepsFile(scenario) }
+    return {
+      filename: `test_${flowSnakeSlug(scenario.name)}.py`,
+      content: renderStepsFile(scenario),
+    }
   },
   renderBddScaffold() {
     return renderBddScaffoldFiles()

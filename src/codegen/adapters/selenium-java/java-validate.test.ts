@@ -124,7 +124,7 @@ describe('selenium-java — generated source passes structural validation', () =
 
   it('renderScenario output is structurally valid Java', () => {
     const scenario: IRScenario = { name: 'Login flow', pages: [loginPage] }
-    expectValid(renderScenario(scenario), 'TestLoginFlow.java')
+    expectValid(renderScenario(scenario), 'LoginFlowTest.java')
   })
 
   it('handles iframes and shadow DOM warnings without breaking syntax', () => {

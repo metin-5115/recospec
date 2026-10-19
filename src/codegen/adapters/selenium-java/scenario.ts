@@ -20,19 +20,24 @@ import {
   type FlowArg,
   type FlowItem,
 } from '../../shared/scenario-flow'
+import { FLOW_SLUG_FALLBACK, flowPascalName } from '../../shared/flow-slug'
 
 /** Convert a recorded scenario name to a valid Java method name suffix. */
 export function toJavaMethodName(name: string): string {
   const cleaned = name.replace(/[^A-Za-z0-9]+/g, ' ').trim()
-  if (!cleaned) return 'flow'
+  if (!cleaned) return FLOW_SLUG_FALLBACK
   const parts = cleaned.split(/\s+/)
-  return parts
+  const camel = parts
     .map((p, i) =>
       i === 0
         ? p.charAt(0).toLowerCase() + p.slice(1).toLowerCase()
         : p.charAt(0).toUpperCase() + p.slice(1).toLowerCase(),
     )
     .join('')
+  // A method name cannot start with a digit (`2FA login` → `flow2faLogin`).
+  return /^\d/.test(camel)
+    ? `${FLOW_SLUG_FALLBACK}${camel.charAt(0).toUpperCase()}${camel.slice(1)}`
+    : camel
 }
 
 /** Convert a class name (LoginPage) to a camelCase variable name (loginPage). */
@@ -221,7 +226,7 @@ export function renderScenario(scenario: IRScenario, options: RenderOptions = {}
   )
   const safeBody = (networkNote + stepLines).trimEnd() || `${INDENT}// no steps recorded`
   const methodSuffix = toJavaMethodName(scenario.name)
-  const className = `Test${methodSuffix.charAt(0).toUpperCase() + methodSuffix.slice(1)}`
+  const className = `${flowPascalName(scenario.name)}Test`
   const interactionImports = javaInteractionImports(inlineSteps)
   const extraImports = `${interactionImports}${contextImports}${pageImports}`
 

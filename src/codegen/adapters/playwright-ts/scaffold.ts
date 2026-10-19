@@ -1,6 +1,7 @@
 import type { GeneratedFile } from '../../ir/types'
 import { PLAYWRIGHT_SELF_HEALING_TS } from '../../scaffold/self-healing'
 import type { RenderOptions } from '../registry'
+import { FLOW_SLUG_FALLBACK } from '../../shared/flow-slug'
 
 function renderEnvExample(options: RenderOptions): GeneratedFile | null {
   const params = options.testData?.params.filter((p) => p.useEnvVar) ?? []
@@ -74,7 +75,10 @@ export default defineConfig({
     { filename: 'playwright.config.ts', content: playwrightConfig },
     { filename: 'tsconfig.json', content: tsConfig },
     { filename: 'utils/locator.ts', content: PLAYWRIGHT_SELF_HEALING_TS },
-    { filename: 'tests/scenario.spec.ts-snapshots/.gitkeep', content: '' },
+    {
+      filename: `tests/${options.flowSlug ?? FLOW_SLUG_FALLBACK}.spec.ts-snapshots/.gitkeep`,
+      content: '',
+    },
   ]
   const envExample = renderEnvExample(options)
   if (envExample) files.push(envExample)

@@ -97,6 +97,8 @@ describe('runAdd dry run', () => {
   })
 })
 
+const specFile = 'login-flow.spec.ts'
+
 describe('runAdd output selection', () => {
   it('page-objects-only writes a page object and no test spec', async () => {
     await runAdd(
@@ -132,11 +134,24 @@ describe('runAdd output selection', () => {
 
   it('writes a spec that opens the start URL and imports the page object it was written next to', async () => {
     await runAdd({ json: jsonPath, projectDir: tmp, framework: 'playwright-ts' }, failingReporter)
-    const spec = readFileSync(join(tmp, 'tests', 'scenario.spec.ts'), 'utf8')
+    const spec = readFileSync(join(tmp, 'tests', specFile), 'utf8')
     expect(spec).toContain('await page.goto("https://example.com/login");')
     const imported = spec.match(/from '(\.\.\/pages\/\w+)'/)?.[1]
     expect(imported).toBeDefined()
     expect(existsSync(join(tmp, 'tests', `${imported}.ts`))).toBe(true)
+  })
+
+  it('writes two different flows into one project without overwriting the first spec', async () => {
+    const other = join(tmp, 'checkout.json')
+    const payload = makePayload()
+    payload.session.name = 'Checkout'
+    writeFileSync(other, JSON.stringify(payload), 'utf8')
+
+    await runAdd({ json: jsonPath, projectDir: tmp, framework: 'playwright-ts', force: true })
+    await runAdd({ json: other, projectDir: tmp, framework: 'playwright-ts', force: true })
+
+    const specs = listFiles(tmp).filter((f) => f.endsWith('.spec.ts'))
+    expect(specs.sort()).toEqual(['/tests/checkout.spec.ts', '/tests/login-flow.spec.ts'])
   })
 
   it('default selection writes both page object and spec but no scaffold', async () => {

@@ -21,6 +21,16 @@ export interface RenderOptions {
   testData?: TestDataConfig
   /** Emit Gherkin .feature + step definitions instead of a vanilla spec. */
   bdd?: boolean
+  /**
+   * Slug of the recorded flow (see `flowSlug`). Scaffold files that live next to the spec —
+   * Playwright's `<slug>.spec.ts-snapshots/` — need it; defaults to the generic name.
+   */
+  flowSlug?: string
+  /**
+   * Origin the flow was recorded on. Scaffold config (Playwright `baseURL`, Cypress `baseUrl`,
+   * pytest `BASE_URL`) defaults to it; specs and page objects use routes relative to it.
+   */
+  baseUrl?: string
 }
 
 export interface FrameworkAdapter {

@@ -5,6 +5,7 @@ import { groupIntoPages } from '@codegen/planner/page-grouper'
 import { applyTemplateModes, applyComposedModes } from '@codegen/planner/template-modes'
 import type { TemplateParamMode } from '@codegen/ir/types'
 import { getAdapter, type RenderOptions } from '@codegen/adapters/registry'
+import { flowSlug } from '@codegen/shared/flow-slug'
 import type { FrameworkId, GeneratedFile, OutputSelection } from '@shared/types/generated'
 import { normalizeSelection } from '@shared/types/generated'
 import type { JsonExportPayload } from '@codegen/export/json-export'
@@ -101,7 +102,11 @@ export async function runAdd(opts: AddOptions, reporter?: ConflictReporter): Pro
   const scenario = { name: payload.session.name, startUrl: payload.session.startUrl, pages }
 
   const adapter = getAdapter(framework)
-  const renderOptions: RenderOptions = { includeMocks: opts.includeMocks, bdd }
+  const renderOptions: RenderOptions = {
+    includeMocks: opts.includeMocks,
+    bdd,
+    flowSlug: flowSlug(scenario.name),
+  }
   if (bdd && selection.test) {
     if (!adapter.renderBddFeature || !adapter.renderBddSteps) {
       throw new Error(
