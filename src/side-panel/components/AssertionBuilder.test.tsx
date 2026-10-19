@@ -205,3 +205,38 @@ describe('AssertionBuilder', () => {
     expect(args[4]).toBe('login-page')
   })
 })
+
+describe('AssertionBuilder — URL assertion', () => {
+  const withUrl: AssertionSuggestion[] = [
+    ...suggestions,
+    { type: 'url', label: 'Expect URL contains: /cart', expected: '/cart' },
+  ]
+
+  it('lets the user edit the expected route', () => {
+    const onConfirm = vi.fn()
+    render(
+      <AssertionBuilder
+        suggestions={withUrl}
+        locatorBundle={null}
+        elementSnapshot={snapshot}
+        pageMetadata={pageMetadata}
+        onConfirm={onConfirm}
+        onCancel={vi.fn()}
+      />,
+    )
+    fireEvent.click(screen.getByText('Expect URL contains: /cart'))
+    const input = screen.getByPlaceholderText('Route or URL fragment') as HTMLInputElement
+    expect(input.value).toBe('/cart')
+    fireEvent.change(input, { target: { value: '/cart/review' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add Assertion' }))
+    const [called, , , , expected] = onConfirm.mock.calls[0] as [
+      AssertionSuggestion,
+      unknown,
+      unknown,
+      unknown,
+      string,
+    ]
+    expect(called.type).toBe('url')
+    expect(expected).toBe('/cart/review')
+  })
+})

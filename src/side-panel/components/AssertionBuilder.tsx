@@ -12,6 +12,7 @@ const NEEDS_VALUE: AssertionSuggestion['type'][] = [
   'value',
   'attribute',
   'count',
+  'url',
 ]
 
 interface AssertionBuilderProps {
@@ -131,7 +132,11 @@ export function AssertionBuilder({
             <input
               type="text"
               placeholder={
-                selected.type === 'matches' ? 'Regex pattern' : 'Custom value (optional)'
+                selected.type === 'matches'
+                  ? 'Regex pattern'
+                  : selected.type === 'url'
+                    ? 'Route or URL fragment'
+                    : 'Custom value (optional)'
               }
               value={customValue}
               onChange={(e) => setCustomValue(e.target.value)}

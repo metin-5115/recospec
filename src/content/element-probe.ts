@@ -1,7 +1,7 @@
 import type { ElementSnapshot, AssertionSuggestion } from '@shared/types/action'
 import type { LocatorBundle } from '@shared/types/locator'
 import { LocatorEngine } from '@locator/index'
-import { valueAssertionSuggestions } from '@shared/assertion-suggestions'
+import { valueAssertionSuggestions, urlAssertionSuggestion } from '@shared/assertion-suggestions'
 import { slugifyKebab } from '@shared/slug'
 import { detectShadowContext, detectFrameContext } from './shadow-pierce'
 import { sendToBackground } from '@shared/messaging/send'
@@ -46,6 +46,9 @@ function buildSuggestions(el: Element, snapshot: ElementSnapshot): AssertionSugg
     name: slugifyKebab(document.title, 'snapshot'),
     threshold: 0.2,
   })
+
+  const urlSuggestion = urlAssertionSuggestion(location.href)
+  if (urlSuggestion) suggestions.push(urlSuggestion)
 
   return suggestions
 }

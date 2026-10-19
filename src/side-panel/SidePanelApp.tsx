@@ -61,6 +61,8 @@ export function SidePanelApp() {
     setBddEnabled,
     includeMocks,
     setIncludeMocks,
+    finalStateAssertion,
+    setFinalStateAssertion,
     outputSelection,
     setOutputSelection,
     methodRenames,
@@ -394,6 +396,18 @@ export function SidePanelApp() {
             <span>
               Include mocks for captured network requests
               <span className="ml-1 text-text-subtle">(page.route)</span>
+            </span>
+          </label>
+          <label className="flex cursor-pointer items-center gap-2 text-xs text-text-muted">
+            <input
+              type="checkbox"
+              checked={finalStateAssertion}
+              onChange={(e) => setFinalStateAssertion(e.target.checked)}
+              className="h-3.5 w-3.5 cursor-pointer rounded border-border accent-accent"
+            />
+            <span>
+              Add final-state assertion
+              <span className="ml-1 text-text-subtle">(URL, when you added none)</span>
             </span>
           </label>
           <label className="flex cursor-pointer items-center gap-2 text-xs text-text-muted">

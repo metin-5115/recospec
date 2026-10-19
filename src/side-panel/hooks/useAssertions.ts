@@ -90,7 +90,12 @@ export function useAssertions() {
       if (!step?.target?.elementSnapshot) return
       const snapshot = step.target.elementSnapshot
       const value = (step.payload?.value as string | undefined) ?? undefined
-      const suggestions = suggestionsForSnapshot(snapshot, step.pageTitle ?? '', value)
+      const suggestions = suggestionsForSnapshot(
+        snapshot,
+        step.pageTitle ?? '',
+        value,
+        step.pageUrl,
+      )
       const bundle: LocatorBundle = {
         primary: step.target.primaryLocator,
         fallbacks: step.target.fallbackLocators,

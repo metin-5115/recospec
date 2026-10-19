@@ -19,6 +19,7 @@ export function useCodegen() {
   const autoWaitEnabled = useSessionStore((s) => s.autoWaitEnabled)
   const bddEnabled = useSessionStore((s) => s.bddEnabled)
   const includeMocks = useSessionStore((s) => s.includeMocks)
+  const finalStateAssertion = useSessionStore((s) => s.finalStateAssertion)
   const outputSelection = useSessionStore((s) => s.outputSelection)
   const {
     setGeneratedCode,
@@ -27,6 +28,7 @@ export function useCodegen() {
     setAutoWaitEnabled,
     setBddEnabled,
     setIncludeMocks,
+    setFinalStateAssertion,
     setOutputSelection,
   } = useSessionStore(
     useShallow((s) => ({
@@ -36,6 +38,7 @@ export function useCodegen() {
       setAutoWaitEnabled: s.setAutoWaitEnabled,
       setBddEnabled: s.setBddEnabled,
       setIncludeMocks: s.setIncludeMocks,
+      setFinalStateAssertion: s.setFinalStateAssertion,
       setOutputSelection: s.setOutputSelection,
     })),
   )
@@ -83,6 +86,7 @@ export function useCodegen() {
           sessionId: activeSession.sessionId,
           framework: selectedFramework,
           includeMocks,
+          finalStateAssertion,
           autoWaitEnabled,
           methodRenames,
           testData,
@@ -106,6 +110,7 @@ export function useCodegen() {
     activeSession,
     selectedFramework,
     includeMocks,
+    finalStateAssertion,
     autoWaitEnabled,
     methodRenames,
     testData,
@@ -127,6 +132,7 @@ export function useCodegen() {
       try {
         const code = await generate(sessionId, selectedFramework, {
           includeMocks,
+          finalStateAssertion,
           methodRenames,
           autoWaitEnabled,
           testData,
@@ -143,6 +149,7 @@ export function useCodegen() {
     [
       selectedFramework,
       includeMocks,
+      finalStateAssertion,
       autoWaitEnabled,
       methodRenames,
       testData,
@@ -165,6 +172,8 @@ export function useCodegen() {
     setBddEnabled,
     includeMocks,
     setIncludeMocks,
+    finalStateAssertion,
+    setFinalStateAssertion,
     outputSelection,
     setOutputSelection,
     methodRenames,

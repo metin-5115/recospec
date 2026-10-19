@@ -36,6 +36,8 @@ export function PreferencesMenu() {
   const setBddEnabled = useSessionStore((s) => s.setBddEnabled)
   const includeMocks = useSessionStore((s) => s.includeMocks)
   const setIncludeMocks = useSessionStore((s) => s.setIncludeMocks)
+  const finalStateAssertion = useSessionStore((s) => s.finalStateAssertion)
+  const setFinalStateAssertion = useSessionStore((s) => s.setFinalStateAssertion)
   const pierceClosedShadow = useSessionStore((s) => s.pierceClosedShadow)
   const setPierceClosedShadow = useSessionStore((s) => s.setPierceClosedShadow)
 
@@ -120,6 +122,16 @@ export function PreferencesMenu() {
               className="h-3.5 w-3.5 cursor-pointer rounded border-border accent-accent"
             />
             <span>Include network mocks</span>
+          </label>
+
+          <label className="flex cursor-pointer items-center gap-2 text-xs text-text-muted">
+            <input
+              type="checkbox"
+              checked={finalStateAssertion}
+              onChange={(e) => setFinalStateAssertion(e.target.checked)}
+              className="h-3.5 w-3.5 cursor-pointer rounded border-border accent-accent"
+            />
+            <span>Add final-state assertion</span>
           </label>
 
           <label className="flex cursor-pointer items-center gap-2 text-xs text-text-muted">

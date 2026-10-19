@@ -63,6 +63,8 @@ export type UIToBackgroundMessage =
       sessionId: string
       framework: FrameworkId
       includeMocks?: boolean
+      /** When false, skip the auto-added "flow ended on this URL" assertion. Defaults to true. */
+      finalStateAssertion?: boolean
       /** When false, strip auto-detected `wait` steps before codegen. */
       autoWaitEnabled?: boolean
       /** Override inferred method names. Keyed by `${pageClassName}.${oldName}`. */

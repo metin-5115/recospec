@@ -173,6 +173,13 @@ describe('sessionStore: persisted preferences', () => {
     expect(window.localStorage.getItem('recospec.includeMocks')).toBe('false')
   })
 
+  it('adds the final-state assertion by default and persists the choice', () => {
+    expect(useSessionStore.getState().finalStateAssertion).toBe(true)
+    useSessionStore.getState().setFinalStateAssertion(false)
+    expect(useSessionStore.getState().finalStateAssertion).toBe(false)
+    expect(window.localStorage.getItem('recospec.finalStateAssertion')).toBe('false')
+  })
+
   it('round-trips outputSelection as JSON', () => {
     const selection = { pageObjects: true, test: false, scaffold: false }
     useSessionStore.getState().setOutputSelection(selection)

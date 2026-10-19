@@ -10,6 +10,7 @@ export async function handleCodeGenerate(
   framework: FrameworkId,
   options: {
     includeMocks?: boolean
+    finalStateAssertion?: boolean
     methodRenames?: Record<string, string>
     autoWaitEnabled?: boolean
     testData?: TestDataConfig
@@ -22,6 +23,7 @@ export async function handleCodeGenerate(
   try {
     const code = await generate(sessionId, framework, {
       includeMocks: options.includeMocks,
+      finalStateAssertion: options.finalStateAssertion,
       methodRenames: options.methodRenames,
       autoWaitEnabled: options.autoWaitEnabled,
       testData: options.testData,

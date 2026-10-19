@@ -143,3 +143,34 @@ describe('handleAssertionAdd — insert after step', () => {
     expect(types2).toContain('STEP_RECORDED')
   })
 })
+
+describe('handleAssertionAdd — url assertion', () => {
+  it('stores the expected route and no element target', async () => {
+    const sessionId = 's-url'
+    await appendAction(makeStep(sessionId, 0))
+
+    await handleAssertionAdd(
+      sessionId,
+      { type: 'url', label: 'Expect URL contains: /cart', expected: '/cart' },
+      undefined,
+      {
+        primary: {
+          strategy: 'testid',
+          selector: '[data-testid="x"]',
+          framework: {},
+          score: 90,
+          matchCount: 1,
+        },
+        fallbacks: [],
+        rejected: [],
+        allCandidates: [],
+      },
+      snap,
+      { url: 'https://example.com/cart', title: 'Cart' },
+    )
+
+    const [, added] = await getActionsBySession(sessionId)
+    expect(added?.payload).toMatchObject({ assertionType: 'url', expected: '/cart' })
+    expect(added?.target).toBeUndefined()
+  })
+})

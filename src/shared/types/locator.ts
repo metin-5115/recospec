@@ -101,10 +101,7 @@ export interface ComposedSpec {
 
 /** Why a candidate was excluded from the bundle by the constraint filter. */
 export type RejectionReason =
-  | 'not-unique'
-  | 'not-renderable'
-  | 'volatile-raw-value'
-  | 'validation-failed'
+  'not-unique' | 'not-renderable' | 'volatile-raw-value' | 'validation-failed'
 
 /**
  * Diagnostic record for a candidate that failed the hard-constraint filter.

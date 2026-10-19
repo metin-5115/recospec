@@ -66,6 +66,7 @@ export async function handleAssertionAdd(
   const insertIndex = resolveInsertIndex(existing, afterActionId)
 
   const isScreenshot = suggestion.type === 'screenshot'
+  const isPageLevel = isScreenshot || suggestion.type === 'url'
   const expected =
     customExpected !== undefined && customExpected !== '' ? customExpected : suggestion.expected
 
@@ -92,7 +93,7 @@ export async function handleAssertionAdd(
     pageUrl: pageMetadata.url,
     pageTitle: pageMetadata.title || undefined,
     target:
-      !isScreenshot && locatorBundle
+      !isPageLevel && locatorBundle
         ? {
             primaryLocator: locatorBundle.primary,
             fallbackLocators: locatorBundle.fallbacks,

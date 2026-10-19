@@ -99,11 +99,17 @@ describe('message router — dispatch', () => {
       includeMocks: true,
       autoWaitEnabled: false,
       bdd: true,
+      finalStateAssertion: false,
     })
     expect(mocks.handleCodeGenerate).toHaveBeenCalledWith(
       's1',
       'cypress',
-      expect.objectContaining({ includeMocks: true, autoWaitEnabled: false, bdd: true }),
+      expect.objectContaining({
+        includeMocks: true,
+        autoWaitEnabled: false,
+        bdd: true,
+        finalStateAssertion: false,
+      }),
     )
   })
 

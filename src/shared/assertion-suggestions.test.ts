@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { suggestionsForSnapshot } from './assertion-suggestions'
+import { suggestionsForSnapshot, urlAssertionSuggestion } from './assertion-suggestions'
 import type { ElementSnapshot } from './types/action'
 
 const buttonSnap: ElementSnapshot = {
@@ -90,5 +90,27 @@ describe('suggestionsForSnapshot — dynamic value', () => {
   it('offers a stable-substring contains (the unit word, not the number)', () => {
     const c = suggestionsForSnapshot(priceSnap, 'Hotels').find((s) => s.type === 'text-contains')
     expect(c?.expected).toBe('TRY')
+  })
+})
+
+describe('URL suggestion', () => {
+  it('suggestionsForSnapshot offers the route of the page, with dynamic segments normalized', () => {
+    const list = suggestionsForSnapshot(
+      buttonSnap,
+      'Order',
+      undefined,
+      'https://shop.test/orders/42?x=1',
+    )
+    const url = list.find((s) => s.type === 'url')
+    expect(url?.expected).toBe('/orders/:id')
+    expect(url?.label).toBe('Expect URL contains: /orders/:id')
+  })
+
+  it('is left out when the page URL is unknown', () => {
+    expect(suggestionsForSnapshot(buttonSnap, 'Order').map((s) => s.type)).not.toContain('url')
+  })
+
+  it('urlAssertionSuggestion returns nothing for a page without a route', () => {
+    expect(urlAssertionSuggestion('about:blank')).toBeUndefined()
   })
 })

@@ -34,6 +34,18 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
+describe('useCodegen.generateCode options', () => {
+  it('asks for the final-state assertion unless the user turned it off', async () => {
+    await runGenerateCode()
+    expect(sendMessageMock().mock.calls[0]?.[0]).toMatchObject({ finalStateAssertion: true })
+
+    useSessionStore.setState({ finalStateAssertion: false })
+    sendMessageMock().mockClear()
+    await runGenerateCode()
+    expect(sendMessageMock().mock.calls[0]?.[0]).toMatchObject({ finalStateAssertion: false })
+  })
+})
+
 describe('useCodegen.generateCode retry', () => {
   it('retries when the background worker is not reachable yet', async () => {
     sendMessageMock()

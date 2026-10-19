@@ -2,6 +2,7 @@ import type { AssertionSuggestion, ElementSnapshot } from './types/action'
 import { isDynamicValue } from './dynamic-value'
 import { suggestedPattern, stableSubstring } from './assertion-pattern'
 import { slugifyKebab } from './slug'
+import { normalizeUrl } from '@codegen/normalizer/url-normalizer'
 
 /**
  * Value assertions for an element's text. Stable text → exact + contains.
@@ -29,6 +30,16 @@ export function valueAssertionSuggestions(text: string): AssertionSuggestion[] {
 }
 
 /**
+ * "The page URL contains this route" — a page-level assertion, offered next to the element ones.
+ * `undefined` when the page has no route (`about:blank`).
+ */
+export function urlAssertionSuggestion(pageUrl: string): AssertionSuggestion | undefined {
+  const route = normalizeUrl(pageUrl)
+  if (!route.startsWith('/')) return undefined
+  return { type: 'url', label: `Expect URL contains: ${route}`, expected: route }
+}
+
+/**
  * Synthesize the default `AssertionSuggestion` set for an already-recorded
  * element. Mirrors `buildSuggestions` from `src/content/element-probe.ts`,
  * but takes a stored snapshot instead of a live `Element` so the side panel
@@ -39,6 +50,7 @@ export function suggestionsForSnapshot(
   snapshot: ElementSnapshot,
   pageTitle: string,
   currentValue?: string,
+  pageUrl?: string,
 ): AssertionSuggestion[] {
   const suggestions: AssertionSuggestion[] = [{ type: 'visible', label: 'Expect visible' }]
 
@@ -64,6 +76,9 @@ export function suggestionsForSnapshot(
     name: slugifyKebab(pageTitle, 'snapshot'),
     threshold: 0.2,
   })
+
+  const urlSuggestion = pageUrl ? urlAssertionSuggestion(pageUrl) : undefined
+  if (urlSuggestion) suggestions.push(urlSuggestion)
 
   return suggestions
 }

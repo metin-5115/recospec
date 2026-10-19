@@ -33,6 +33,7 @@ export function resetUiHarness(): void {
     activeTab: 'recording',
     asyncError: null,
     includeMocks: false,
+    finalStateAssertion: true,
     pierceClosedShadow: false,
   })
 }

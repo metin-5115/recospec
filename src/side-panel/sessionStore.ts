@@ -27,6 +27,8 @@ interface SessionStore {
    * a default so the user does not re-tick it every recording.
    */
   includeMocks: boolean
+  /** Append a "flow ended on this URL" assertion to recordings with no assertion. Default on. */
+  finalStateAssertion: boolean
   /**
    * Opt-in: pierce CLOSED shadow roots during recording (invasive MAIN-world
    * `attachShadow` proxy). Persisted; default off.
@@ -66,6 +68,7 @@ interface SessionStore {
   setAutoWaitEnabled: (enabled: boolean) => void
   setBddEnabled: (enabled: boolean) => void
   setIncludeMocks: (enabled: boolean) => void
+  setFinalStateAssertion: (enabled: boolean) => void
   setPierceClosedShadow: (enabled: boolean) => void
   setOutputSelection: (selection: OutputSelection) => void
 }
@@ -78,6 +81,7 @@ const FRAMEWORK_STORAGE_KEY = 'recospec.selectedFramework'
 const AUTO_WAIT_STORAGE_KEY = 'recospec.autoWaitEnabled'
 const BDD_ENABLED_STORAGE_KEY = 'recospec.bddEnabled'
 const INCLUDE_MOCKS_STORAGE_KEY = 'recospec.includeMocks'
+const FINAL_STATE_ASSERTION_STORAGE_KEY = 'recospec.finalStateAssertion'
 const PIERCE_CLOSED_SHADOW_STORAGE_KEY = 'recospec.pierceClosedShadow'
 const OUTPUT_SELECTION_STORAGE_KEY = 'recospec.outputSelection'
 
@@ -109,6 +113,15 @@ function loadInitialIncludeMocks(): boolean {
     /* localStorage unavailable in some test envs */
   }
   return false
+}
+
+function loadInitialFinalStateAssertion(): boolean {
+  try {
+    if (window.localStorage.getItem(FINAL_STATE_ASSERTION_STORAGE_KEY) === 'false') return false
+  } catch {
+    /* localStorage unavailable in some test envs */
+  }
+  return true
 }
 
 function loadInitialPierceClosedShadow(): boolean {
@@ -173,6 +186,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
   autoWaitEnabled: loadInitialAutoWait(),
   bddEnabled: loadInitialBddEnabled(),
   includeMocks: loadInitialIncludeMocks(),
+  finalStateAssertion: loadInitialFinalStateAssertion(),
   pierceClosedShadow: loadInitialPierceClosedShadow(),
   outputSelection: loadInitialOutputSelection(),
   activeTab: 'recording',
@@ -308,6 +322,14 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       /* localStorage unavailable */
     }
     set({ includeMocks: enabled })
+  },
+  setFinalStateAssertion: (enabled) => {
+    try {
+      window.localStorage.setItem(FINAL_STATE_ASSERTION_STORAGE_KEY, enabled ? 'true' : 'false')
+    } catch {
+      /* localStorage unavailable */
+    }
+    set({ finalStateAssertion: enabled })
   },
   setPierceClosedShadow: (enabled) => {
     try {
