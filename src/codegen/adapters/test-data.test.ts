@@ -107,10 +107,6 @@ describe('test-data parameterization — playwright-ts', () => {
 })
 
 describe('test-data parameterization — cypress', () => {
-  beforeEach(() => {
-    cypressAdapter.applyOptions?.({ testData: undefined })
-  })
-
   it('renders Cypress.env() || default for sensitive fields', () => {
     const out = cypressAdapter.renderScenario(scenario)
     expect(out.content).toContain(`Cypress.env("password") || "change-me"`)
@@ -118,7 +114,7 @@ describe('test-data parameterization — cypress', () => {
   })
 
   it('emits cypress.env.json.example when sensitive params exist', () => {
-    cypressAdapter.applyOptions?.({
+    const options: RenderOptions = {
       testData: {
         params: [
           {
@@ -131,9 +127,9 @@ describe('test-data parameterization — cypress', () => {
           },
         ],
       },
-    })
+    }
     const env = cypressAdapter
-      .renderScaffold()
+      .renderScaffold(options)
       .find((f) => f.filename === 'cypress.env.json.example')
     expect(env?.content).toContain('"password"')
   })

@@ -1,19 +1,15 @@
 import type { GeneratedFile } from '@shared/types/generated'
-import type { IRPage, IRScenario, TestDataConfig } from '../../ir/types'
-import { registerAdapter, type FrameworkAdapter } from '../registry'
+import type { IRPage, IRScenario } from '../../ir/types'
+import { registerAdapter, type FrameworkAdapter, type RenderOptions } from '../registry'
 import { renderPageObject } from './page-object'
-import { renderScenario, setCypressTestData } from './scenario'
-import { setCypressPageObjectTestData } from './page-object'
+import { renderScenario } from './scenario'
 import { renderLocator } from './locator'
-import { setCypressRenderMocks } from './mock'
 import { CYPRESS_SELF_HEALING_JS } from '../../scaffold/self-healing'
 import { renderFeatureFile, renderStepsFile, renderBddScaffoldFiles } from './bdd'
 
 export { renderPageObject, renderScenario, renderLocator }
 
-let TEST_DATA: TestDataConfig | undefined
-
-export function renderScaffold(): GeneratedFile[] {
+export function renderScaffold(options: RenderOptions = {}): GeneratedFile[] {
   const packageJson = JSON.stringify(
     {
       name: 'recospec-generated-tests',
@@ -70,7 +66,7 @@ addMatchImageSnapshotCommand({
     { filename: 'cypress/support/locator.js', content: CYPRESS_SELF_HEALING_JS },
     { filename: 'cypress/screenshots/.gitkeep', content: '' },
   ]
-  const params = TEST_DATA?.params.filter((p) => p.useEnvVar) ?? []
+  const params = options.testData?.params.filter((p) => p.useEnvVar) ?? []
   if (params.length) {
     const envObject: Record<string, string> = {}
     for (const p of params) envObject[p.name] = p.isSecret ? '' : p.defaultValue
@@ -91,20 +87,14 @@ export const cypressAdapter: FrameworkAdapter = {
     testRunner: 'cypress',
     packageName: 'cypress',
   },
-  applyOptions(options) {
-    TEST_DATA = options.testData
-    setCypressTestData(options.testData)
-    setCypressPageObjectTestData(options.testData)
-    setCypressRenderMocks(options.includeMocks === true)
+  renderPageObject(page: IRPage, options?: RenderOptions): GeneratedFile {
+    return { filename: `${page.className}.js`, content: renderPageObject(page, options) }
   },
-  renderPageObject(page: IRPage): GeneratedFile {
-    return { filename: `${page.className}.js`, content: renderPageObject(page) }
+  renderScenario(scenario: IRScenario, options?: RenderOptions): GeneratedFile {
+    return { filename: 'scenario.cy.js', content: renderScenario(scenario, options) }
   },
-  renderScenario(scenario: IRScenario): GeneratedFile {
-    return { filename: 'scenario.cy.js', content: renderScenario(scenario) }
-  },
-  renderScaffold() {
-    return renderScaffold()
+  renderScaffold(options) {
+    return renderScaffold(options)
   },
   renderBddFeature(scenario) {
     return { filename: 'scenario.feature', content: renderFeatureFile(scenario) }

@@ -1,29 +1,12 @@
-import type {
-  IRPage,
-  IRElement,
-  IRStep,
-  IRFallback,
-  InferredMethod,
-  TestDataConfig,
-} from '../../ir/types'
+import type { IRPage, IRElement, IRStep, IRFallback, InferredMethod } from '../../ir/types'
 import { renderLocator, roleQuery } from './locator'
 import { renderAssertion } from './assertion'
 import { renderInteraction, renderToggleByParam } from './interaction'
 import { renderCypressMocks } from './mock'
-import { resolveTestData } from '../../planner/test-data-resolver'
+import { renderFillValueExpr } from './fill-value'
+import type { RenderOptions } from '../registry'
 import { dateCtorFromIso } from '../../shared/date-literal'
 import { dateFnsLocaleImportName } from '@shared/date-template'
-
-let TEST_DATA: TestDataConfig | undefined
-export function setCypressPageObjectTestData(value: TestDataConfig | undefined): void {
-  TEST_DATA = value
-}
-
-function renderFillValueExpr(el: IRElement | undefined, recordedValue: string): string {
-  const r = resolveTestData(el, recordedValue, TEST_DATA)
-  if (!r.useEnvVar) return JSON.stringify(r.literal)
-  return `Cypress.env(${JSON.stringify(r.paramName)}) || ${JSON.stringify(r.defaultValue)}`
-}
 
 // ---------------------------------------------------------------------------
 // Element getters
@@ -134,7 +117,7 @@ function renderElementGetter(el: IRElement): string {
 // Step rendering inside Page Object methods
 // ---------------------------------------------------------------------------
 
-function renderStepInMethod(step: IRStep, indent: string): string {
+function renderStepInMethod(step: IRStep, indent: string, options: RenderOptions): string {
   if (step.action === 'navigate' && step.url) {
     return `${indent}cy.visit(${JSON.stringify(step.url)});`
   }
@@ -142,7 +125,7 @@ function renderStepInMethod(step: IRStep, indent: string): string {
     return `${indent}${templateCallExpr(step.element)}.click();`
   }
   if (step.action === 'fill' && step.element) {
-    const expr = renderFillValueExpr(step.element, step.value ?? '')
+    const expr = renderFillValueExpr(step.element, step.value ?? '', options.testData)
     return `${indent}this.${step.element.name}().clear().type(${expr});`
   }
   if (step.element) {
@@ -186,7 +169,7 @@ function paramSlug(elementName: string): string {
   return base.charAt(0).toLowerCase() + base.slice(1)
 }
 
-function renderInferredMethod(method: InferredMethod): string {
+function renderInferredMethod(method: InferredMethod, options: RenderOptions): string {
   const paramList = method.params.join(', ')
   const bodyLines = method.steps
     .map((s) => {
@@ -217,13 +200,13 @@ function renderInferredMethod(method: InferredMethod): string {
           return renderToggleByParam(templateCallExpr(s.element), method.params[paramIdx]!, '    ')
         }
       }
-      return renderStepInMethod(s, '    ')
+      return renderStepInMethod(s, '    ', options)
     })
     .filter(Boolean)
     .join('\n')
 
   // Mocks go first: an intercept registered after the click would miss the request.
-  const mocks = renderCypressMocks(method.steps, '    ')
+  const mocks = renderCypressMocks(method.steps, '    ', options)
   const body = [mocks, bodyLines].filter(Boolean).join('\n')
 
   return `  ${method.name}(${paramList}) {\n${body}\n  }`
@@ -255,7 +238,7 @@ function renderDateFnsImports(page: IRPage): string {
   return `import { ${fnList} } from 'date-fns';\nimport { ${localeList} } from 'date-fns/locale';\n\n`
 }
 
-export function renderPageObject(page: IRPage): string {
+export function renderPageObject(page: IRPage, options: RenderOptions = {}): string {
   const elementGetters = page.elements.map(renderElementGetter).join('\n\n')
 
   const gotoStep = page.steps.find((s) => s.action === 'navigate')
@@ -263,13 +246,14 @@ export function renderPageObject(page: IRPage): string {
 
   let methodsBlock = ''
   if (page.inferredMethods?.length) {
-    methodsBlock = '\n' + page.inferredMethods.map(renderInferredMethod).join('\n\n')
+    methodsBlock =
+      '\n' + page.inferredMethods.map((m) => renderInferredMethod(m, options)).join('\n\n')
   } else {
     const stepLines = [
-      renderCypressMocks(page.steps, '    '),
+      renderCypressMocks(page.steps, '    ', options),
       ...page.steps
         .filter((s) => s.action !== 'navigate')
-        .map((s) => renderStepInMethod(s, '    ')),
+        .map((s) => renderStepInMethod(s, '    ', options)),
     ]
       .filter(Boolean)
       .join('\n')

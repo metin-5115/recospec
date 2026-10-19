@@ -1,9 +1,11 @@
-import type { IRScenario, IRStep, IRElement, TestDataConfig } from '../../ir/types'
+import type { IRScenario, IRStep } from '../../ir/types'
 import { renderLocator } from './locator'
 import { renderAssertion } from './assertion'
 import { renderInteraction } from './interaction'
 import { renderCypressMocks } from './mock'
 import { resolveTestData } from '../../planner/test-data-resolver'
+import { renderFillValueExpr } from './fill-value'
+import type { RenderOptions } from '../registry'
 import { dateCtorFromIso } from '../../shared/date-literal'
 import {
   buildScenarioFlow,
@@ -12,20 +14,6 @@ import {
   type FlowArg,
   type FlowItem,
 } from '../../shared/scenario-flow'
-
-let TEST_DATA: TestDataConfig | undefined
-export function setCypressTestData(value: TestDataConfig | undefined): void {
-  TEST_DATA = value
-}
-
-function renderFillValueExpr(el: IRElement | undefined, recordedValue: string): string {
-  const r = resolveTestData(el, recordedValue, TEST_DATA)
-  if (!r.useEnvVar) return JSON.stringify(r.literal)
-  // Cypress.env returns undefined when missing; `||` falls back to the safe default.
-  return `Cypress.env(${JSON.stringify(r.paramName)}) || ${JSON.stringify(r.defaultValue)}`
-}
-
-export { renderFillValueExpr as _internal_renderFillValueExpr }
 
 function renderWait(step: IRStep, indent: string): string {
   if (!step.wait) return ''
@@ -46,7 +34,7 @@ function renderWait(step: IRStep, indent: string): string {
   return ''
 }
 
-function renderStepInSpec(step: IRStep, indent: string): string {
+function renderStepInSpec(step: IRStep, indent: string, options: RenderOptions): string {
   if (step.action === 'navigate' && step.url) {
     return `${indent}cy.visit(${JSON.stringify(step.url)});`
   }
@@ -54,7 +42,7 @@ function renderStepInSpec(step: IRStep, indent: string): string {
     return `${indent}${renderLocator(step.element)}.click();`
   }
   if (step.action === 'fill' && step.element) {
-    const expr = renderFillValueExpr(step.element, step.value ?? '')
+    const expr = renderFillValueExpr(step.element, step.value ?? '', options.testData)
     return `${indent}${renderLocator(step.element)}.clear().type(${expr});`
   }
   if (step.element) {
@@ -86,9 +74,9 @@ function toVarName(className: string): string {
   return className.charAt(0).toLowerCase() + className.slice(1)
 }
 
-function renderArg(arg: FlowArg): string {
-  if (arg.fromFill && resolveTestData(arg.element, arg.value, TEST_DATA).useEnvVar) {
-    return renderFillValueExpr(arg.element, arg.value)
+function renderArg(arg: FlowArg, options: RenderOptions): string {
+  if (arg.fromFill && resolveTestData(arg.element, arg.value, options.testData).useEnvVar) {
+    return renderFillValueExpr(arg.element, arg.value, options.testData)
   }
   switch (arg.type) {
     case 'boolean':
@@ -102,20 +90,20 @@ function renderArg(arg: FlowArg): string {
   }
 }
 
-function renderItem(item: FlowItem): string[] {
+function renderItem(item: FlowItem, options: RenderOptions): string[] {
   switch (item.kind) {
     case 'visit':
       return [`${INDENT}cy.visit(${JSON.stringify(item.url)});`]
     case 'call': {
-      const args = item.args.map(renderArg).join(', ')
+      const args = item.args.map((a) => renderArg(a, options)).join(', ')
       return [`${INDENT}${toVarName(item.page.className)}.${item.method.name}(${args});`]
     }
     case 'inline':
-      return item.page.steps.map((step) => renderStepInSpec(step, INDENT)).filter(Boolean)
+      return item.page.steps.map((step) => renderStepInSpec(step, INDENT, options)).filter(Boolean)
   }
 }
 
-export function renderScenario(scenario: IRScenario): string {
+export function renderScenario(scenario: IRScenario, options: RenderOptions = {}): string {
   const flow = buildScenarioFlow(scenario)
   const used = pagesUsed(flow)
 
@@ -126,13 +114,18 @@ export function renderScenario(scenario: IRScenario): string {
   // Page-object methods register their own mocks; only inline pages need them here, and
   // before any step: an intercept registered after the click would miss the request.
   const inlineSteps = flow.flatMap((item) => (item.kind === 'inline' ? item.page.steps : []))
-  const mocks = renderCypressMocks(inlineSteps, INDENT)
+  const mocks = renderCypressMocks(inlineSteps, INDENT, options)
   const start = initialUrl(scenario, flow)
   const opening = start ? [`${INDENT}cy.visit(${JSON.stringify(start)});`] : []
   const pageObjects = used.map(
     (p) => `${INDENT}const ${toVarName(p.className)} = new ${p.className}();`,
   )
-  const testBody = [mocks, ...opening, ...pageObjects, ...flow.flatMap(renderItem)]
+  const testBody = [
+    mocks,
+    ...opening,
+    ...pageObjects,
+    ...flow.flatMap((item) => renderItem(item, options)),
+  ]
     .filter(Boolean)
     .join('\n')
 

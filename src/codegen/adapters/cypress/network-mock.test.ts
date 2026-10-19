@@ -1,7 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { renderPageObject } from './page-object'
 import { renderScenario } from './scenario'
-import { cypressAdapter } from './index'
 import { inferMethods } from '../../planner/method-inferer'
 import type { IRElement, IRNetworkInfo, IRPage, IRScenario, IRStep } from '../../ir/types'
 
@@ -44,10 +43,6 @@ const steps: IRStep[] = [
   { id: 's3', action: 'network', network: loginNetwork },
 ]
 
-beforeEach(() => {
-  cypressAdapter.applyOptions?.({ includeMocks: false })
-})
-
 describe('cypress adapter — network mocks', () => {
   it('emits nothing when mocks are disabled (default)', () => {
     const scenario: IRScenario = { name: 'Login', pages: [page(steps)] }
@@ -56,8 +51,7 @@ describe('cypress adapter — network mocks', () => {
   })
 
   it('renders a method + pathname matcher with a status and JSON body', () => {
-    cypressAdapter.applyOptions?.({ includeMocks: true })
-    const out = renderPageObject(page(steps))
+    const out = renderPageObject(page(steps), { includeMocks: true })
     expect(out).toContain(`method: 'POST'`)
     expect(out).toContain(`pathname: '/api/login'`)
     expect(out).toContain(`query: { remember: '1' }`)
@@ -67,29 +61,25 @@ describe('cypress adapter — network mocks', () => {
   })
 
   it('registers the mock BEFORE the inline steps that trigger the request', () => {
-    cypressAdapter.applyOptions?.({ includeMocks: true })
     const inline: IRPage = { ...page(steps), inferredMethods: undefined }
-    const out = renderScenario({ name: 'Login', pages: [inline] })
+    const out = renderScenario({ name: 'Login', pages: [inline] }, { includeMocks: true })
     expect(out.indexOf('cy.intercept')).toBeGreaterThan(-1)
     expect(out.indexOf('cy.intercept')).toBeLessThan(out.indexOf('.click()'))
   })
 
   it('leaves the mock to the page-object method the spec calls', () => {
-    cypressAdapter.applyOptions?.({ includeMocks: true })
-    const out = renderScenario({ name: 'Login', pages: [page(steps)] })
+    const out = renderScenario({ name: 'Login', pages: [page(steps)] }, { includeMocks: true })
     expect(out).toMatch(/loginPage\.submitForm\(.+\);/)
     expect(out).not.toContain('cy.intercept')
   })
 
   it('registers the mock first inside the page-object method as well', () => {
-    cypressAdapter.applyOptions?.({ includeMocks: true })
-    const out = renderPageObject(page(steps))
+    const out = renderPageObject(page(steps), { includeMocks: true })
     expect(out.indexOf('cy.intercept')).toBeGreaterThan(-1)
     expect(out.indexOf('cy.intercept')).toBeLessThan(out.indexOf('.click()'))
   })
 
   it('renders a non-JSON body as a string literal', () => {
-    cypressAdapter.applyOptions?.({ includeMocks: true })
     const text: IRStep = {
       id: 'n',
       action: 'network',
@@ -101,12 +91,11 @@ describe('cypress adapter — network mocks', () => {
         responseBody: 'ok "fine"',
       },
     }
-    const out = renderPageObject(page([text]))
+    const out = renderPageObject(page([text]), { includeMocks: true })
     expect(out).toContain('body: "ok \\"fine\\""')
   })
 
   it('falls back to a string body when the JSON is truncated', () => {
-    cypressAdapter.applyOptions?.({ includeMocks: true })
     const truncated: IRStep = {
       id: 'n',
       action: 'network',
@@ -118,28 +107,26 @@ describe('cypress adapter — network mocks', () => {
         responseBody: '{"items":[1,2,',
       },
     }
-    const out = renderPageObject(page([truncated]))
+    const out = renderPageObject(page([truncated]), { includeMocks: true })
     expect(out).toContain('body: "{\\"items\\":[1,2,"')
   })
 
   it('emits a single intercept for repeated identical requests', () => {
-    cypressAdapter.applyOptions?.({ includeMocks: true })
     const dup: IRStep[] = [
       { id: 'a', action: 'network', network: loginNetwork },
       { id: 'b', action: 'network', network: loginNetwork },
     ]
-    const out = renderPageObject(page(dup))
+    const out = renderPageObject(page(dup), { includeMocks: true })
     expect(out.match(/cy\.intercept/g)).toHaveLength(1)
   })
 
   it('skips an unparseable URL instead of emitting a broken matcher', () => {
-    cypressAdapter.applyOptions?.({ includeMocks: true })
     const bad: IRStep = {
       id: 'n',
       action: 'network',
       network: { method: 'GET', url: 'not a url', status: 200 },
     }
-    const out = renderPageObject(page([bad]))
+    const out = renderPageObject(page([bad]), { includeMocks: true })
     expect(out).not.toContain('cy.intercept')
   })
 })

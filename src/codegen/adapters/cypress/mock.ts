@@ -1,16 +1,6 @@
 import type { IRNetworkInfo, IRStep } from '../../ir/types'
 import { jsSingleQuoted } from '@shared/selector-escape'
-
-/**
- * Cypress network mocks. Module state is flipped by `applyOptions` so the
- * default output (and every existing snapshot) is unchanged until the user
- * opts in with "Include mocks for captured network requests".
- */
-let RENDER_MOCKS = false
-
-export function setCypressRenderMocks(value: boolean): void {
-  RENDER_MOCKS = value
-}
+import type { RenderOptions } from '../registry'
 
 const DEFAULT_CONTENT_TYPE = 'application/json'
 const DEFAULT_STATUS = 200
@@ -85,8 +75,12 @@ function renderOne(net: IRNetworkInfo, matcher: RouteMatcher, indent: string): s
  * trigger the requests, so callers place the result at the start of a test or
  * method. Returns an empty string when mocks are disabled.
  */
-export function renderCypressMocks(steps: readonly IRStep[], indent: string): string {
-  if (!RENDER_MOCKS) return ''
+export function renderCypressMocks(
+  steps: readonly IRStep[],
+  indent: string,
+  options: RenderOptions = {},
+): string {
+  if (!options.includeMocks) return ''
   const seen = new Set<string>()
   const blocks: string[] = []
   for (const step of steps) {
