@@ -52,6 +52,34 @@ export async function appendNextAction(
   )
 }
 
+/**
+ * Appends several actions in ONE readwrite transaction, numbering each session's actions
+ * consecutively after what is already stored (in the order given).
+ */
+export async function appendNextActions(
+  drafts: ReadonlyArray<Omit<RecordedAction, 'sequenceNumber'>>,
+): Promise<RecordedAction[]> {
+  if (drafts.length === 0) return []
+  return withQuotaGuard(() =>
+    db.transaction('rw', db.actions, async () => {
+      const next = new Map<string, number>()
+      const actions: RecordedAction[] = []
+      for (const draft of drafts) {
+        if (!next.has(draft.sessionId)) {
+          const lastKey = (await sessionRange(draft.sessionId).lastKey()) as unknown as
+            [string, number] | undefined
+          next.set(draft.sessionId, lastKey ? lastKey[1] + 1 : 0)
+        }
+        const sequenceNumber = next.get(draft.sessionId) ?? 0
+        next.set(draft.sessionId, sequenceNumber + 1)
+        actions.push({ ...draft, sequenceNumber })
+      }
+      await db.actions.bulkAdd(actions)
+      return actions
+    }),
+  )
+}
+
 export async function getActionsBySession(sessionId: string): Promise<RecordedAction[]> {
   return sessionRange(sessionId).toArray()
 }

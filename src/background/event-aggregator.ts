@@ -1,6 +1,6 @@
 import type { CapturedEvent } from '@shared/types/action'
 import type { RecordedAction } from '@shared/types/action'
-import { appendNextAction, getActionsBySession } from '@storage/action-repo'
+import { appendNextAction, appendNextActions, getActionsBySession } from '@storage/action-repo'
 import {
   computeFlowSignature,
   findIterationCandidate,
@@ -8,7 +8,7 @@ import {
   updateSession,
 } from '@storage/session-repo'
 import { broadcastToUI } from '@shared/messaging/send'
-import { ITERATION_SIGNATURE_STEPS } from '@shared/constants'
+import { ITERATION_SIGNATURE_STEPS, NETWORK_BATCH_WINDOW_MS } from '@shared/constants'
 import { classifyBundle } from '@shared/locator-quality'
 import { logger } from '@shared/logger'
 
@@ -43,6 +43,72 @@ async function maybeSuggestIteration(sessionId: string): Promise<void> {
   logger.info('[BG] Iteration suggested for session', sessionId, '→ parent', candidate.sessionId)
 }
 
+type ActionDraft = Omit<RecordedAction, 'sequenceNumber'>
+
+/** Network calls waiting for their window to close. Loss on a worker restart costs at most one window. */
+const pendingNetwork: ActionDraft[] = []
+let openWindow: Promise<void> | null = null
+let writes: Promise<void> = Promise.resolve()
+
+function waitForWindow(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, NETWORK_BATCH_WINDOW_MS))
+}
+
+/** The step as the side panel receives it: the response body (up to 50 KB) stays in IndexedDB. */
+function withoutResponseBody(action: RecordedAction): RecordedAction {
+  if (!action.payload || !('responseBody' in action.payload)) return action
+  const payload = { ...action.payload }
+  delete payload.responseBody
+  return { ...action, payload }
+}
+
+async function writePendingNetwork(): Promise<void> {
+  const drafts = pendingNetwork.splice(0)
+  if (drafts.length === 0) return
+  const actions = await appendNextActions(drafts)
+
+  const bySession = new Map<string, RecordedAction[]>()
+  for (const action of actions) {
+    bySession.set(action.sessionId, [...(bySession.get(action.sessionId) ?? []), action])
+  }
+  for (const [sessionId, steps] of bySession) {
+    await broadcastToUI({
+      type: 'NETWORK_STEPS_RECORDED',
+      sessionId,
+      steps: steps.map(withoutResponseBody),
+    })
+  }
+  for (const action of actions) {
+    if (action.sequenceNumber === ITERATION_SIGNATURE_STEPS - 1) {
+      await maybeSuggestIteration(action.sessionId).catch((err) =>
+        logger.error('[BG] maybeSuggestIteration failed', err),
+      )
+    }
+  }
+}
+
+/**
+ * Writes every pending network call now, in one transaction. Writes are queued one after the
+ * other, so a batch is always stored before anything recorded after it.
+ */
+export function flushNetworkBatch(): Promise<void> {
+  const run = writes.then(writePendingNetwork)
+  writes = run.catch(() => undefined)
+  return run
+}
+
+/** Queues a network call; resolves once the batch it joined is stored. */
+function enqueueNetwork(draft: ActionDraft): Promise<void> {
+  pendingNetwork.push(draft)
+  if (!openWindow) {
+    openWindow = waitForWindow().then(() => {
+      openWindow = null
+      return flushNetworkBatch()
+    })
+  }
+  return openWindow
+}
+
 export async function aggregateEvent(sessionId: string, event: CapturedEvent): Promise<void> {
   const bundle = event.target?.locatorBundle ?? null
   const quality = classifyBundle(bundle)
@@ -75,6 +141,11 @@ export async function aggregateEvent(sessionId: string, event: CapturedEvent): P
     quality: !bundle && event.target ? flag : undefined,
     payload: event.payload,
   }
+
+  // A page makes many requests per interaction: write them as a batch, but never let one
+  // overtake the step recorded after it.
+  if (event.type === 'network') return enqueueNetwork(draft)
+  await flushNetworkBatch()
 
   const action = await appendNextAction(draft)
   const { sequenceNumber } = action

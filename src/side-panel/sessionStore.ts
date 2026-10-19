@@ -56,6 +56,7 @@ interface SessionStore {
   setActiveTab: (tab: SidePanelTab) => void
   setAsyncError: (error: RecospecError | null) => void
   appendStep: (step: RecordedAction) => void
+  appendSteps: (steps: RecordedAction[]) => void
   deleteStep: (actionId: string) => void
   reorderSteps: (fromIndex: number, toIndex: number) => string[]
   updateStep: (actionId: string, patch: StepPatch) => void
@@ -223,6 +224,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
   setActiveTab: (tab) => set({ activeTab: tab }),
   setAsyncError: (error) => set({ asyncError: error }),
   appendStep: (step) => set((state) => ({ steps: [...state.steps, step] })),
+  appendSteps: (steps) => set((state) => ({ steps: [...state.steps, ...steps] })),
   deleteStep: (actionId) =>
     set((state) => ({
       steps: state.steps.filter((s) => s.actionId !== actionId),

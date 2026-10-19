@@ -4,12 +4,14 @@ import { initMessageRouter } from './message-router'
 import { handleExportRequest } from './export-handler'
 import { startReplay } from './replay-controller'
 import { db } from '@storage/db'
+import { allowContentScriptsToReadRecordingFlag } from '@shared/recording-flag'
 import type { RecordedAction } from '@shared/types/action'
 import type { Session } from '@shared/types/session'
 
 logger.info('[BG] Service worker started')
 
 initMessageRouter()
+allowContentScriptsToReadRecordingFlag().catch(() => undefined)
 
 // Expose the export handler on the service-worker global so the VS Code
 // extension can pull a JSON payload via Playwright `worker.evaluate(...)`

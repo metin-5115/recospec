@@ -3,10 +3,10 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { db } from '@storage/db'
 import { getActionsBySession } from '@storage/action-repo'
 import { createSession, getSession } from '@storage/session-repo'
-import { ITERATION_SIGNATURE_STEPS } from '@shared/constants'
+import { ITERATION_SIGNATURE_STEPS, NETWORK_BATCH_WINDOW_MS } from '@shared/constants'
 import type { CapturedEvent, ElementSnapshot } from '@shared/types/action'
 import type { Session } from '@shared/types/session'
-import { aggregateEvent } from './event-aggregator'
+import { aggregateEvent, flushNetworkBatch } from './event-aggregator'
 
 const broadcasts: Array<{ type: string } & Record<string, unknown>> = []
 
@@ -158,5 +158,98 @@ describe('iteration suggestion', () => {
     await recordSteps('child', ITERATION_SIGNATURE_STEPS)
 
     expect(broadcasts.some((m) => m.type === 'SESSION_ITERATION_SUGGESTED')).toBe(false)
+  })
+})
+
+describe('aggregateEvent — network batching', () => {
+  const WINDOW_SLACK_MS = 80
+
+  function networkEvent(timestamp: number, status = 200): CapturedEvent {
+    return {
+      type: 'network',
+      timestamp,
+      target: null,
+      pageMetadata: { url: 'https://example.com/cart', title: '' },
+      payload: {
+        method: 'GET',
+        url: `https://example.com/api/${timestamp}`,
+        status,
+        contentType: 'application/json',
+        responseBody: '{"big":"body"}',
+      },
+    }
+  }
+
+  const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
+
+  it('writes the events of one window in a single transaction and one broadcast', async () => {
+    await createSession(makeSession())
+    const spy = vi.spyOn(db, 'transaction')
+
+    await Promise.all([
+      aggregateEvent('s1', networkEvent(1)),
+      aggregateEvent('s1', networkEvent(2)),
+      aggregateEvent('s1', networkEvent(3)),
+    ])
+
+    expect(spy).toHaveBeenCalledTimes(1)
+    spy.mockRestore()
+    expect((await getActionsBySession('s1')).map((a) => a.sequenceNumber)).toEqual([0, 1, 2])
+    const batches = broadcasts.filter((m) => m.type === 'NETWORK_STEPS_RECORDED')
+    expect(batches).toHaveLength(1)
+    expect(broadcasts.filter((m) => m.type === 'STEP_RECORDED')).toHaveLength(0)
+  })
+
+  it('tells the UI about the calls without their response bodies', async () => {
+    await createSession(makeSession())
+    await aggregateEvent('s1', networkEvent(1))
+
+    const batch = broadcasts.find((m) => m.type === 'NETWORK_STEPS_RECORDED') as unknown as {
+      steps: Array<{ payload?: Record<string, unknown> }>
+    }
+    expect(batch.steps).toHaveLength(1)
+    expect(batch.steps[0]?.payload).toMatchObject({ method: 'GET', status: 200 })
+    expect(batch.steps[0]?.payload).not.toHaveProperty('responseBody')
+    // The stored action keeps the body — mocks are generated from it.
+    expect((await getActionsBySession('s1'))[0]?.payload).toHaveProperty('responseBody')
+  })
+
+  it('persists a pending batch before a later click, keeping the recorded order', async () => {
+    await createSession(makeSession())
+    const network = aggregateEvent('s1', networkEvent(1))
+    const startedAt = Date.now()
+    await aggregateEvent('s1', clickEvent(2))
+    const waited = Date.now() - startedAt
+    await network
+
+    expect(waited).toBeLessThan(NETWORK_BATCH_WINDOW_MS)
+    expect((await getActionsBySession('s1')).map((a) => a.type)).toEqual(['network', 'click'])
+  })
+
+  it('flushNetworkBatch writes what is pending without waiting for the window', async () => {
+    await createSession(makeSession())
+    const pending = aggregateEvent('s1', networkEvent(1))
+    await flushNetworkBatch()
+    expect(await getActionsBySession('s1')).toHaveLength(1)
+    await pending
+  })
+
+  it('does not hold the first call of a quiet period back longer than the window', async () => {
+    await createSession(makeSession())
+    const startedAt = Date.now()
+    await aggregateEvent('s1', networkEvent(1))
+    expect(Date.now() - startedAt).toBeLessThan(NETWORK_BATCH_WINDOW_MS + WINDOW_SLACK_MS)
+    await wait(0)
+  })
+
+  it('still suggests an iteration when a batch contains the signature-completing step', async () => {
+    await createSession(makeSession())
+    await Promise.all(
+      Array.from({ length: ITERATION_SIGNATURE_STEPS }, (_, i) =>
+        aggregateEvent('s1', networkEvent(i + 1)),
+      ),
+    )
+    const stored = await getSession('s1')
+    expect(stored?.flowSignature).not.toBe('placeholder')
   })
 })

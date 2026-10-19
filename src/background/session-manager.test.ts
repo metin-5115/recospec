@@ -196,3 +196,75 @@ describe('service-worker wake-up race', () => {
     await expect(tab).resolves.toBe(11)
   })
 })
+
+describe('recording flag mirror (chrome.storage.session)', () => {
+  const FLAG = 'recospec:recording-active'
+  let flagWrites: boolean[]
+
+  function installChromeWithFlag(): void {
+    installChrome()
+    flagWrites = []
+    ;(globalThis as unknown as { chrome: { storage: unknown } }).chrome.storage = {
+      session: {
+        set: vi.fn(async (items: Record<string, boolean>) => {
+          flagWrites.push(items[FLAG] as boolean)
+        }),
+      },
+    }
+  }
+
+  type Manager = typeof import('./session-manager')
+  let manager: Manager
+  let repo: typeof import('@storage/session-repo')
+
+  beforeEach(async () => {
+    installChromeWithFlag()
+    vi.clearAllMocks()
+    vi.resetModules()
+    manager = await import('./session-manager')
+    repo = await import('@storage/session-repo')
+  })
+
+  it('is raised when the worker restores a recording', async () => {
+    vi.mocked(repo.listSessionsByState).mockResolvedValue([session('recording')])
+    await manager.restoreActiveSession()
+    expect(flagWrites.at(-1)).toBe(true)
+  })
+
+  it('is down when there is nothing to restore', async () => {
+    vi.mocked(repo.listSessionsByState).mockResolvedValue([])
+    await manager.restoreActiveSession()
+    expect(flagWrites.at(-1)).toBe(false)
+  })
+
+  it('follows pause, resume and stop', async () => {
+    vi.mocked(repo.listSessionsByState).mockResolvedValue([session('recording')])
+    await manager.restoreActiveSession()
+
+    vi.mocked(repo.getSession).mockResolvedValue(session('paused'))
+    await manager.pauseSession('s1')
+    expect(flagWrites.at(-1)).toBe(false)
+
+    await manager.resumeSession('s1')
+    expect(flagWrites.at(-1)).toBe(true)
+
+    vi.mocked(repo.getSession).mockResolvedValue(session('stopped'))
+    await manager.stopSession('s1')
+    expect(flagWrites.at(-1)).toBe(false)
+  })
+
+  it('stays up across a navigation: re-arming capture does not touch it', async () => {
+    vi.mocked(repo.listSessionsByState).mockResolvedValue([session('recording')])
+    await manager.restoreActiveSession()
+    vi.mocked(repo.getSession).mockResolvedValue(session('recording'))
+    const before = flagWrites.length
+
+    await manager.resumeCaptureOnReady(7)
+
+    expect(flagWrites.length).toBe(before)
+    expect(flagWrites.at(-1)).toBe(true)
+    expect(tabMessages).toContainEqual(
+      expect.objectContaining({ msg: expect.objectContaining({ type: 'START_CAPTURE' }) }),
+    )
+  })
+})

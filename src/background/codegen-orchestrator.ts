@@ -1,6 +1,7 @@
 import { generate } from '@codegen/index'
 import { broadcastToUI } from '@shared/messaging/send'
 import { logger } from '@shared/logger'
+import { flushNetworkBatch } from './event-aggregator'
 import type { FrameworkId, OutputSelection } from '@shared/types/generated'
 import type { TestDataConfig, TemplateParamMode } from '@codegen/ir/types'
 import type { ComposedParamMode } from '@codegen/planner/template-modes'
@@ -22,6 +23,7 @@ export async function handleCodeGenerate(
   } = {},
 ): Promise<void> {
   try {
+    await flushNetworkBatch()
     const code = await generate(sessionId, framework, {
       includeMocks: options.includeMocks,
       selfHealing: options.selfHealing,

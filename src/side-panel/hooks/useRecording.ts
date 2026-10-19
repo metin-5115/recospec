@@ -19,6 +19,7 @@ export function useRecording() {
   const captureNetwork = useSessionStore((s) => s.captureNetwork)
   const {
     appendStep,
+    appendSteps,
     syncSteps,
     setActiveSession,
     upsertSession,
@@ -29,6 +30,7 @@ export function useRecording() {
   } = useSessionStore(
     useShallow((s) => ({
       appendStep: s.appendStep,
+      appendSteps: s.appendSteps,
       syncSteps: s.syncSteps,
       setActiveSession: s.setActiveSession,
       upsertSession: s.upsertSession,
@@ -55,6 +57,8 @@ export function useRecording() {
           setLastStepId(null)
           flashTimerRef.current = null
         }, STEP_FLASH_DURATION_MS)
+      } else if (message.type === 'NETWORK_STEPS_RECORDED') {
+        appendSteps(message.steps)
       } else if (message.type === 'STEPS_SYNCED') {
         syncSteps(message.steps)
       } else if (message.type === 'SESSION_STATE_CHANGED') {
@@ -71,7 +75,7 @@ export function useRecording() {
         flashTimerRef.current = null
       }
     }
-  }, [appendStep, syncSteps, setActiveSession, upsertSession, setAsyncError])
+  }, [appendStep, appendSteps, syncSteps, setActiveSession, upsertSession, setAsyncError])
 
   const startRecording = useCallback(async () => {
     if (isStarting) return

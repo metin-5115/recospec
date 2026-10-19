@@ -6,6 +6,7 @@ import { DB_NAME } from '@shared/constants'
 import {
   appendAction,
   appendNextAction,
+  appendNextActions,
   deleteAction,
   getActionsBySession,
   getActionsBySessionPage,
@@ -196,5 +197,41 @@ describe('db schema v3: [sessionId+sequenceNumber] index', () => {
 
     const page = await getActionsBySessionPage('m', 0, 10)
     expect(page.map((a) => a.sequenceNumber)).toEqual([0, 1, 2])
+  })
+})
+
+describe('appendNextActions', () => {
+  function draft(sessionId: string, n: number): Omit<RecordedAction, 'sequenceNumber'> {
+    return {
+      actionId: `a-${sessionId}-${n}`,
+      sessionId,
+      type: 'network',
+      timestamp: n,
+      pageUrl: 'https://example.com',
+    }
+  }
+
+  it('numbers a batch consecutively, after the actions already there', async () => {
+    await appendNextAction(draft('s1', 0))
+    const added = await appendNextActions([draft('s1', 1), draft('s1', 2), draft('s1', 3)])
+    expect(added.map((a) => a.sequenceNumber)).toEqual([1, 2, 3])
+    const stored = await getActionsBySession('s1')
+    expect(stored.map((a) => a.actionId)).toEqual(['a-s1-0', 'a-s1-1', 'a-s1-2', 'a-s1-3'])
+  })
+
+  it('writes the batch in one transaction', async () => {
+    const spy = vi.spyOn(db, 'transaction')
+    await appendNextActions([draft('s1', 0), draft('s1', 1), draft('s1', 2)])
+    expect(spy).toHaveBeenCalledTimes(1)
+    spy.mockRestore()
+  })
+
+  it('numbers each session on its own', async () => {
+    const added = await appendNextActions([draft('s1', 0), draft('s2', 0), draft('s1', 1)])
+    expect(added.map((a) => `${a.sessionId}:${a.sequenceNumber}`)).toEqual(['s1:0', 's2:0', 's1:1'])
+  })
+
+  it('is a no-op for an empty batch', async () => {
+    expect(await appendNextActions([])).toEqual([])
   })
 })

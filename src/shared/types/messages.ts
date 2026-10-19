@@ -145,6 +145,8 @@ export type UIToBackgroundMessage =
 
 export type BackgroundToUIMessage =
   | { type: 'STEP_RECORDED'; sessionId: string; step: RecordedAction }
+  /** A batch of captured network calls — the steps carry no response bodies (the UI never shows them). */
+  | { type: 'NETWORK_STEPS_RECORDED'; sessionId: string; steps: RecordedAction[] }
   | { type: 'STEPS_SYNCED'; sessionId: string; steps: RecordedAction[] }
   | { type: 'SESSION_STATE_CHANGED'; session: Session }
   | { type: 'SESSION_DELETED'; sessionId: string }

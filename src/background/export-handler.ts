@@ -1,4 +1,5 @@
 import { getSessionWithActions, listSessions } from '@storage/session-repo'
+import { flushNetworkBatch } from './event-aggregator'
 import { buildJsonExport, type JsonExportPayload } from '@codegen/export/json-export'
 
 /**
@@ -11,6 +12,7 @@ import { buildJsonExport, type JsonExportPayload } from '@codegen/export/json-ex
  * friendly "No steps recorded" message instead of writing an empty file.
  */
 export async function handleExportRequest(sessionId?: string): Promise<JsonExportPayload | null> {
+  await flushNetworkBatch()
   let targetId = sessionId
   if (!targetId) {
     const sessions = await listSessions() // newest first

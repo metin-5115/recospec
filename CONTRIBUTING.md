@@ -50,7 +50,7 @@ These keep the codebase consistent — PRs that follow them merge faster:
 - **No `any`** — use `unknown` + a type guard.
 - **No `console.log`** — use `src/shared/logger.ts`.
 - **No magic numbers/strings** — add them to `src/shared/constants.ts`.
-- **No `localStorage`/`sessionStorage`** — persistence goes through IndexedDB (Dexie).
+- **No `localStorage`/`sessionStorage`** — persistence goes through IndexedDB (Dexie). One exception: `chrome.storage.session` holds a single boolean mirror of "a recording is active" (`src/shared/recording-flag.ts`) so a content script can skip waking the service worker; IndexedDB stays the source of truth.
 - **No floating promises** — every async call is `await`ed or `.catch()`ed.
 - **Tagged template literals** for codegen — no Handlebars/EJS.
 - Use **path aliases** (`@locator/…`, `@codegen/…`, `@shared/…`), not deep relative imports.

@@ -336,3 +336,9 @@ export const JWT_PATTERN = /\beyJ[\w-]{4,}\.[\w-]{4,}\.[\w-]*/g
 
 /** The credential part of an `Authorization: Bearer …` value. */
 export const BEARER_TOKEN_PATTERN = /\b(Bearer\s+)[\w.~+/=-]+/gi
+
+/** `chrome.storage.session` key mirroring "a recording is active" for content scripts. */
+export const RECORDING_FLAG_STORAGE_KEY = 'recospec:recording-active' as const
+
+/** Network events arriving within this window are written to IndexedDB in one transaction. */
+export const NETWORK_BATCH_WINDOW_MS = 250 as const

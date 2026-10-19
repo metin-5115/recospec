@@ -6,6 +6,8 @@ import { highlightLocator, validateTargets } from './locator-validator'
 import { executeReplayStep } from './replay-runner'
 import { mountBadge, unmountBadge } from './recording-badge'
 import { setPageFlag } from './page-flag'
+import { announceWhenRecording } from './recording-gate'
+import { readRecordingFlag } from '@shared/recording-flag'
 import { logger } from '@shared/logger'
 import { PIERCE_CLOSED_SHADOW_FLAG_KEY } from '@shared/constants'
 
@@ -69,6 +71,6 @@ onContentMessage((message) => {
 // what lets a recording survive a full-page navigation: the freshly-injected
 // content script tells the background "I'm here", and the background re-arms
 // capture if this tab owns an active recording session.
-sendToBackground({ type: 'CONTENT_READY', url: location.href }).catch((err) =>
-  logger.error('[CS] Failed to send CONTENT_READY', err),
-)
+announceWhenRecording(readRecordingFlag, () =>
+  sendToBackground({ type: 'CONTENT_READY', url: location.href }),
+).catch((err) => logger.error('[CS] Failed to send CONTENT_READY', err))

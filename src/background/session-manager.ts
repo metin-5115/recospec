@@ -9,6 +9,8 @@ import {
 import { sendToTab, broadcastToUI } from '@shared/messaging/send'
 import { reinjectContentScript, resetReinjectAttempts } from './content-injector'
 import { logger } from '@shared/logger'
+import { writeRecordingFlag } from '@shared/recording-flag'
+import { flushNetworkBatch } from './event-aggregator'
 import { SESSION_NAME_PREFIX } from '@shared/constants'
 
 let activeSessionId: string | null = null
@@ -22,6 +24,7 @@ async function loadActiveSession(): Promise<void> {
     activeTabId = recording[0].tabId ?? null
     logger.info('[BG] Restored active session', activeSessionId)
   }
+  await writeRecordingFlag(recording.length > 0)
 }
 
 /**
@@ -85,6 +88,7 @@ export async function startSession(
   await createSession(session)
   activeSessionId = sessionId
   activeTabId = tabId
+  await writeRecordingFlag(true)
 
   await sendToTab(tabId, { type: 'START_CAPTURE', sessionId, config }).catch(async (err) => {
     logger.warn('[BG] START_CAPTURE failed — content script may have crashed, re-injecting', err)
@@ -110,6 +114,7 @@ export async function stopSession(sessionId: string): Promise<void> {
     return
   }
 
+  await flushNetworkBatch()
   const now = Date.now()
   await updateSession(sessionId, { state: 'stopped', stoppedAt: now })
 
@@ -127,6 +132,7 @@ export async function stopSession(sessionId: string): Promise<void> {
   if (activeTabId !== null) resetReinjectAttempts(activeTabId)
   activeSessionId = null
   activeTabId = null
+  await writeRecordingFlag(false)
 
   await chrome.action.setBadgeText({ text: '' }).catch(() => undefined)
 
@@ -140,7 +146,9 @@ export async function pauseSession(sessionId: string): Promise<void> {
     return
   }
 
+  await flushNetworkBatch()
   await updateSession(sessionId, { state: 'paused' })
+  await writeRecordingFlag(false)
 
   if (activeTabId !== null) {
     await sendToTab(activeTabId, { type: 'STOP_CAPTURE', sessionId }).catch((err) =>
@@ -168,6 +176,7 @@ export async function resumeSession(sessionId: string): Promise<void> {
   if (!session || session.state !== 'paused') return
 
   await updateSession(sessionId, { state: 'recording' })
+  await writeRecordingFlag(true)
 
   if (activeTabId !== null) {
     await sendToTab(activeTabId, {
@@ -195,6 +204,7 @@ export async function deleteSessionById(sessionId: string): Promise<void> {
     }
     activeSessionId = null
     activeTabId = null
+    await writeRecordingFlag(false)
     await chrome.action.setBadgeText({ text: '' }).catch(() => undefined)
   }
 
