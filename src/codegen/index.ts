@@ -2,6 +2,7 @@ import { getActionsBySession } from '@storage/action-repo'
 import { getSession } from '@storage/session-repo'
 import { normalizeActions } from './normalizer/action-normalizer'
 import { groupIntoPages } from './planner/page-grouper'
+import { appendFinalStateAssertion } from './planner/final-assertion'
 import './adapters/playwright-ts'
 import './adapters/cypress'
 import './adapters/selenium-py'
@@ -34,6 +35,11 @@ export interface GenerateOptions {
    * fields and which fixture/.env scaffolds adapters render.
    */
   testData?: TestDataConfig
+  /**
+   * Append a "the flow ended on this URL" assertion to a recording the user never asserted on.
+   * Defaults to `true`.
+   */
+  finalStateAssertion?: boolean
   /** Emit Gherkin `.feature` + step definitions alongside the page objects. */
   bdd?: boolean
   /**
@@ -81,7 +87,9 @@ export async function generate(
   const startUrl = session?.startUrl ?? 'about:blank'
   const sourceActions =
     options.autoWaitEnabled === false ? actions.filter((a) => a.type !== 'wait') : actions
-  const { flatSteps } = normalizeActions(sourceActions)
+  const normalized = normalizeActions(sourceActions).flatSteps
+  const flatSteps =
+    options.finalStateAssertion === false ? normalized : appendFinalStateAssertion(normalized)
   // Before grouping — method inference reads templateParamMode / composedParamMode.
   applyTemplateModes(flatSteps, options.templateModes)
   applyComposedModes(flatSteps, options.composedModes)

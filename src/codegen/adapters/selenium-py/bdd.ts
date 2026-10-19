@@ -1,4 +1,5 @@
 import type { GeneratedFile } from '@shared/types/generated'
+import { isUrlAssertionStep } from '../../shared/page-assertion'
 import type { IRScenario, IRPage } from '../../ir/types'
 import {
   mapScenarioToGherkin,
@@ -149,6 +150,9 @@ function renderStepBody(step: GherkinStep, argNames: string[]): string {
     const keyRef = argNames[0] ?? '""'
     return `    driver.switch_to.active_element.send_keys(getattr(Keys, ${keyRef}.upper()))`
   }
+  if (sourceAction === 'assert' && isUrlAssertionStep(step)) {
+    return `    WebDriverWait(driver, 10).until(lambda d: ${argNames[0] ?? '""'} in d.current_url)`
+  }
   if (sourceAction === 'assert') {
     const textRef = argNames[0] ?? '""'
     return [
@@ -226,6 +230,9 @@ export function renderStepsFile(scenario: IRScenario, options: RenderOptions = {
   importLines.push('from selenium.webdriver.common.keys import Keys')
   const stepsText = stepDefs.join('\n')
   if (/\bos\.path\b/.test(stepsText)) importLines.unshift('import os')
+  if (/\bWebDriverWait\(/.test(stepsText)) {
+    importLines.push('from selenium.webdriver.support.ui import WebDriverWait')
+  }
   if (/\bSelect\(/.test(stepsText)) {
     importLines.push('from selenium.webdriver.support.ui import Select')
   }

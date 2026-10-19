@@ -57,6 +57,8 @@ export type AssertionType =
   | 'attribute'
   | 'count'
   | 'screenshot'
+  /** Page URL contains the expected route (`:id`-style segments match any value). */
+  | 'url'
 
 export interface AssertionSuggestion {
   type: AssertionType

@@ -1,4 +1,5 @@
 import type { IRPage, IRElement, IRStep, IRFallback, InferredMethod } from '../../ir/types'
+import { isPageLevelAssertion } from '../../shared/page-assertion'
 import { renderLocator, roleQuery } from './locator'
 import { renderAssertion } from './assertion'
 import { renderInteraction, renderToggleByParam } from './interaction'
@@ -139,7 +140,7 @@ function renderStepInMethod(step: IRStep, indent: string, options: RenderOptions
   if (step.action === 'assert') {
     if (step.assertionDetail) {
       const chain =
-        step.assertionDetail.type === 'screenshot' || !step.element
+        isPageLevelAssertion(step.assertionDetail) || !step.element
           ? 'cy'
           : templateCallExpr(step.element)
       return renderAssertion(step.assertionDetail, chain, indent)

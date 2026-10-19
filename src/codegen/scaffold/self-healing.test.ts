@@ -9,11 +9,9 @@ import {
 
 function fakePage(matches: Record<string, number>): MinimalPlaywrightPage {
   return {
-    locator: vi.fn(
-      (sel: string): MinimalPlaywrightLocator => ({
-        count: vi.fn().mockResolvedValue(matches[sel] ?? 0),
-      }),
-    ),
+    locator: vi.fn((sel: string): MinimalPlaywrightLocator => ({
+      count: vi.fn().mockResolvedValue(matches[sel] ?? 0),
+    })),
   }
 }
 

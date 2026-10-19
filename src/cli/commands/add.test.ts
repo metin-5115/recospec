@@ -211,3 +211,28 @@ describe('runAdd render options', () => {
     }
   })
 })
+
+describe('runAdd final-state assertion', () => {
+  async function outputFor(finalStateAssertion?: boolean): Promise<string> {
+    const target = mkdtempSync(join(tmpdir(), 'recospec-add-'))
+    try {
+      await runAdd(
+        { json: jsonPath, projectDir: target, framework: 'playwright-ts', finalStateAssertion },
+        failingReporter,
+      )
+      return listFiles(target)
+        .map((f) => readFileSync(join(target, f), 'utf8'))
+        .join('\n')
+    } finally {
+      rmSync(target, { recursive: true, force: true })
+    }
+  }
+
+  it('verifies the page the flow ended on by default', async () => {
+    expect(await outputFor()).toContain('toHaveURL(new RegExp("/login(?:[?#]|$)"))')
+  })
+
+  it('can be switched off', async () => {
+    expect(await outputFor(false)).not.toContain('toHaveURL')
+  })
+})

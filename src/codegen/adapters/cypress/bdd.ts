@@ -1,4 +1,5 @@
 import type { GeneratedFile } from '@shared/types/generated'
+import { isUrlAssertionStep } from '../../shared/page-assertion'
 import type { IRScenario, IRPage } from '../../ir/types'
 import type { RenderOptions } from '../registry'
 import { nodeBaseUrlExpr } from '../../shared/base-url'
@@ -77,6 +78,9 @@ function renderStepBody(step: GherkinStep, paramNames: string[]): string {
   }
   if (sourceAction === 'keypress') {
     return `  cy.focused().type(\`{\${String(${paramNames[0] ?? '""'}).toLowerCase()}}\`);`
+  }
+  if (sourceAction === 'assert' && isUrlAssertionStep(step)) {
+    return `  cy.url().should('include', ${paramNames[0] ?? '""'});`
   }
   if (sourceAction === 'assert') {
     return `  cy.contains(${paramNames[0] ?? '""'}).should('be.visible');`

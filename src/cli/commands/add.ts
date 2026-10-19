@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { normalizeActions } from '@codegen/normalizer/action-normalizer'
 import { groupIntoPages } from '@codegen/planner/page-grouper'
+import { appendFinalStateAssertion } from '@codegen/planner/final-assertion'
 import { applyTemplateModes, applyComposedModes } from '@codegen/planner/template-modes'
 import type { TemplateParamMode } from '@codegen/ir/types'
 import { getAdapter, type RenderOptions } from '@codegen/adapters/registry'
@@ -43,6 +44,8 @@ export interface AddOptions {
   bdd?: boolean
   /** Emit network mocks for captured requests (Playwright / Cypress / notes elsewhere). */
   includeMocks?: boolean
+  /** Add a "flow ended on this URL" assertion to a recording with none. Defaults to true. */
+  finalStateAssertion?: boolean
   /**
    * Which file groups to write. `scaffold` is always ignored here — the CLI
    * assumes an existing, configured project. Defaults to page objects + test.
@@ -96,7 +99,9 @@ export async function runAdd(opts: AddOptions, reporter?: ConflictReporter): Pro
     `[recospec] session=${payload.session.name} framework=${framework} bdd=${bdd} target=${opts.projectDir}`,
   )
 
-  const { flatSteps } = normalizeActions(payload.actions)
+  const normalized = normalizeActions(payload.actions).flatSteps
+  const flatSteps =
+    opts.finalStateAssertion === false ? normalized : appendFinalStateAssertion(normalized)
   // Before grouping — method inference reads templateParamMode / composedParamMode.
   applyTemplateModes(flatSteps, opts.templateModes)
   applyComposedModes(flatSteps, opts.composedModes)

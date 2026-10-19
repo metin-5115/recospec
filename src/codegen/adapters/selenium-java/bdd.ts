@@ -1,4 +1,5 @@
 import type { GeneratedFile } from '@shared/types/generated'
+import { isUrlAssertionStep } from '../../shared/page-assertion'
 import type { IRScenario, IRPage } from '../../ir/types'
 import type { RenderOptions } from '../registry'
 import { javaPackages } from './packages'
@@ -119,6 +120,9 @@ function renderStepBody(step: GherkinStep, argNames: string[]): string {
   if (sourceAction === 'keypress') {
     const keyRef = argNames[0] ?? '""'
     return `        driver.switchTo().activeElement().sendKeys(Keys.valueOf(${keyRef}.toUpperCase()));`
+  }
+  if (sourceAction === 'assert' && isUrlAssertionStep(step)) {
+    return `        new WebDriverWait(driver, Duration.ofSeconds(10)).until(d -> d.getCurrentUrl().contains(${argNames[0] ?? '""'}));`
   }
   if (sourceAction === 'assert') {
     const textRef = argNames[0] ?? '""'

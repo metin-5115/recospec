@@ -283,3 +283,15 @@ export const ENTER_ACTIVATED_INPUT_TYPES = [
 
 /** How long after a hover a DOM mutation still counts as the hover revealing something. */
 export const HOVER_DOM_CHANGE_WINDOW_MS = 1000 as const
+
+/** Route segments `normalizeUrl` replaces with a placeholder (`/orders/:id`). */
+export const DYNAMIC_ROUTE_SEGMENT_PATTERN = /^:(id|uuid)$/
+
+/** Regex source a dynamic route segment matches in a generated URL assertion. */
+export const DYNAMIC_ROUTE_SEGMENT_REGEX_SOURCE = '[^/]+' as const
+
+/** Ends a URL regex at the end of the path (query string and fragment may follow). */
+export const URL_PATH_END_REGEX_SOURCE = '(?:[?#]|$)' as const
+
+/** Id of the assertion the generator appends when the recording contains none. */
+export const FINAL_STATE_ASSERTION_ID = 'final-state-url' as const

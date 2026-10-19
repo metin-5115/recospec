@@ -6,6 +6,7 @@ import type {
   AssertionDetail,
   IRParamType,
 } from '../../ir/types'
+import { urlAssertionPattern } from '../../shared/url-assertion'
 import {
   renderFindByAnnotation,
   renderFallbackAnnotation,
@@ -231,6 +232,12 @@ function renderAssertion(d: AssertionDetail, el: IRElement | undefined, indent: 
       if (!el) return `${indent}// assert count (no element)`
       const expected = Number(d.expected ?? 0)
       return `${indent}assert driver.findElements(${renderByExpression(el)}).size() == ${expected};`
+    }
+    case 'url': {
+      const pattern = urlAssertionPattern(String(d.expected ?? ''))
+      return pattern.kind === 'contains'
+        ? `${indent}wait.until(ExpectedConditions.urlContains(${javaStr(pattern.value)}));`
+        : `${indent}wait.until(ExpectedConditions.urlMatches(${javaStr(pattern.source)}));`
     }
     case 'screenshot': {
       const name = javaStr(screenshotName(d.name))

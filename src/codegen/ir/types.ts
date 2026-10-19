@@ -127,6 +127,7 @@ export interface AssertionDetail {
     | 'attribute'
     | 'count'
     | 'screenshot'
+    | 'url'
   /** For `matches`, this holds the regex source. */
   expected?: string | number
   attribute?: string

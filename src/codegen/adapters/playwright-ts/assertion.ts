@@ -1,4 +1,5 @@
 import type { AssertionDetail } from '../../ir/types'
+import { urlAssertionRegexSource } from '../../shared/url-assertion'
 
 /** Render one Playwright `expect` assertion against a locator / page expression. */
 export function renderAssertionMatcher(
@@ -25,6 +26,8 @@ export function renderAssertionMatcher(
       return `${indent}await expect(${locator}).toHaveAttribute(${JSON.stringify(d.attribute ?? '')}, ${JSON.stringify(d.expected ?? '')});`
     case 'count':
       return `${indent}await expect(${locator}).toHaveCount(${Number(d.expected ?? 0)});`
+    case 'url':
+      return `${indent}await expect(${locator}).toHaveURL(new RegExp(${JSON.stringify(urlAssertionRegexSource(String(d.expected ?? '')))}));`
     case 'screenshot': {
       const file = `${d.name ?? 'snapshot'}.png`
       const threshold = d.threshold ?? 0.2

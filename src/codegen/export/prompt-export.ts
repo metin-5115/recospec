@@ -332,6 +332,8 @@ function describeAssertion(step: IRStep): string {
       )
     case 'count':
       return `Verify \`${name}\` resolves to ${detail.expected} elements.`
+    case 'url':
+      return `Verify the page URL contains ${JSON.stringify(String(detail.expected ?? ''))}.`
     case 'screenshot':
       return (
         `Capture visual baseline \`${detail.name ?? 'page'}\` ` +

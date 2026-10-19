@@ -1,4 +1,5 @@
 import type { InferredMethod, IRPage, IRScenario, IRStep, IRParamType } from '../ir/types'
+import { urlStaticPrefix } from '../shared/url-assertion'
 
 export type GherkinKeyword = 'Given' | 'When' | 'Then' | 'And'
 
@@ -508,6 +509,17 @@ export function mapIRStepToGherkin(step: IRStep, keyword: GherkinKeyword): Gherk
         paramTypes: ['string', 'string', 'string'],
         sourceSteps: [step],
       }
+    if (d.type === 'url') {
+      const fragment = urlStaticPrefix(String(d.expected ?? ''))
+      return {
+        keyword,
+        text: `the page URL should contain ${JSON.stringify(fragment)}`,
+        pattern: 'the page URL should contain {string}',
+        params: [fragment],
+        paramTypes: ['string'],
+        sourceSteps: [step],
+      }
+    }
     if (d.type === 'screenshot')
       return {
         keyword,

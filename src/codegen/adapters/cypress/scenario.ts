@@ -1,4 +1,5 @@
 import type { IRScenario, IRStep } from '../../ir/types'
+import { isPageLevelAssertion } from '../../shared/page-assertion'
 import { renderLocator } from './locator'
 import { renderAssertion } from './assertion'
 import { renderInteraction } from './interaction'
@@ -61,7 +62,7 @@ function renderStepInSpec(step: IRStep, indent: string, options: RenderOptions):
   if (step.action === 'assert') {
     if (step.assertionDetail) {
       const chain =
-        step.assertionDetail.type === 'screenshot' || !step.element
+        isPageLevelAssertion(step.assertionDetail) || !step.element
           ? 'cy'
           : renderLocator(step.element)
       return renderAssertion(step.assertionDetail, chain, indent)

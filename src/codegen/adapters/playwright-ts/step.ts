@@ -4,6 +4,7 @@ import { renderAssertionMatcher } from './assertion'
 import { renderMockBlock } from './mock'
 import { renderFillValueExpr } from './fill-value'
 import type { RenderOptions } from '../registry'
+import { isPageLevelAssertion } from '../../shared/page-assertion'
 import { isMultiUpload, uploadFixturePaths } from '../../shared/upload-fixtures'
 
 /** IR action → Playwright locator method for the element-targeted interactions. */
@@ -58,7 +59,7 @@ export function renderStepInMethod(
   if (step.action === 'assert') {
     if (step.assertionDetail) {
       const target =
-        step.assertionDetail.type === 'screenshot' || !step.element
+        isPageLevelAssertion(step.assertionDetail) || !step.element
           ? 'this.page'
           : memberExpr(step.element)
       return renderAssertionMatcher(step.assertionDetail, target, indent)
@@ -150,7 +151,7 @@ export function renderStepInSpec(
   if (step.action === 'assert') {
     if (step.assertionDetail) {
       const target =
-        step.assertionDetail.type === 'screenshot' || !step.element
+        isPageLevelAssertion(step.assertionDetail) || !step.element
           ? 'page'
           : renderLocator(step.element)
       return renderAssertionMatcher(step.assertionDetail, target, indent)

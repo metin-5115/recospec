@@ -1,5 +1,6 @@
 import type { AssertionDetail } from '../../ir/types'
 import { pyStr } from './locator'
+import { urlAssertionPattern } from '../../shared/url-assertion'
 import { DEFAULT_SCREENSHOT_THRESHOLD, screenshotName } from './screenshot'
 
 /**
@@ -64,6 +65,14 @@ export function renderPyAssertion(
       if (!locator) return `${indent}# assert count (no element)`
       const expected = Number(d.expected ?? 0)
       return `${indent}assert len(${driver}.find_elements(*${locator})) == ${expected}`
+    }
+    case 'url': {
+      const pattern = urlAssertionPattern(String(d.expected ?? ''))
+      const condition =
+        pattern.kind === 'contains'
+          ? `EC.url_contains(${pyStr(pattern.value)})`
+          : `EC.url_matches(${pyStr(pattern.source)})`
+      return `${indent}${wait}.until(${condition})`
     }
     case 'screenshot': {
       const name = pyStr(screenshotName(d.name))

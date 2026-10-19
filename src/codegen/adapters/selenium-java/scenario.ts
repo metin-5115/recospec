@@ -1,4 +1,5 @@
 import type { IRPage, IRScenario, IRStep, AssertionDetail, IRElement } from '../../ir/types'
+import { urlAssertionPattern } from '../../shared/url-assertion'
 import { renderByExpression, javaStr } from './locator'
 import { renderJavaInteraction, javaInteractionImports } from './interaction'
 import { renderNetworkNote } from './network-note'
@@ -55,6 +56,12 @@ function renderAssertion(d: AssertionDetail, el: IRElement | undefined, indent: 
   if (d.type === 'screenshot') {
     const name = javaStr(screenshotName(d.name))
     return `${indent}assertScreenshot(driver, ${name}, ${d.threshold ?? DEFAULT_SCREENSHOT_THRESHOLD});`
+  }
+  if (d.type === 'url') {
+    const pattern = urlAssertionPattern(String(d.expected ?? ''))
+    return pattern.kind === 'contains'
+      ? `${indent}wait.until(ExpectedConditions.urlContains(${javaStr(pattern.value)}));`
+      : `${indent}wait.until(ExpectedConditions.urlMatches(${javaStr(pattern.source)}));`
   }
   if (!el) return `${indent}// assert ${d.type} (no element)`
   const byExpr = renderByExpression(el)

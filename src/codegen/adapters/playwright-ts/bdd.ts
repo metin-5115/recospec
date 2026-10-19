@@ -1,4 +1,5 @@
 import type { GeneratedFile } from '@shared/types/generated'
+import { isUrlAssertionStep } from '../../shared/page-assertion'
 import type { IRScenario, IRPage } from '../../ir/types'
 import type { RenderOptions } from '../registry'
 import { nodeBaseUrlExpr } from '../../shared/base-url'
@@ -76,6 +77,9 @@ function renderStepBody(step: GherkinStep, paramNames: string[]): string {
   }
   if (sourceAction === 'keypress') {
     return `  await page.keyboard.press(${paramNames[0] ?? '""'});`
+  }
+  if (sourceAction === 'assert' && isUrlAssertionStep(step)) {
+    return `  await expect(page).toHaveURL((url) => url.href.includes(${paramNames[0] ?? '""'}));`
   }
   if (sourceAction === 'assert') {
     return `  await expect(page.getByText(${paramNames[0] ?? '""'})).toBeVisible();`
