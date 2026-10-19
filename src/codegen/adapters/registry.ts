@@ -33,8 +33,6 @@ export interface FrameworkAdapter {
   renderScenario(scenario: IRScenario, options?: RenderOptions): GeneratedFile
   renderScaffold(options?: RenderOptions): GeneratedFile[]
   postProcess?(files: GeneratedFile[], options?: RenderOptions): GeneratedFile[]
-  /** @deprecated Transitional — removed once every adapter reads the explicit `options` argument. */
-  applyOptions?(options: RenderOptions): void
 
   /** BDD mode — Gherkin feature file (`*.feature`). Adapters that support BDD implement all three. */
   renderBddFeature?(scenario: IRScenario, options?: RenderOptions): GeneratedFile

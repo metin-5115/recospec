@@ -107,7 +107,6 @@ export async function generate(
     testData: options.testData,
     bdd: options.bdd,
   }
-  adapter.applyOptions?.(renderOptions)
 
   const selection = normalizeSelection(options.selection)
   if (isEmptySelection(selection)) {

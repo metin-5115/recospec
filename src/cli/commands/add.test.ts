@@ -137,3 +137,52 @@ describe('runAdd output selection', () => {
     expect(files.some((f) => f.endsWith('package.json'))).toBe(false)
   })
 })
+
+describe('runAdd render options', () => {
+  function writeNetworkPayload(): void {
+    const network: RecordedAction = {
+      actionId: 'a1',
+      sessionId: 'session-1',
+      sequenceNumber: 1,
+      type: 'network',
+      timestamp: 1,
+      pageUrl: 'https://example.com/login',
+      payload: {
+        method: 'POST',
+        url: 'https://example.com/api/login',
+        status: 200,
+        contentType: 'application/json',
+        responseBody: '{"ok":true}',
+      },
+    }
+    const payload = makePayload()
+    payload.actions = [clickAction(), network]
+    writeFileSync(jsonPath, JSON.stringify(payload), 'utf8')
+  }
+
+  function readAllOutput(dir: string): string {
+    return listFiles(dir)
+      .map((f) => readFileSync(join(dir, f), 'utf8'))
+      .join('\n')
+  }
+
+  it('emits network mocks only for the run that asked for them', async () => {
+    writeNetworkPayload()
+    await runAdd(
+      { json: jsonPath, projectDir: tmp, framework: 'playwright-ts', includeMocks: true },
+      failingReporter,
+    )
+    expect(readAllOutput(tmp)).toContain('.route(')
+
+    const second = mkdtempSync(join(tmpdir(), 'recospec-add-'))
+    try {
+      await runAdd(
+        { json: jsonPath, projectDir: second, framework: 'playwright-ts' },
+        failingReporter,
+      )
+      expect(readAllOutput(second)).not.toContain('.route(')
+    } finally {
+      rmSync(second, { recursive: true, force: true })
+    }
+  })
+})

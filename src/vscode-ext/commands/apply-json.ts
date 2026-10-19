@@ -3,7 +3,6 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve as resolvePath } from 'node:path'
 import { runAdd } from '@/cli/commands/add'
 import { renameForConflict } from '@/cli/conflict-resolver'
-import { getAdapter } from '@codegen/adapters/registry'
 import { normalizeActions } from '@codegen/normalizer/action-normalizer'
 import {
   collectTemplateOccurrences,
@@ -24,9 +23,8 @@ import { showOutputPicker, type PickerChoices } from '../output-picker'
 import type { RecospecStatusBar } from '../status-bar'
 
 // Side-effect imports — the adapters self-register in `ADAPTER_REGISTRY`
-// when the module is loaded. `runAdd` already pulls these in, but we also
-// reach for `getAdapter()` directly when applying picker options, so we
-// duplicate the registration imports here to guarantee they run first.
+// when the module is loaded. `runAdd` already pulls these in; they are
+// repeated here so registration never depends on that transitive import.
 import '@codegen/adapters/playwright-ts'
 import '@codegen/adapters/cypress'
 import '@codegen/adapters/selenium-py'
@@ -111,12 +109,6 @@ export async function applyJsonAtPath(args: ApplyJsonAtPathArgs): Promise<void> 
     if (choices.pageObjects || choices.test) {
       const templateModes = await pickTemplateModes(payload, args.output)
       const composedModes = await pickComposedModes(payload, args.output)
-      // Adapters consume render-time flags via `applyOptions` before
-      // `runAdd` calls `renderPageObject` / `renderScenario`.
-      getAdapter(framework).applyOptions?.({
-        includeMocks: choices.mocks,
-        bdd: choices.bdd,
-      })
       await runAdd(
         {
           json: args.jsonPath,
