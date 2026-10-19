@@ -3,6 +3,7 @@ import { PLAYWRIGHT_SELF_HEALING_TS } from '../../scaffold/self-healing'
 import type { RenderOptions } from '../registry'
 import { FLOW_SLUG_FALLBACK } from '../../shared/flow-slug'
 import { nodeBaseUrlExpr } from '../../shared/base-url'
+import { renderFixturesScaffold } from '../../shared/upload-fixtures'
 
 function renderEnvExample(options: RenderOptions): GeneratedFile | null {
   const params = options.testData?.params.filter((p) => p.useEnvVar) ?? []
@@ -81,6 +82,7 @@ export default defineConfig({
       content: '',
     },
   ]
+  files.push(...renderFixturesScaffold(options))
   const envExample = renderEnvExample(options)
   if (envExample) files.push(envExample)
   return files

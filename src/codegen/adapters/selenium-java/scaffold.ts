@@ -1,5 +1,6 @@
 import type { GeneratedFile } from '@shared/types/generated'
 import type { RenderOptions } from '../registry'
+import { renderFixturesScaffold } from '../../shared/upload-fixtures'
 
 const POM_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
@@ -79,6 +80,7 @@ export function renderScaffold(options: RenderOptions = {}): GeneratedFile[] {
     { filename: 'pom.xml', content: POM_XML },
     { filename: 'testng.xml', content: TESTNG_XML },
     { filename: '.gitignore', content: GITIGNORE },
+    ...renderFixturesScaffold(options),
   ]
   const params = options.testData?.params.filter((p) => p.useEnvVar) ?? []
   if (params.length) {

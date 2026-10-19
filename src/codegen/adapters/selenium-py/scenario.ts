@@ -29,6 +29,7 @@ import {
 } from '../../shared/scenario-flow'
 import { toPyIdentifier, toSnakeCase } from './naming'
 import { pyUrlExpr } from './base-url'
+import { hasUploadStep } from '../../shared/upload-fixtures'
 import { dottedModule, resolveOutputDirs } from '../../export/output-layout'
 
 export { toSnakeCase }
@@ -213,7 +214,7 @@ export function renderScenario(scenario: IRScenario, given: RenderOptions = {}):
   const slug = testNameSlug(scenario.name)
   const docstring = `    """${docstringSafe(scenario.name || 'Recorded scenario')}."""`
 
-  const needsOsImport = /\bos\.environ\b/.test(body)
+  const needsOsImport = /\bos\.environ\b/.test(body) || hasUploadStep(inlineSteps)
   const needsReImport = inlineSteps.some((s) => s.assertionDetail?.type === 'matches')
   const stdlibImports = [
     needsReImport ? 'import re' : '',

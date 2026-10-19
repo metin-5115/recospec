@@ -512,3 +512,35 @@ describe('inferMethods — auto-detected waits', () => {
     expect(methods[1]!.steps).toContain(netFilter)
   })
 })
+
+describe('inferMethods — upload', () => {
+  it('names an upload step after the element and leaves the file out of the signature', () => {
+    const methods = inferMethods([
+      elementStep(
+        'upload',
+        'avatarInput',
+        'input',
+        { upload: { fileNames: ['me.png'], multiple: false } },
+        'file',
+      ),
+    ])
+    expect(methods).toHaveLength(1)
+    expect(methods[0].name).toBe('uploadAvatar')
+    expect(methods[0].params).toEqual([])
+    expect(methods[0].steps[0].action).toBe('upload')
+  })
+
+  it('keeps an upload separate from the submit click that follows it', () => {
+    const methods = inferMethods([
+      elementStep(
+        'upload',
+        'resumeInput',
+        'input',
+        { upload: { fileNames: ['cv.pdf'], multiple: false } },
+        'file',
+      ),
+      clickStep('submitBtn'),
+    ])
+    expect(methods.map((m) => m.name)).toEqual(['uploadResume', 'clickSubmit'])
+  })
+})

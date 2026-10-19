@@ -6,6 +6,7 @@ import { renderScenario } from './scenario'
 import { renderLocator } from './locator'
 import { flowSlug } from '../../shared/flow-slug'
 import { nodeBaseUrlExpr } from '../../shared/base-url'
+import { renderFixturesScaffold } from '../../shared/upload-fixtures'
 import { CYPRESS_SELF_HEALING_JS } from '../../scaffold/self-healing'
 import { renderFeatureFile, renderStepsFile, renderBddScaffoldFiles } from './bdd'
 
@@ -67,6 +68,7 @@ addMatchImageSnapshotCommand({
     { filename: 'cypress/support/e2e.js', content: supportFile },
     { filename: 'cypress/support/locator.js', content: CYPRESS_SELF_HEALING_JS },
     { filename: 'cypress/screenshots/.gitkeep', content: '' },
+    ...renderFixturesScaffold(options),
   ]
   const params = options.testData?.params.filter((p) => p.useEnvVar) ?? []
   if (params.length) {

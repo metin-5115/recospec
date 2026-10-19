@@ -2,7 +2,13 @@ import type { GeneratedFile } from '@shared/types/generated'
 import type { IRScenario, IRPage } from '../../ir/types'
 import type { RenderOptions } from '../registry'
 import { javaPackages } from './packages'
-import { mapScenarioToGherkin, literalArgsFor, type GherkinStep } from '../../bdd/gherkin-mapper'
+import {
+  mapScenarioToGherkin,
+  literalArgsFor,
+  UPLOAD_FILE_SEPARATOR,
+  type GherkinStep,
+} from '../../bdd/gherkin-mapper'
+import { UPLOAD_FIXTURES_DIR } from '../../shared/upload-fixtures'
 
 export { renderFeatureFile } from '../../bdd/feature-file'
 
@@ -89,6 +95,16 @@ function renderStepBody(step: GherkinStep, argNames: string[]): string {
       `        if (${condition}) {`,
       `            el.click();`,
       `        }`,
+    ].join('\n')
+  }
+  if (sourceAction === 'upload') {
+    const filesRef = argNames[0] ?? '""'
+    const labelRef = argNames[1] ?? '""'
+    const toPath = `file -> java.nio.file.Paths.get("${UPLOAD_FIXTURES_DIR}", file).toAbsolutePath().toString()`
+    return [
+      `        String xpath = "//*[@aria-label='" + ${labelRef} + "' or @name='" + ${labelRef} + "']";`,
+      `        String paths = java.util.Arrays.stream(${filesRef}.split(${JSON.stringify(UPLOAD_FILE_SEPARATOR)})).map(${toPath}).collect(java.util.stream.Collectors.joining("\\n"));`,
+      `        driver.findElement(By.xpath(xpath)).sendKeys(paths);`,
     ].join('\n')
   }
   if (sourceAction === 'hover' || sourceAction === 'dblclick') {

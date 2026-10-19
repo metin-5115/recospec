@@ -136,3 +136,20 @@ describe('estimateTokens', () => {
     expect(estimateTokens('abcde')).toBe(2)
   })
 })
+
+describe('buildLlmContext — file upload', () => {
+  it('describes an upload step by its file names, never a local path', () => {
+    const payload = LOGIN()
+    const fill = payload.actions.find((a) => a.type === 'fill')!
+    payload.actions.push({
+      ...fill,
+      actionId: 'upload-1',
+      sequenceNumber: payload.actions.length,
+      type: 'upload',
+      payload: { fileNames: ['me.png'], multiple: false },
+    })
+    const ctx = buildLlmContext(payload, { task: 'codegen', framework: 'playwright-ts' })
+    const upload = ctx.steps.find((s) => s.action === 'upload')
+    expect(upload?.value).toBe('"me.png"')
+  })
+})

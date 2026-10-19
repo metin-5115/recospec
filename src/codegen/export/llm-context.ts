@@ -247,6 +247,8 @@ function describeStep(step: IRStep, base: string, redact: Redact): string | unde
     case 'fill':
     case 'select':
       return step.value !== undefined ? formatValue(redact(step.value)) : undefined
+    case 'upload':
+      return step.upload ? formatValue(redact(step.upload.fileNames.join(', '))) : undefined
     case 'keypress':
       return step.key
     case 'wait':

@@ -3,6 +3,7 @@ import type { RenderOptions } from '../registry'
 import { BASE_URL_ENV_VAR } from '@shared/constants'
 import { configuredBaseUrl } from '../../shared/base-url'
 import { pyStr } from './locator'
+import { renderFixturesScaffold } from '../../shared/upload-fixtures'
 
 const REQUIREMENTS_TXT = `selenium>=4.15.0
 pytest>=7.4.0
@@ -69,6 +70,7 @@ export function renderScaffold(options: RenderOptions = {}): GeneratedFile[] {
     { filename: 'pytest.ini', content: PYTEST_INI },
     { filename: 'pages/__init__.py', content: '' },
     { filename: 'tests/__init__.py', content: '' },
+    ...renderFixturesScaffold(options),
   ]
   const params = options.testData?.params.filter((p) => p.useEnvVar) ?? []
   if (params.length) {

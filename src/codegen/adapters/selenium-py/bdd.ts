@@ -1,6 +1,12 @@
 import type { GeneratedFile } from '@shared/types/generated'
 import type { IRScenario, IRPage } from '../../ir/types'
-import { mapScenarioToGherkin, literalArgsFor, type GherkinStep } from '../../bdd/gherkin-mapper'
+import {
+  mapScenarioToGherkin,
+  literalArgsFor,
+  UPLOAD_FILE_SEPARATOR,
+  type GherkinStep,
+} from '../../bdd/gherkin-mapper'
+import { UPLOAD_FIXTURES_DIR } from '../../shared/upload-fixtures'
 
 export { renderFeatureFile } from '../../bdd/feature-file'
 import { toPyIdentifier, toSnakeCase } from './naming'
@@ -121,6 +127,15 @@ function renderStepBody(step: GherkinStep, argNames: string[]): string {
       `        _el.click()`,
     ].join('\n')
   }
+  if (sourceAction === 'upload') {
+    const filesRef = argNames[0] ?? '""'
+    const labelRef = argNames[1] ?? '""'
+    return [
+      `    _xpath = "//*[@aria-label='" + ${labelRef} + "' or @name='" + ${labelRef} + "']"`,
+      `    _paths = [os.path.abspath(os.path.join('${UPLOAD_FIXTURES_DIR}', f)) for f in ${filesRef}.split(${JSON.stringify(UPLOAD_FILE_SEPARATOR)})]`,
+      `    driver.find_element(By.XPATH, _xpath).send_keys('\\n'.join(_paths))`,
+    ].join('\n')
+  }
   if (sourceAction === 'hover' || sourceAction === 'dblclick') {
     const textRef = argNames[0] ?? '""'
     const call = sourceAction === 'hover' ? 'move_to_element(_el)' : 'double_click(_el)'
@@ -210,6 +225,7 @@ export function renderStepsFile(scenario: IRScenario, options: RenderOptions = {
   importLines.push('from selenium.webdriver.common.by import By')
   importLines.push('from selenium.webdriver.common.keys import Keys')
   const stepsText = stepDefs.join('\n')
+  if (/\bos\.path\b/.test(stepsText)) importLines.unshift('import os')
   if (/\bSelect\(/.test(stepsText)) {
     importLines.push('from selenium.webdriver.support.ui import Select')
   }

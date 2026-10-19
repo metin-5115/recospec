@@ -3,7 +3,13 @@ import type { IRScenario, IRPage } from '../../ir/types'
 import type { RenderOptions } from '../registry'
 import { nodeBaseUrlExpr } from '../../shared/base-url'
 import { relativeModule, resolveOutputDirs } from '../../export/output-layout'
-import { mapScenarioToGherkin, literalArgsFor, type GherkinStep } from '../../bdd/gherkin-mapper'
+import {
+  mapScenarioToGherkin,
+  literalArgsFor,
+  UPLOAD_FILE_SEPARATOR,
+  type GherkinStep,
+} from '../../bdd/gherkin-mapper'
+import { UPLOAD_FIXTURES_DIR } from '../../shared/upload-fixtures'
 
 export { renderFeatureFile } from '../../bdd/feature-file'
 
@@ -60,6 +66,10 @@ function renderStepBody(step: GherkinStep, paramNames: string[]): string {
   }
   if (sourceAction === 'check' || sourceAction === 'uncheck') {
     return `  await page.getByLabel(${paramNames[0] ?? '""'}).${sourceAction}();`
+  }
+  if (sourceAction === 'upload') {
+    const files = `${paramNames[0] ?? '""'}.split(${JSON.stringify(UPLOAD_FILE_SEPARATOR)}).map((file) => \`${UPLOAD_FIXTURES_DIR}/\${file}\`)`
+    return `  await page.getByLabel(${paramNames[1] ?? '""'}).setInputFiles(${files});`
   }
   if (sourceAction === 'hover' || sourceAction === 'dblclick') {
     return `  await page.getByText(${paramNames[0] ?? '""'}).${sourceAction}();`

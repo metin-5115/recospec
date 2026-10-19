@@ -15,6 +15,7 @@ export type IRActionType =
   | 'select'
   | 'check'
   | 'uncheck'
+  | 'upload'
   | 'assert'
   | 'keypress'
   | 'network'
@@ -148,6 +149,15 @@ export interface IRNetworkInfo {
   responseBody?: string
 }
 
+/**
+ * Files chosen on an `<input type=file>`. Names only: the recorded local path is neither
+ * portable nor safe to commit, so adapters point at a `fixtures/<name>` placeholder instead.
+ */
+export interface IRUploadInfo {
+  fileNames: string[]
+  multiple: boolean
+}
+
 export interface IRStep {
   id: string
   action: IRActionType
@@ -165,6 +175,7 @@ export interface IRStep {
   assertionDetail?: AssertionDetail
   network?: IRNetworkInfo
   wait?: IRWaitInfo
+  upload?: IRUploadInfo
 }
 
 export interface InferredMethod {

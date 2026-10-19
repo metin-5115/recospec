@@ -9,6 +9,7 @@ import './adapters/selenium-java'
 import { getAdapter, type RenderOptions } from './adapters/registry'
 import { flowSlug } from './shared/flow-slug'
 import { recordedOrigin } from './shared/scenario-flow'
+import { hasUploadStep } from './shared/upload-fixtures'
 import type { FrameworkId, GeneratedCode, OutputSelection } from '@shared/types/generated'
 import { normalizeSelection, isEmptySelection } from '@shared/types/generated'
 import type { IRDocument, IRScenario, TestDataConfig, TemplateParamMode } from './ir/types'
@@ -110,6 +111,7 @@ export async function generate(
     bdd: options.bdd,
     flowSlug: flowSlug(scenario.name),
     baseUrl: recordedOrigin(scenario),
+    hasUploads: hasUploadStep(flatSteps),
   }
 
   const selection = normalizeSelection(options.selection)

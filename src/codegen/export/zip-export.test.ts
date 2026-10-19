@@ -178,3 +178,20 @@ describe('buildZipExport', () => {
     expect(paths).toContain('README.md')
   })
 })
+
+describe('buildZipExport — upload fixtures', () => {
+  it('explains the fixtures folder when the flow uploads files', async () => {
+    const code = makeCode([{ filename: 'fixtures/.gitkeep', content: '' }])
+    const blob = await buildZipExport(makeSession(), code)
+    expect(await listZipPaths(blob)).toContain('fixtures/.gitkeep')
+    const readme = await readZipFile(blob, 'README.md')
+    expect(readme).toContain('## Upload fixtures')
+    expect(readme).toContain('`fixtures/`')
+  })
+
+  it('leaves the fixtures section out when nothing is uploaded', async () => {
+    const blob = await buildZipExport(makeSession(), makeCode([]))
+    const readme = await readZipFile(blob, 'README.md')
+    expect(readme).not.toContain('Upload fixtures')
+  })
+})

@@ -1,5 +1,6 @@
 import type { IRStep } from '../../ir/types'
 import { pyStr } from './locator'
+import { uploadFixturePaths } from '../../shared/upload-fixtures'
 
 const SELECT_IMPORT = 'from selenium.webdriver.support.ui import Select'
 const ACTION_CHAINS_IMPORT = 'from selenium.webdriver.common.action_chains import ActionChains'
@@ -12,7 +13,7 @@ export interface PyInteractionOptions {
 }
 
 /**
- * Renders select / check / uncheck / hover / dblclick for Selenium Python.
+ * Renders select / check / uncheck / upload / hover / dblclick for Selenium Python.
  *
  * `elementExpr` is an expression that yields the WebElement (the caller owns the
  * explicit wait); `driverExpr` is `self.driver` in page objects and `driver` in
@@ -42,6 +43,13 @@ export function renderPyInteraction(
         `${indent}if ${condition}:`,
         `${indent}    _el.click()`,
       ].join('\n')
+    }
+    case 'upload': {
+      // A file input takes the absolute path as keystrokes; several files are newline-separated.
+      const paths = uploadFixturePaths(step).map((p) => `os.path.abspath(${pyStr(p)})`)
+      if (paths.length === 0) return null
+      const arg = paths.length > 1 ? `'\\n'.join([${paths.join(', ')}])` : paths[0]
+      return `${indent}${elementExpr}.send_keys(${arg})`
     }
     case 'hover':
       return [

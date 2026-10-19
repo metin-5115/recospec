@@ -33,6 +33,11 @@ export interface RenderOptions {
    */
   baseUrl?: string
   /**
+   * The flow uploads files. Scaffolds then add the `fixtures/` folder the generated upload
+   * steps read from.
+   */
+  hasUploads?: boolean
+  /**
    * Folders the files will be written to when they differ from the framework's standard layout
    * (the CLI's `paths` setting). Generated imports and package names are computed from them.
    */

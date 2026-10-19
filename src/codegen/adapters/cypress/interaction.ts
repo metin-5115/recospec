@@ -1,15 +1,17 @@
 import type { IRStep } from '../../ir/types'
+import { isMultiUpload, uploadFixturePaths } from '../../shared/upload-fixtures'
 
 const INTERACTION_ACTIONS: ReadonlySet<IRStep['action']> = new Set([
   'select',
   'check',
   'uncheck',
+  'upload',
   'hover',
   'dblclick',
 ])
 
 /**
- * Renders the element-targeted interactions Cypress has a one-liner for.
+ * Renders the element-targeted interactions Cypress has a one-liner for (`upload` is `selectFile`).
  * `chain` is the already-rendered element chain (`cy.findByRole(...)`).
  * Returns `null` for actions this helper doesn't own.
  *
@@ -29,6 +31,12 @@ export function renderInteraction(
       return `${indent}${chain}.check();`
     case 'uncheck':
       return `${indent}${chain}.uncheck();`
+    case 'upload': {
+      const paths = uploadFixturePaths(step).map((p) => JSON.stringify(p))
+      if (paths.length === 0) return null
+      const arg = isMultiUpload(step) ? `[${paths.join(', ')}]` : paths[0]
+      return `${indent}${chain}.selectFile(${arg});`
+    }
     case 'hover':
       return `${indent}${chain}.trigger('mouseover');`
     case 'dblclick':

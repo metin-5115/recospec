@@ -1,8 +1,11 @@
 import type { IRStep } from '../../ir/types'
 import { javaStr } from './locator'
+import { uploadFixturePaths } from '../../shared/upload-fixtures'
 
 const SELECT_IMPORT = 'import org.openqa.selenium.support.ui.Select;'
 const ACTIONS_IMPORT = 'import org.openqa.selenium.interactions.Actions;'
+/** A file input with `multiple` reads one path per line. */
+const FILE_LIST_SEPARATOR = '\n'
 
 export interface JavaInteractionTarget {
   /** Statements that wait for / resolve the element before it is used. */
@@ -30,7 +33,7 @@ function wrap(lines: string[], indent: string, scoped: boolean): string {
 }
 
 /**
- * Renders select / check / uncheck / hover / dblclick for Selenium Java.
+ * Renders select / check / uncheck / upload / hover / dblclick for Selenium Java.
  * Returns `null` for actions this helper doesn't own.
  */
 export function renderJavaInteraction(
@@ -53,6 +56,18 @@ export function renderJavaInteraction(
           ? `!${ref}.isSelected()`
           : `${ref}.isSelected()`
       return wrap([...prelude, `if (${condition}) {`, `    ${ref}.click();`, `}`], indent, scoped)
+    }
+    case 'upload': {
+      // A file input takes the absolute path as keystrokes; several files are newline-separated.
+      const paths = uploadFixturePaths(step).map(
+        (p) => `java.nio.file.Paths.get(${javaStr(p)}).toAbsolutePath().toString()`,
+      )
+      if (paths.length === 0) return null
+      const arg =
+        paths.length > 1
+          ? `String.join(${javaStr(FILE_LIST_SEPARATOR)}, ${paths.join(', ')})`
+          : paths[0]
+      return wrap([...prelude, `${ref}.sendKeys(${arg});`], indent, scoped)
     }
     case 'hover':
       return wrap(

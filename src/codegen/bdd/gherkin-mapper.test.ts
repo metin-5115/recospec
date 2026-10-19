@@ -521,3 +521,53 @@ describe('select / check / hover / dblclick', () => {
     )
   })
 })
+
+describe('upload', () => {
+  const fileEl: IRElement = {
+    name: 'avatarInput',
+    locatorStrategy: 'testid',
+    locatorValue: '[data-testid="avatar"]',
+    tagName: 'input',
+    inputType: 'file',
+  }
+
+  it('upload → I upload "<file>" to the "<label>" field', () => {
+    const out = mapIRStepToGherkin(
+      ir({
+        action: 'upload',
+        element: fileEl,
+        upload: { fileNames: ['me.png'], multiple: false },
+      }),
+      'When',
+    )
+    expect(out.text).toBe('I upload "me.png" to the "avatar" field')
+    expect(out.pattern).toBe('I upload {string} to the {string} field')
+    expect(out.params).toEqual(['me.png', 'avatar'])
+  })
+
+  it('lists several files in one comma-separated parameter', () => {
+    const out = mapIRStepToGherkin(
+      ir({
+        action: 'upload',
+        element: fileEl,
+        upload: { fileNames: ['a.pdf', 'b.pdf'], multiple: true },
+      }),
+      'When',
+    )
+    expect(out.params).toEqual(['a.pdf, b.pdf', 'avatar'])
+  })
+
+  it('an uploadX method maps to a parameterless sentence', () => {
+    const page: IRPage = {
+      name: 'P',
+      className: 'PPage',
+      normalizedUrl: '/p',
+      elements: [],
+      steps: [],
+    }
+    const method: InferredMethod = { name: 'uploadAvatar', params: [], steps: [] }
+    expect(mapInferredMethodToGherkin(method, page, null).text).toBe(
+      'I upload a file to the avatar',
+    )
+  })
+})

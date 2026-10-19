@@ -207,6 +207,12 @@ function defaultDraft(step: IRStep): MethodDraft {
       step,
     )
   }
+  if (step.action === 'upload') {
+    return emptyDraft(
+      `upload${capitalize(stripElementSuffix(step.element?.name ?? '') || 'File')}`,
+      step,
+    )
+  }
   if (step.action === 'hover') {
     return emptyDraft(
       `hover${capitalize(stripElementSuffix(step.element?.name ?? '') || 'Element')}`,

@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **File uploads are recorded as `upload`** — choosing a file on an `<input type=file>` was
+  recorded as `fill("C:\fakepath\…")`, which Playwright rejects and no framework can run. The
+  recorder now stores the file names (never a path) and the `multiple` flag, and the click that
+  merely opens the dialog is no longer a step. Generated code uses `setInputFiles` (Playwright),
+  `selectFile` (Cypress) and `send_keys` / `sendKeys` with an absolute path (Selenium Python /
+  Java), all pointing at `fixtures/<file name>`. The scaffold gains `fixtures/.gitkeep` (and the
+  ZIP README a note) for flows that upload; BDD step definitions follow. Replay reports an upload
+  step as skipped, and old sessions holding a `fakepath` fill are converted on the fly.
+
 - **One spec per flow** — every adapter wrote `scenario.spec.ts` / `test_scenario.py` /
   `scenario.cy.js`, so recording a second flow overwrote the first. Files are now named after the
   flow (`<flow-slug>.spec.ts`, `<flow-slug>.cy.js`, `test_<flow_slug>.py`, `<FlowSlug>Test.java`);

@@ -20,7 +20,12 @@ function baseUrlRunCommand(framework: string): string {
   return 'npx playwright test'
 }
 
-const README_TEMPLATE = (session: Session, framework: string) => {
+const UPLOAD_FIXTURES_NOTE = `## Upload fixtures
+
+The recording picked files through a file input. Recospec keeps only the file names, so the generated steps read them from \`fixtures/\` (next to \`package.json\` / \`pom.xml\` / \`conftest.py\`) — add files with the same names there before running the tests.
+`
+
+const README_TEMPLATE = (session: Session, framework: string, hasUploads: boolean) => {
   const snapshotsDir = `tests/${flowSlug(session.name)}.spec.ts-snapshots/`
   const isCypress = framework === 'cypress'
   const isSeleniumPy = framework === 'selenium-py'
@@ -97,7 +102,12 @@ included helper:
 
 ${selfHealingNote}
 
-## Visual regression
+${
+  hasUploads
+    ? `${UPLOAD_FIXTURES_NOTE}
+`
+    : ''
+}## Visual regression
 
 ${visualRegressionNote}
 
@@ -112,7 +122,8 @@ export async function buildZipExport(session: Session, code: GeneratedCode): Pro
     zip.file(resolveOutputPath(file.filename, code.framework), file.content)
   }
 
-  zip.file('README.md', README_TEMPLATE(session, code.framework))
+  const hasUploads = code.files.some((f) => f.filename.startsWith('fixtures/'))
+  zip.file('README.md', README_TEMPLATE(session, code.framework, hasUploads))
 
   return zip.generateAsync({ type: 'blob', compression: 'DEFLATE' })
 }

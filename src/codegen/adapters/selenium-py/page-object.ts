@@ -13,6 +13,7 @@ import type { RenderOptions } from '../registry'
 import { navigationTarget } from '../../shared/scenario-flow'
 import { pyUrlExpr } from './base-url'
 import { toPyIdentifier } from './naming'
+import { hasUploadStep } from '../../shared/upload-fixtures'
 
 // ---------------------------------------------------------------------------
 // Naming helpers
@@ -294,8 +295,9 @@ export function renderPageObject(page: IRPage, options: RenderOptions = {}): str
     ...(page.inferredMethods ?? []).flatMap((m) => m.steps),
   ])
 
-  const needsOsImport = /\bos\.environ\b/.test(`${methodsBlock}${accessorsBlock}`)
   const allSteps = [...page.steps, ...(page.inferredMethods ?? []).flatMap((m) => m.steps)]
+  const needsOsImport =
+    /\bos\.environ\b/.test(`${methodsBlock}${accessorsBlock}`) || hasUploadStep(allSteps)
   const needsReImport = allSteps.some((s) => s.assertionDetail?.type === 'matches')
   const stdlibImports = [
     needsReImport ? 'import re' : '',

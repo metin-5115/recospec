@@ -4,7 +4,13 @@ import type { RenderOptions } from '../registry'
 import { nodeBaseUrlExpr } from '../../shared/base-url'
 import { flowSlug } from '../../shared/flow-slug'
 import { relativeModule, resolveOutputDirs } from '../../export/output-layout'
-import { mapScenarioToGherkin, literalArgsFor, type GherkinStep } from '../../bdd/gherkin-mapper'
+import {
+  mapScenarioToGherkin,
+  literalArgsFor,
+  UPLOAD_FILE_SEPARATOR,
+  type GherkinStep,
+} from '../../bdd/gherkin-mapper'
+import { UPLOAD_FIXTURES_DIR } from '../../shared/upload-fixtures'
 
 export { renderFeatureFile } from '../../bdd/feature-file'
 
@@ -58,6 +64,10 @@ function renderStepBody(step: GherkinStep, paramNames: string[]): string {
   }
   if (sourceAction === 'check' || sourceAction === 'uncheck') {
     return `  cy.findByLabelText(${paramNames[0] ?? '""'}).${sourceAction}();`
+  }
+  if (sourceAction === 'upload') {
+    const files = `${paramNames[0] ?? '""'}.split(${JSON.stringify(UPLOAD_FILE_SEPARATOR)}).map((file) => \`${UPLOAD_FIXTURES_DIR}/\${file}\`)`
+    return `  cy.findByLabelText(${paramNames[1] ?? '""'}).selectFile(${files});`
   }
   if (sourceAction === 'hover') {
     return `  cy.contains(${paramNames[0] ?? '""'}).trigger('mouseover');`

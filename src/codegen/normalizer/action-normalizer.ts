@@ -12,6 +12,7 @@ import type {
   IRElementSnapshot,
   IRFallback,
   IRNetworkInfo,
+  IRUploadInfo,
 } from '../ir/types'
 import { normalizeUrl } from './url-normalizer'
 import { normalizeWaitAction } from './wait-normalizer'
@@ -132,7 +133,8 @@ function buildElement(
   return { name, ...shared }
 }
 
-type ElementActionType = 'click' | 'dblclick' | 'hover' | 'fill' | 'select' | 'check' | 'uncheck'
+type ElementActionType =
+  'click' | 'dblclick' | 'hover' | 'fill' | 'select' | 'check' | 'uncheck' | 'upload'
 
 const ELEMENT_ACTION_TYPES: ReadonlySet<string> = new Set<ElementActionType>([
   'click',
@@ -142,6 +144,7 @@ const ELEMENT_ACTION_TYPES: ReadonlySet<string> = new Set<ElementActionType>([
   'select',
   'check',
   'uncheck',
+  'upload',
 ])
 
 /** Actions whose recorded `payload.value` becomes the IR step value. */
@@ -149,6 +152,39 @@ const VALUE_ACTIONS: ReadonlySet<string> = new Set<ElementActionType>(['fill', '
 
 /** A dblclick fires after two click events; replaying all three would triple-click. */
 const DBLCLICK_PRECEDING_CLICKS = 2
+
+/** A path (either separator style) reduced to its file name. */
+function baseName(path: string): string {
+  return path.split(/[\\/]/).pop() ?? ''
+}
+
+function isFileInput(snapshot: ElementSnapshot): boolean {
+  return snapshot.tagName === 'input' && snapshot.attributes?.type?.toLowerCase() === 'file'
+}
+
+/**
+ * Recordings made before `upload` existed hold the browser's fake path (fakepath plus the name) as a `fill`
+ * value; treat those as a single-file upload so old sessions still generate working code.
+ */
+function asUploadAction(action: RecordedAction): RecordedAction['type'] {
+  const { type, target, payload } = action
+  return type === 'fill' && target && isFileInput(target.elementSnapshot) && payload?.value
+    ? 'upload'
+    : type
+}
+
+function uploadInfoFor(action: RecordedAction): IRUploadInfo | undefined {
+  const { payload } = action
+  const raw = Array.isArray(payload?.fileNames)
+    ? (payload.fileNames as unknown[])
+    : [payload?.value]
+  const fileNames = raw
+    .filter((n): n is string => typeof n === 'string')
+    .map(baseName)
+    .filter(Boolean)
+  if (fileNames.length === 0) return undefined
+  return { fileNames, multiple: payload?.multiple === true }
+}
 
 function isElementAction(type: RecordedAction['type']): type is ElementActionType {
   return ELEMENT_ACTION_TYPES.has(type)
@@ -188,7 +224,8 @@ export function normalizeActions(actions: RecordedAction[]): NormalizedActions {
   const locatorToName = new Map<string, string>()
 
   for (const action of actions) {
-    const { actionId: id, type, payload, pageUrl, annotation } = action
+    const { actionId: id, payload, pageUrl, annotation } = action
+    const type = asUploadAction(action)
 
     if (type === 'navigate') {
       steps.push({
@@ -222,6 +259,13 @@ export function normalizeActions(actions: RecordedAction[]): NormalizedActions {
         [...action.target.fallbackLocators, ...(action.target.allCandidates ?? [])],
       )
       const step: IRStep = { id, action: type, element, annotation }
+      if (type === 'upload') {
+        const upload = uploadInfoFor(action)
+        if (!upload) continue
+        step.upload = upload
+        steps.push(step)
+        continue
+      }
       if (VALUE_ACTIONS.has(type) && payload?.value !== undefined) {
         step.value = String(payload.value)
       }

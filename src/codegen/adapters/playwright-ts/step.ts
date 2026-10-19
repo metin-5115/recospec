@@ -4,6 +4,7 @@ import { renderAssertionMatcher } from './assertion'
 import { renderMockBlock } from './mock'
 import { renderFillValueExpr } from './fill-value'
 import type { RenderOptions } from '../registry'
+import { isMultiUpload, uploadFixturePaths } from '../../shared/upload-fixtures'
 
 /** IR action → Playwright locator method for the element-targeted interactions. */
 const INTERACTION_CALLS: Partial<Record<IRStep['action'], string>> = {
@@ -23,6 +24,12 @@ export function mocksFirst(steps: readonly IRStep[], lines: readonly string[]): 
   return [...lines.filter((_, i) => isMock(i)), ...lines.filter((_, i) => !isMock(i))]
 }
 
+/** `setInputFiles(...)` argument: a single path, or an array for a `multiple` input. */
+function uploadArg(step: IRStep): string {
+  const paths = uploadFixturePaths(step).map((p) => JSON.stringify(p))
+  return isMultiUpload(step) ? `[${paths.join(', ')}]` : (paths[0] ?? '[]')
+}
+
 export function renderStepInMethod(
   step: IRStep,
   indent: string,
@@ -37,6 +44,9 @@ export function renderStepInMethod(
   if (step.action === 'fill' && step.element) {
     const expr = renderFillValueExpr(step.element, step.value ?? '', options.testData)
     return `${indent}await this.${step.element.name}.fill(${expr});`
+  }
+  if (step.action === 'upload' && step.element && step.upload) {
+    return `${indent}await ${memberExpr(step.element)}.setInputFiles(${uploadArg(step)});`
   }
   if (step.element && INTERACTION_CALLS[step.action]) {
     const args = step.action === 'select' ? JSON.stringify(step.value ?? '') : ''
@@ -126,6 +136,9 @@ export function renderStepInSpec(
   if (step.action === 'fill' && step.element) {
     const expr = renderFillValueExpr(step.element, step.value ?? '', options.testData)
     return `${indent}await ${renderLocator(step.element)}.fill(${expr});`
+  }
+  if (step.action === 'upload' && step.element && step.upload) {
+    return `${indent}await ${renderLocator(step.element)}.setInputFiles(${uploadArg(step)});`
   }
   if (step.element && INTERACTION_CALLS[step.action]) {
     const args = step.action === 'select' ? JSON.stringify(step.value ?? '') : ''

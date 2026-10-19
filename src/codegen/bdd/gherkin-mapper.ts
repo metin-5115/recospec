@@ -252,6 +252,7 @@ function defaultMethodTemplate(method: InferredMethod): NamedTemplate {
   const toggleVerbs: Array<[prefix: string, verb: string, fallback: string]> = [
     ['uncheck', 'uncheck', 'option'],
     ['check', 'check', 'option'],
+    ['upload', 'upload a file to', 'field'],
     ['hover', 'hover over', 'element'],
     ['doubleClick', 'double-click', 'element'],
   ]
@@ -344,6 +345,9 @@ export function literalArgsFor(
   return out
 }
 
+/** Joins several uploaded file names into the single string parameter of the step. */
+export const UPLOAD_FILE_SEPARATOR = ', '
+
 /** Map a single IR step to a Gherkin step (used for step-level scenarios). */
 export function mapIRStepToGherkin(step: IRStep, keyword: GherkinKeyword): GherkinStep {
   if (step.action === 'navigate' && step.url) {
@@ -390,6 +394,19 @@ export function mapIRStepToGherkin(step: IRStep, keyword: GherkinKeyword): Gherk
       text: `I select ${JSON.stringify(value)} from the ${JSON.stringify(label)} ${role}`,
       pattern: `I select {string} from the {string} ${role}`,
       params: [value, label],
+      paramTypes: ['string', 'string'],
+      sourceSteps: [step],
+    }
+  }
+  if (step.action === 'upload' && step.element && step.upload) {
+    const role = elementRoleLabel(step.element.tagName, step.element.inputType)
+    const label = elementDisplayName(step)
+    const files = step.upload.fileNames.join(UPLOAD_FILE_SEPARATOR)
+    return {
+      keyword,
+      text: `I upload ${JSON.stringify(files)} to the ${JSON.stringify(label)} ${role}`,
+      pattern: `I upload {string} to the {string} ${role}`,
+      params: [files, label],
       paramTypes: ['string', 'string'],
       sourceSteps: [step],
     }

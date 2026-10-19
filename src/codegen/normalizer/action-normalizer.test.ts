@@ -368,3 +368,52 @@ describe('normalizeActions — page URL per step', () => {
     expect(flatSteps[0]!.pageUrl).toBeUndefined()
   })
 })
+
+describe('normalizeActions — file upload', () => {
+  it('turns an upload action into an upload step carrying file names', () => {
+    const { flatSteps } = normalizeActions([
+      makeTargetAction('u1', 'upload', 'avatar', 'input', {
+        fileNames: ['me.png', 'you.png'],
+        multiple: true,
+      }),
+    ])
+    expect(flatSteps).toHaveLength(1)
+    expect(flatSteps[0].action).toBe('upload')
+    expect(flatSteps[0].upload).toEqual({ fileNames: ['me.png', 'you.png'], multiple: true })
+    expect(flatSteps[0].element?.tagName).toBe('input')
+  })
+
+  it('keeps only the base name when a path slipped into the payload', () => {
+    const { flatSteps } = normalizeActions([
+      makeTargetAction('u1', 'upload', 'avatar', 'input', {
+        fileNames: ['C:\\Users\\me\\Desktop\\me.png', '/home/me/you.png'],
+        multiple: true,
+      }),
+    ])
+    expect(flatSteps[0].upload?.fileNames).toEqual(['me.png', 'you.png'])
+  })
+
+  it('drops an upload without any file name', () => {
+    const { flatSteps } = normalizeActions([
+      makeTargetAction('u1', 'upload', 'avatar', 'input', { fileNames: [], multiple: false }),
+    ])
+    expect(flatSteps).toEqual([])
+  })
+
+  it('migrates a legacy fakepath fill on a file input into an upload', () => {
+    const { flatSteps } = normalizeActions([
+      makeTargetAction(
+        'f1',
+        'fill',
+        'avatar',
+        'input',
+        { value: 'C:\\fakepath\\me.png' },
+        { type: 'file' },
+      ),
+    ])
+    expect(flatSteps).toHaveLength(1)
+    expect(flatSteps[0].action).toBe('upload')
+    expect(flatSteps[0].value).toBeUndefined()
+    expect(flatSteps[0].upload).toEqual({ fileNames: ['me.png'], multiple: false })
+  })
+})
