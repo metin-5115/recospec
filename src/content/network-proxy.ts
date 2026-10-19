@@ -15,6 +15,7 @@
  */
 import {
   NETWORK_BODY_MAX_BYTES,
+  NETWORK_BODY_SERIALIZE_FACTOR,
   NETWORK_BODY_SKIP_CONTENT_TYPES,
   NETWORK_CAPTURE_EVENT_NAME,
   NETWORK_CAPTURE_FLAG_KEY,
@@ -38,6 +39,18 @@ function shouldSkip(url: string): boolean {
 
 function truncate(s: string): string {
   return s.length > NETWORK_BODY_MAX_BYTES ? s.slice(0, NETWORK_BODY_MAX_BYTES) : s
+}
+
+/**
+ * A parsed JSON response can only be captured by serializing all of it, then cutting it — and a
+ * body cut in the middle is not usable JSON anyway. When the server says the body is far over the
+ * cap, skip the serialization.
+ */
+function isFarOverCap(xhr: XMLHttpRequest): boolean {
+  const declared = Number(xhr.getResponseHeader('content-length'))
+  return (
+    Number.isFinite(declared) && declared > NETWORK_BODY_MAX_BYTES * NETWORK_BODY_SERIALIZE_FACTOR
+  )
 }
 
 function isRecording(): boolean {
@@ -188,7 +201,7 @@ XMLHttpRequest.prototype.send = function patchedSend(
     try {
       const rt = this.responseType
       if (rt === '' || rt === 'text') responseBody = truncate(String(this.responseText ?? ''))
-      else if (rt === 'json' && this.response != null) {
+      else if (rt === 'json' && this.response != null && !isFarOverCap(this)) {
         responseBody = truncate(JSON.stringify(this.response))
       }
     } catch {

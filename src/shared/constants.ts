@@ -342,3 +342,12 @@ export const RECORDING_FLAG_STORAGE_KEY = 'recospec:recording-active' as const
 
 /** Network events arriving within this window are written to IndexedDB in one transaction. */
 export const NETWORK_BATCH_WINDOW_MS = 250 as const
+
+/** Page-world event the content script fires when it changes a page flag, so MAIN-world code can cache the flag. */
+export const PAGE_FLAG_EVENT_NAME = 'recospec:page-flag' as const
+
+/** A response that declares more than this many times the body cap is not serialized for capture. */
+export const NETWORK_BODY_SERIALIZE_FACTOR = 4 as const
+
+/** Delay used instead of requestAnimationFrame where the API is missing (non-page contexts). */
+export const MUTATION_FALLBACK_FRAME_MS = 16 as const

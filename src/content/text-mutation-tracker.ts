@@ -7,9 +7,16 @@
  * Elements are held in a WeakSet (no leak across long sessions); marking
  * bubbles three ancestor levels up so a click target whose CHILD span ticks
  * is itself flagged.
+ *
+ * Mutation records are batched and processed once per animation frame, so a page that rewrites
+ * text constantly does not pay a pass per callback. Asking about an element flushes first, so a
+ * change just before a click is never missed.
  */
+import { MUTATION_FALLBACK_FRAME_MS } from '@shared/constants'
 
 let observer: MutationObserver | null = null
+let pending: MutationRecord[] = []
+let isFlushScheduled = false
 const mutatedElements = new WeakSet<Element>()
 
 const ANCESTOR_MARK_DEPTH = 3
@@ -22,7 +29,7 @@ function markElement(el: Element | null): void {
   }
 }
 
-function onMutations(records: MutationRecord[]): void {
+function process(records: MutationRecord[]): void {
   for (const record of records) {
     if (record.type === 'characterData') {
       markElement(record.target.parentElement)
@@ -38,6 +45,26 @@ function onMutations(records: MutationRecord[]): void {
   }
 }
 
+function flush(): void {
+  const records = [...pending.splice(0), ...(observer?.takeRecords() ?? [])]
+  if (records.length > 0) process(records)
+}
+
+function requestFrame(callback: () => void): void {
+  if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(callback)
+  else setTimeout(callback, MUTATION_FALLBACK_FRAME_MS)
+}
+
+function onMutations(records: MutationRecord[]): void {
+  pending.push(...records)
+  if (isFlushScheduled) return
+  isFlushScheduled = true
+  requestFrame(() => {
+    isFlushScheduled = false
+    flush()
+  })
+}
+
 export function startTextMutationTracking(): void {
   if (observer) return
   observer = new MutationObserver(onMutations)
@@ -51,9 +78,11 @@ export function startTextMutationTracking(): void {
 export function stopTextMutationTracking(): void {
   observer?.disconnect()
   observer = null
+  pending = []
 }
 
 /** Did this element's (or a near descendant's) text change during the session? */
 export function wasTextMutated(el: Element): boolean {
+  flush()
   return mutatedElements.has(el)
 }

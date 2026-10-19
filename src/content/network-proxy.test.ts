@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { setPageFlag } from './page-flag'
 import {
   NETWORK_BODY_MAX_BYTES,
   NETWORK_CAPTURE_EVENT_NAME,
@@ -234,7 +235,8 @@ describe('network-proxy — fetch', () => {
     window.localStorage.removeItem(NETWORK_CAPTURE_FLAG_KEY)
     await installProxy()
     await window.fetch('https://api.test/a')
-    window.localStorage.setItem(NETWORK_CAPTURE_FLAG_KEY, 'true')
+    // The content script changes the flag; the proxy (its own module copy) hears the event.
+    setPageFlag(NETWORK_CAPTURE_FLAG_KEY, true)
     await window.fetch('https://api.test/b')
     await vi.waitFor(() => expect(events).toHaveLength(1))
     expect(events[0].url).toBe('https://api.test/b')
@@ -346,5 +348,30 @@ describe('network-proxy — redaction', () => {
     expect(body).not.toContain('abc')
     expect(body).not.toContain('ada@example.com')
     expect(JSON.parse(body).user.id).toBe(7)
+  })
+})
+
+describe('network-proxy — XHR size guard', () => {
+  it('does not serialize a JSON response the server says is far over the cap', async () => {
+    await installProxy()
+    const stringify = vi.spyOn(JSON, 'stringify')
+    const xhr = new XMLHttpRequest()
+    xhr.open('GET', 'https://api.test/huge')
+    xhr.responseType = 'json'
+    Object.defineProperty(xhr, 'response', { value: { rows: [1, 2, 3] } })
+    Object.defineProperty(xhr, 'status', { value: 200 })
+    xhr.getResponseHeader = (name: string) =>
+      name.toLowerCase() === 'content-length'
+        ? String(NETWORK_BODY_MAX_BYTES * 20)
+        : 'application/json'
+    XMLHttpRequest.prototype.send = vi.fn() as unknown as typeof XMLHttpRequest.prototype.send
+    await installProxy()
+    xhr.send()
+    xhr.dispatchEvent(new Event('loadend'))
+
+    await vi.waitFor(() => expect(events.length).toBeGreaterThan(0))
+    const huge = events.find((e) => e.url.endsWith('/huge'))
+    expect(huge?.responseBody).toBeUndefined()
+    expect(stringify).not.toHaveBeenCalledWith({ rows: [1, 2, 3] })
   })
 })

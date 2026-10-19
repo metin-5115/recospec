@@ -53,16 +53,14 @@ function buildSuggestions(el: Element, snapshot: ElementSnapshot): AssertionSugg
   return suggestions
 }
 
-function showOverlay(el: Element): void {
-  removeOverlay()
-  const rect = el.getBoundingClientRect()
-  overlayEl = document.createElement('div')
-  overlayEl.style.cssText = [
+/** Element the overlay should cover; applied once per frame however many mouseovers arrive. */
+let overlayTarget: Element | null = null
+let isOverlayFrameScheduled = false
+
+function createOverlay(): HTMLDivElement {
+  const overlay = document.createElement('div')
+  overlay.style.cssText = [
     'position:fixed',
-    `top:${rect.top}px`,
-    `left:${rect.left}px`,
-    `width:${rect.width}px`,
-    `height:${rect.height}px`,
     'background:rgba(59,130,246,0.15)',
     'outline:2px solid #3b82f6',
     'pointer-events:none',
@@ -70,10 +68,30 @@ function showOverlay(el: Element): void {
     'border-radius:2px',
     'box-sizing:border-box',
   ].join(';')
-  document.body.appendChild(overlayEl)
+  document.body.appendChild(overlay)
+  return overlay
+}
+
+function positionOverlay(): void {
+  isOverlayFrameScheduled = false
+  if (!overlayTarget) return
+  const rect = overlayTarget.getBoundingClientRect()
+  overlayEl ??= createOverlay()
+  overlayEl.style.top = `${rect.top}px`
+  overlayEl.style.left = `${rect.left}px`
+  overlayEl.style.width = `${rect.width}px`
+  overlayEl.style.height = `${rect.height}px`
+}
+
+function showOverlay(el: Element): void {
+  overlayTarget = el
+  if (isOverlayFrameScheduled) return
+  isOverlayFrameScheduled = true
+  window.requestAnimationFrame(positionOverlay)
 }
 
 function removeOverlay(): void {
+  overlayTarget = null
   overlayEl?.remove()
   overlayEl = null
 }
