@@ -174,3 +174,45 @@ describe('handleAssertionAdd — url assertion', () => {
     expect(added?.target).toBeUndefined()
   })
 })
+
+describe('screenshot on demand', () => {
+  it('forwards suggestions without taking a screenshot', async () => {
+    const captureVisibleTab = vi.fn(async () => 'data:image/png;base64,AAAA')
+    ;(globalThis as unknown as { chrome: { tabs: unknown } }).chrome.tabs = { captureVisibleTab }
+    const { handleAssertionSuggestion } = await import('./assertion-handler')
+
+    await handleAssertionSuggestion(
+      's1',
+      null,
+      snap,
+      [
+        { type: 'visible', label: 'Expect visible' },
+        { type: 'screenshot', label: 'Screenshot match' },
+      ],
+      { url: 'https://example.com', title: 'x' },
+      { x: 1, y: 2, width: 3, height: 4, devicePixelRatio: 1 },
+    )
+
+    expect(captureVisibleTab).not.toHaveBeenCalled()
+    expect(broadcastSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'ASSERTION_SUGGESTIONS',
+        elementRect: { x: 1, y: 2, width: 3, height: 4, devicePixelRatio: 1 },
+      }),
+    )
+  })
+
+  it('captures and sends a thumbnail when the user asks for one', async () => {
+    ;(globalThis as unknown as { chrome: { tabs: unknown } }).chrome.tabs = {
+      captureVisibleTab: vi.fn(async () => 'data:image/jpeg;base64,BBBB'),
+    }
+    const { handleAssertionThumbnailRequest } = await import('./assertion-handler')
+
+    await handleAssertionThumbnailRequest(undefined)
+
+    expect(broadcastSpy).toHaveBeenCalledWith({
+      type: 'ASSERTION_THUMBNAIL',
+      dataUrl: 'data:image/jpeg;base64,BBBB',
+    })
+  })
+})

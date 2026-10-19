@@ -2,7 +2,7 @@ import type { CaptureConfig, Session, SessionMeta } from './session'
 import type { CapturedEvent, RecordedAction, AssertionSuggestion } from './action'
 import type { GeneratedCode, FrameworkId, OutputSelection } from './generated'
 import type { FrameContext, Locator, LocatorBundle, ScoredLocator, ShadowContext } from './locator'
-import type { ElementSnapshot } from './action'
+import type { ElementRect, ElementSnapshot } from './action'
 import type { TestDataConfig, TemplateParamMode } from '@codegen/ir/types'
 import type { ComposedParamMode } from '@codegen/planner/template-modes'
 import type { JsonExportPayload } from '@codegen/export/json-export'
@@ -87,6 +87,8 @@ export type UIToBackgroundMessage =
       templateModes?: Record<string, TemplateParamMode>
     }
   | { type: 'ASSERTION_PROBE_START'; sessionId: string }
+  /** The user picked "Screenshot match": capture the (cropped) thumbnail now. */
+  | { type: 'ASSERTION_THUMBNAIL_REQUEST'; sessionId: string; elementRect?: ElementRect }
   | { type: 'ASSERTION_PROBE_STOP'; sessionId: string }
   | {
       type: 'ASSERTION_ADD'
@@ -158,9 +160,11 @@ export type BackgroundToUIMessage =
       elementSnapshot: ElementSnapshot
       suggestions: AssertionSuggestion[]
       pageMetadata: { url: string; title: string }
-      /** PNG data URL of the visible tab; populated when a `screenshot` suggestion is offered. */
-      screenshotDataUrl?: string
+      /** Position of the picked element when it can be cropped from a capture of the tab. */
+      elementRect?: ElementRect
     }
+  /** The thumbnail the user asked for with {@link UIToBackgroundMessage} `ASSERTION_THUMBNAIL_REQUEST`. */
+  | { type: 'ASSERTION_THUMBNAIL'; dataUrl: string }
   | {
       type: 'LOCATOR_VALIDATION_RESULT'
       sessionId: string
@@ -233,6 +237,7 @@ export type ContentToBackgroundMessage =
       elementSnapshot: ElementSnapshot
       suggestions: AssertionSuggestion[]
       pageMetadata: { url: string; title: string }
+      elementRect?: ElementRect
     }
   | {
       type: 'LOCATOR_VALIDATION_RESPONSE'

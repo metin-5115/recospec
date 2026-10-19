@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { CheckCircle2, X, Camera } from 'lucide-react'
 import type { AssertionSuggestion } from '@shared/types/action'
 import type { LocatorBundle } from '@shared/types/locator'
@@ -21,6 +21,8 @@ interface AssertionBuilderProps {
   elementSnapshot: ElementSnapshot
   pageMetadata: { url: string; title: string }
   screenshotDataUrl?: string
+  /** Called when the screenshot assertion becomes the selected one: the preview is fetched then. */
+  onScreenshotSelected?: () => void
   onConfirm: (
     suggestion: AssertionSuggestion,
     locatorBundle: LocatorBundle | null,
@@ -37,6 +39,7 @@ export function AssertionBuilder({
   elementSnapshot,
   pageMetadata,
   screenshotDataUrl,
+  onScreenshotSelected,
   onConfirm,
   onCancel,
 }: AssertionBuilderProps) {
@@ -54,6 +57,9 @@ export function AssertionBuilder({
 
   const selected = suggestions[selectedIndex]
   const isScreenshot = selected.type === 'screenshot'
+  useEffect(() => {
+    if (isScreenshot) onScreenshotSelected?.()
+  }, [isScreenshot, onScreenshotSelected])
   const needsValue = NEEDS_VALUE.includes(selected.type)
   const previewLabel =
     elementSnapshot.tagName +

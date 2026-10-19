@@ -1,4 +1,4 @@
-import type { ElementSnapshot, AssertionSuggestion } from '@shared/types/action'
+import type { ElementSnapshot, AssertionSuggestion, ElementRect } from '@shared/types/action'
 import type { LocatorBundle } from '@shared/types/locator'
 import { LocatorEngine } from '@locator/index'
 import { valueAssertionSuggestions, urlAssertionSuggestion } from '@shared/assertion-suggestions'
@@ -83,6 +83,20 @@ function positionOverlay(): void {
   overlayEl.style.height = `${rect.height}px`
 }
 
+/** Viewport position of the element — omitted inside an iframe, where it would not match the tab capture. */
+function elementRectOf(el: Element): ElementRect | undefined {
+  if (frameContext) return undefined
+  const rect = el.getBoundingClientRect()
+  if (rect.width <= 0 || rect.height <= 0) return undefined
+  return {
+    x: rect.x,
+    y: rect.y,
+    width: rect.width,
+    height: rect.height,
+    devicePixelRatio: window.devicePixelRatio || 1,
+  }
+}
+
 function showOverlay(el: Element): void {
   overlayTarget = el
   if (isOverlayFrameScheduled) return
@@ -127,6 +141,7 @@ function onClickProbe(e: MouseEvent): void {
     elementSnapshot: snapshot,
     suggestions,
     pageMetadata: { url: location.href, title: document.title },
+    elementRect: elementRectOf(el),
   }).catch((err) => logger.error('[CS] Failed to send ASSERTION_SUGGESTION', err))
 }
 

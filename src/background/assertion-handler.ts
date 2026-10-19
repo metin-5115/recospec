@@ -1,20 +1,16 @@
-import type { AssertionSuggestion, ElementSnapshot, RecordedAction } from '@shared/types/action'
+import type {
+  AssertionSuggestion,
+  ElementRect,
+  ElementSnapshot,
+  RecordedAction,
+} from '@shared/types/action'
+import { captureElementThumbnail } from './thumbnail'
 import type { LocatorBundle } from '@shared/types/locator'
 import { getActiveTabId, whenSessionRestored } from './session-manager'
 import { sendToTab, broadcastToUI } from '@shared/messaging/send'
 import { appendAction, getActionsBySession } from '@storage/action-repo'
 import { db } from '@storage/db'
 import { logger } from '@shared/logger'
-
-async function captureVisibleTabSafe(): Promise<string | undefined> {
-  try {
-    const dataUrl = await chrome.tabs.captureVisibleTab({ format: 'png' })
-    return dataUrl ?? undefined
-  } catch (err) {
-    logger.warn('[BG] captureVisibleTab failed', err)
-    return undefined
-  }
-}
 
 export async function handleAssertionProbeStart(sessionId: string): Promise<void> {
   await whenSessionRestored()
@@ -39,18 +35,24 @@ export async function handleAssertionSuggestion(
   elementSnapshot: ElementSnapshot,
   suggestions: AssertionSuggestion[],
   pageMetadata: { url: string; title: string },
+  elementRect?: ElementRect,
 ): Promise<void> {
-  const hasScreenshot = suggestions.some((s) => s.type === 'screenshot')
-  const screenshotDataUrl = hasScreenshot ? await captureVisibleTabSafe() : undefined
+  // No screenshot here: it is only taken if the user picks "Screenshot match".
   await broadcastToUI({
     type: 'ASSERTION_SUGGESTIONS',
     locatorBundle,
     elementSnapshot,
     suggestions,
     pageMetadata,
-    screenshotDataUrl,
+    elementRect,
   })
   logger.debug('[BG] Assertion suggestions forwarded to UI', suggestions.length)
+}
+
+/** Captures the preview for a "Screenshot match" assertion and sends it to the side panel. */
+export async function handleAssertionThumbnailRequest(elementRect?: ElementRect): Promise<void> {
+  const dataUrl = await captureElementThumbnail(elementRect)
+  if (dataUrl) await broadcastToUI({ type: 'ASSERTION_THUMBNAIL', dataUrl })
 }
 
 export async function handleAssertionAdd(

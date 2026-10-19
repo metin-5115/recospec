@@ -46,6 +46,7 @@ export function SidePanelApp() {
     resumeRecording,
     generateCode,
     toggleAssertionProbe,
+    requestThumbnail,
     cancelAssertionBuilder,
     addAssertion,
     loadSession,
@@ -189,6 +190,7 @@ export function SidePanelApp() {
           elementSnapshot={assertionContext.elementSnapshot}
           pageMetadata={assertionContext.pageMetadata}
           screenshotDataUrl={assertionContext.screenshotDataUrl}
+          onScreenshotSelected={requestThumbnail}
           onConfirm={(suggestion, bundle, snapshot, page, customExpected) =>
             void addAssertion(
               suggestion,

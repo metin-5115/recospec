@@ -240,3 +240,37 @@ describe('AssertionBuilder — URL assertion', () => {
     expect(expected).toBe('/cart/review')
   })
 })
+
+describe('AssertionBuilder — thumbnail on demand', () => {
+  const withScreenshot: AssertionSuggestion[] = [
+    { type: 'visible', label: 'Expect visible' },
+    { type: 'screenshot', label: 'Screenshot match', name: 'x', threshold: 0.2 },
+  ]
+
+  function renderBuilder(onScreenshotSelected: () => void) {
+    return render(
+      <AssertionBuilder
+        suggestions={withScreenshot}
+        locatorBundle={null}
+        elementSnapshot={snapshot}
+        pageMetadata={pageMetadata}
+        onScreenshotSelected={onScreenshotSelected}
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    )
+  }
+
+  it('does not ask for a screenshot while another assertion is selected', () => {
+    const onScreenshotSelected = vi.fn()
+    renderBuilder(onScreenshotSelected)
+    expect(onScreenshotSelected).not.toHaveBeenCalled()
+  })
+
+  it('asks for it when "Screenshot match" is picked', () => {
+    const onScreenshotSelected = vi.fn()
+    renderBuilder(onScreenshotSelected)
+    fireEvent.click(screen.getByText('Screenshot match'))
+    expect(onScreenshotSelected).toHaveBeenCalledTimes(1)
+  })
+})

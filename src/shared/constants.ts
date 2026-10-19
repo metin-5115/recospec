@@ -351,3 +351,12 @@ export const NETWORK_BODY_SERIALIZE_FACTOR = 4 as const
 
 /** Delay used instead of requestAnimationFrame where the API is missing (non-page contexts). */
 export const MUTATION_FALLBACK_FRAME_MS = 16 as const
+
+/** Longest edge of the assertion screenshot thumbnail. */
+export const THUMBNAIL_MAX_EDGE_PX = 480 as const
+
+/** CSS pixels of context kept around the element in the thumbnail. */
+export const THUMBNAIL_PADDING_PX = 8 as const
+
+/** JPEG quality as a 0..1 fraction (captureVisibleTab takes it as a percentage). */
+export const THUMBNAIL_JPEG_QUALITY = 0.7 as const

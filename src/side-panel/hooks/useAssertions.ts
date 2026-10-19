@@ -1,9 +1,9 @@
-import { useEffect, useCallback, useState } from 'react'
+import { useEffect, useCallback, useRef, useState } from 'react'
 import { useSessionStore } from '../sessionStore'
 import { onUIMessage } from '@shared/messaging/listen'
 import { sendToBackground } from '@shared/messaging/send'
 import { suggestionsForSnapshot } from '@shared/assertion-suggestions'
-import type { AssertionSuggestion, ElementSnapshot } from '@shared/types/action'
+import type { AssertionSuggestion, ElementRect, ElementSnapshot } from '@shared/types/action'
 import type { LocatorBundle } from '@shared/types/locator'
 
 export interface AssertionContext {
@@ -12,6 +12,8 @@ export interface AssertionContext {
   elementSnapshot: ElementSnapshot
   pageMetadata: { url: string; title: string }
   screenshotDataUrl?: string
+  /** Position of the picked element: present for a live pick, which can be captured and cropped. */
+  elementRect?: ElementRect
   /** Set when the builder was opened from a stopped step row, not the live probe. */
   afterActionId?: string
 }
@@ -21,18 +23,24 @@ export function useAssertions() {
   const activeSession = useSessionStore((s) => s.activeSession)
   const [isProbeActive, setIsProbeActive] = useState(false)
   const [assertionContext, setAssertionContext] = useState<AssertionContext | null>(null)
+  const thumbnailRequested = useRef(false)
 
   useEffect(
     () =>
       onUIMessage((message) => {
+        if (message.type === 'ASSERTION_THUMBNAIL') {
+          setAssertionContext((ctx) => (ctx ? { ...ctx, screenshotDataUrl: message.dataUrl } : ctx))
+          return
+        }
         if (message.type !== 'ASSERTION_SUGGESTIONS') return
         setIsProbeActive(false)
+        thumbnailRequested.current = false
         setAssertionContext({
           suggestions: message.suggestions,
           locatorBundle: message.locatorBundle,
           elementSnapshot: message.elementSnapshot,
           pageMetadata: message.pageMetadata,
-          screenshotDataUrl: message.screenshotDataUrl,
+          elementRect: message.elementRect,
         })
       }),
     [],
@@ -48,6 +56,17 @@ export function useAssertions() {
       await sendToBackground({ type: 'ASSERTION_PROBE_START', sessionId: activeSession.sessionId })
     }
   }, [activeSession, isProbeActive])
+
+  /** The user picked the screenshot assertion: fetch the (cropped) preview, once per picked element. */
+  const requestThumbnail = useCallback(() => {
+    if (!activeSession || !assertionContext?.elementRect || thumbnailRequested.current) return
+    thumbnailRequested.current = true
+    void sendToBackground({
+      type: 'ASSERTION_THUMBNAIL_REQUEST',
+      sessionId: activeSession.sessionId,
+      elementRect: assertionContext.elementRect,
+    })
+  }, [activeSession, assertionContext])
 
   const cancelAssertionBuilder = useCallback(() => {
     setAssertionContext(null)
@@ -120,6 +139,7 @@ export function useAssertions() {
     isProbeActive,
     assertionContext,
     toggleAssertionProbe,
+    requestThumbnail,
     cancelAssertionBuilder,
     addAssertion,
     openAssertionForStep,

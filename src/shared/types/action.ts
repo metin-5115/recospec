@@ -60,6 +60,15 @@ export type AssertionType =
   /** Page URL contains the expected route (`:id`-style segments match any value). */
   | 'url'
 
+/** Where an element sits in the visible viewport (CSS pixels), for cropping a screenshot to it. */
+export interface ElementRect {
+  x: number
+  y: number
+  width: number
+  height: number
+  devicePixelRatio: number
+}
+
 export interface AssertionSuggestion {
   type: AssertionType
   label: string

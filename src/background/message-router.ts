@@ -14,6 +14,7 @@ import {
   handleAssertionProbeStart,
   handleAssertionProbeStop,
   handleAssertionSuggestion,
+  handleAssertionThumbnailRequest,
   handleAssertionAdd,
 } from './assertion-handler'
 import { handleStepsReordered, handleStepUpdated, handleStepDeleted } from './step-controller'
@@ -121,7 +122,13 @@ export function initMessageRouter(): void {
           message.elementSnapshot,
           message.suggestions,
           message.pageMetadata,
+          message.elementRect,
         ).catch(handleBgError('ASSERTION_SUGGESTION', message.sessionId))
+
+      case 'ASSERTION_THUMBNAIL_REQUEST':
+        return handleAssertionThumbnailRequest(message.elementRect).catch(
+          handleBgError('ASSERTION_THUMBNAIL_REQUEST', message.sessionId),
+        )
 
       case 'ASSERTION_ADD':
         return handleAssertionAdd(
