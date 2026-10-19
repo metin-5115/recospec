@@ -123,6 +123,7 @@ export async function applyJsonAtPath(args: ApplyJsonAtPathArgs): Promise<void> 
           projectDir: args.projectDir,
           framework,
           bdd: choices.bdd,
+          includeMocks: choices.mocks,
           selection: { pageObjects: choices.pageObjects, test: choices.test },
           templateModes,
           composedModes,

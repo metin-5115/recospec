@@ -4,7 +4,7 @@ import { normalizeActions } from '@codegen/normalizer/action-normalizer'
 import { groupIntoPages } from '@codegen/planner/page-grouper'
 import { applyTemplateModes, applyComposedModes } from '@codegen/planner/template-modes'
 import type { TemplateParamMode } from '@codegen/ir/types'
-import { getAdapter } from '@codegen/adapters/registry'
+import { getAdapter, type RenderOptions } from '@codegen/adapters/registry'
 import type { FrameworkId, GeneratedFile, OutputSelection } from '@shared/types/generated'
 import { normalizeSelection } from '@shared/types/generated'
 import type { JsonExportPayload } from '@codegen/export/json-export'
@@ -38,6 +38,8 @@ export interface AddOptions {
   dryRun?: boolean
   /** Emit Gherkin .feature + step definitions instead of a vanilla spec. */
   bdd?: boolean
+  /** Emit network mocks for captured requests (Playwright / Cypress / notes elsewhere). */
+  includeMocks?: boolean
   /**
    * Which file groups to write. `scaffold` is always ignored here — the CLI
    * assumes an existing, configured project. Defaults to page objects + test.
@@ -99,6 +101,7 @@ export async function runAdd(opts: AddOptions, reporter?: ConflictReporter): Pro
   const scenario = { name: payload.session.name, startUrl: payload.session.startUrl, pages }
 
   const adapter = getAdapter(framework)
+  const renderOptions: RenderOptions = { includeMocks: opts.includeMocks, bdd }
   if (bdd && selection.test) {
     if (!adapter.renderBddFeature || !adapter.renderBddSteps) {
       throw new Error(
@@ -109,14 +112,14 @@ export async function runAdd(opts: AddOptions, reporter?: ConflictReporter): Pro
 
   const emitted: GeneratedFile[] = []
   if (selection.pageObjects) {
-    emitted.push(...pages.map((p) => adapter.renderPageObject(p)))
+    emitted.push(...pages.map((p) => adapter.renderPageObject(p, renderOptions)))
   }
   if (selection.test) {
     if (bdd && adapter.renderBddFeature && adapter.renderBddSteps) {
-      emitted.push(adapter.renderBddFeature(scenario))
-      emitted.push(adapter.renderBddSteps(scenario))
+      emitted.push(adapter.renderBddFeature(scenario, renderOptions))
+      emitted.push(adapter.renderBddSteps(scenario, renderOptions))
     } else {
-      emitted.push(adapter.renderScenario(scenario))
+      emitted.push(adapter.renderScenario(scenario, renderOptions))
     }
   }
 

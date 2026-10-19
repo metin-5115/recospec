@@ -7,7 +7,11 @@ export interface AdapterMetadata {
   packageName: string
 }
 
-/** Render-time options forwarded by the orchestrator (e.g. include mocks). */
+/**
+ * Render-time options forwarded by the orchestrator (e.g. include mocks).
+ * Every render method takes them as an explicit trailing argument, so a render
+ * is a pure function of its inputs — adapters hold no per-call state.
+ */
 export interface RenderOptions {
   includeMocks?: boolean
   /**
@@ -25,19 +29,19 @@ export interface FrameworkAdapter {
   readonly fileExtension: string
   readonly metadata: AdapterMetadata
 
-  renderPageObject(page: IRPage): GeneratedFile
-  renderScenario(scenario: IRScenario): GeneratedFile
-  renderScaffold(): GeneratedFile[]
-  postProcess?(files: GeneratedFile[]): GeneratedFile[]
-  /** Optional hook invoked once before rendering — adapters use this to read flags like `includeMocks`. */
+  renderPageObject(page: IRPage, options?: RenderOptions): GeneratedFile
+  renderScenario(scenario: IRScenario, options?: RenderOptions): GeneratedFile
+  renderScaffold(options?: RenderOptions): GeneratedFile[]
+  postProcess?(files: GeneratedFile[], options?: RenderOptions): GeneratedFile[]
+  /** @deprecated Transitional — removed once every adapter reads the explicit `options` argument. */
   applyOptions?(options: RenderOptions): void
 
   /** BDD mode — Gherkin feature file (`*.feature`). Adapters that support BDD implement all three. */
-  renderBddFeature?(scenario: IRScenario): GeneratedFile
+  renderBddFeature?(scenario: IRScenario, options?: RenderOptions): GeneratedFile
   /** BDD mode — step definitions wired to the page-object methods (`*.steps.ts`). */
-  renderBddSteps?(scenario: IRScenario): GeneratedFile
+  renderBddSteps?(scenario: IRScenario, options?: RenderOptions): GeneratedFile
   /** BDD mode — scaffold additions (config, deps). Merged with `renderScaffold()`. */
-  renderBddScaffold?(): GeneratedFile[]
+  renderBddScaffold?(options?: RenderOptions): GeneratedFile[]
 }
 
 export const ADAPTER_REGISTRY: Record<FrameworkId, FrameworkAdapter | undefined> = {

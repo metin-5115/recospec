@@ -6,7 +6,7 @@ import './adapters/playwright-ts'
 import './adapters/cypress'
 import './adapters/selenium-py'
 import './adapters/selenium-java'
-import { getAdapter } from './adapters/registry'
+import { getAdapter, type RenderOptions } from './adapters/registry'
 import type { FrameworkId, GeneratedCode, OutputSelection } from '@shared/types/generated'
 import { normalizeSelection, isEmptySelection } from '@shared/types/generated'
 import type { IRDocument, IRScenario, TestDataConfig, TemplateParamMode } from './ir/types'
@@ -102,11 +102,12 @@ export async function generate(
   }
 
   const adapter = getAdapter(framework)
-  adapter.applyOptions?.({
+  const renderOptions: RenderOptions = {
     includeMocks: options.includeMocks,
     testData: options.testData,
     bdd: options.bdd,
-  })
+  }
+  adapter.applyOptions?.(renderOptions)
 
   const selection = normalizeSelection(options.selection)
   if (isEmptySelection(selection)) {
@@ -126,23 +127,23 @@ export async function generate(
 
   const allFiles: ReturnType<typeof adapter.renderPageObject>[] = []
   if (selection.pageObjects) {
-    allFiles.push(...doc.pages.map((page) => adapter.renderPageObject(page)))
+    allFiles.push(...doc.pages.map((page) => adapter.renderPageObject(page, renderOptions)))
   }
 
   const renderBdd =
     options.bdd && adapter.renderBddFeature && adapter.renderBddSteps && adapter.renderBddScaffold
   if (selection.test) {
     if (renderBdd) {
-      allFiles.push(adapter.renderBddFeature!(scenario))
-      allFiles.push(adapter.renderBddSteps!(scenario))
+      allFiles.push(adapter.renderBddFeature!(scenario, renderOptions))
+      allFiles.push(adapter.renderBddSteps!(scenario, renderOptions))
     } else {
-      allFiles.push(adapter.renderScenario(scenario))
+      allFiles.push(adapter.renderScenario(scenario, renderOptions))
     }
   }
   if (selection.scaffold) {
-    allFiles.push(...adapter.renderScaffold())
+    allFiles.push(...adapter.renderScaffold(renderOptions))
     if (renderBdd) {
-      allFiles.push(...adapter.renderBddScaffold!())
+      allFiles.push(...adapter.renderBddScaffold!(renderOptions))
     }
   }
 
@@ -154,7 +155,7 @@ export async function generate(
       .values(),
   )
 
-  const finalFiles = adapter.postProcess?.(dedupedByFilename) ?? dedupedByFilename
+  const finalFiles = adapter.postProcess?.(dedupedByFilename, renderOptions) ?? dedupedByFilename
 
   return {
     framework,
