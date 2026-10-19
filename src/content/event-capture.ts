@@ -3,6 +3,7 @@ import type {
   CapturedEvent,
   ElementSnapshot,
   NetworkPayload,
+  UploadPayload,
 } from '@shared/types/action'
 import type { LocatorBundle } from '@shared/types/locator'
 import type { IRWaitInfo, IRWaitReason } from '@codegen/ir/types'
@@ -158,15 +159,21 @@ function isToggleInput(el: Element | null | undefined): el is HTMLInputElement {
   return el instanceof HTMLInputElement && hasToggleType(el)
 }
 
+function isFileInput(el: EventTarget | null | undefined): el is HTMLInputElement {
+  return el instanceof HTMLInputElement && el.type === 'file'
+}
+
 /**
- * True when the click lands on a `<label>` whose checkbox/radio will receive its
+ * True when the click lands on a `<label>` whose checkbox/radio/file input will receive its
  * own synthetic click right after — recording both would double the step.
  */
-function isLabelForwardingToToggle(target: Element): boolean {
+function isLabelForwardingToControl(target: Element): boolean {
+  const forwardsTo = (control: HTMLElement | null | undefined) =>
+    isToggleInput(control) || isFileInput(control)
   const label = target.closest('label')
   return (
-    Boolean(label && label !== target && isToggleInput(label.control)) ||
-    (target instanceof HTMLLabelElement && isToggleInput(target.control))
+    Boolean(label && label !== target && forwardsTo(label.control)) ||
+    (target instanceof HTMLLabelElement && forwardsTo(target.control))
   )
 }
 
@@ -206,7 +213,9 @@ function onClickCapture(e: MouseEvent): void {
     sendCaptured(activeSessionId, buildEvent(type, realTarget, undefined, path))
     return
   }
-  if (isLabelForwardingToToggle(realTarget)) return
+  // The click that opens the file dialog is not a step: the chosen files arrive as `upload`.
+  if (isFileInput(realTarget)) return
+  if (isLabelForwardingToControl(realTarget)) return
   // Promote presentational leaf clicks (icon paths, card text) to the nearest
   // actionable ancestor — the element the user actually meant to target.
   const target = normalizeClickTarget(realTarget, ancestorsFromComposedPath(realTarget, path))
@@ -225,6 +234,10 @@ function onChangeCapture(e: Event): void {
   if (target instanceof HTMLSelectElement) {
     const label = target.selectedOptions[0]?.text.trim()
     sendCaptured(activeSessionId, buildEvent('select', target, { value: target.value, label }))
+    return
+  }
+  if (isFileInput(target)) {
+    recordUpload(activeSessionId, target)
     return
   }
   // Checkbox/radio state is recorded from the click as check/uncheck instead.
@@ -252,7 +265,16 @@ type TextField = HTMLInputElement | HTMLTextAreaElement
 
 function isTextField(el: EventTarget | null): el is TextField {
   if (el instanceof HTMLTextAreaElement) return true
-  return el instanceof HTMLInputElement && !hasToggleType(el)
+  return el instanceof HTMLInputElement && !hasToggleType(el) && !isFileInput(el)
+}
+
+/** Records the chosen file names, never `input.value` (the browser's fake path), which is not usable. */
+function recordUpload(sessionId: string, input: HTMLInputElement): void {
+  const fileNames = Array.from(input.files ?? [], (file) => file.name)
+  // Clearing the selection leaves nothing to upload.
+  if (fileNames.length === 0) return
+  const payload: UploadPayload = { fileNames, multiple: input.multiple }
+  sendCaptured(sessionId, buildEvent('upload', input, { ...payload }))
 }
 
 function onFocusinCapture(e: FocusEvent): void {

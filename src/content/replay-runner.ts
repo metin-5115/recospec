@@ -89,6 +89,9 @@ function dispatchKey(el: Element, key: string): void {
   }
 }
 
+/** A page script cannot attach local files to an `<input type=file>`, so replay cannot upload. */
+export const UPLOAD_REPLAY_SKIP_REASON = 'Skipped: replay does not support file upload'
+
 const SKIPPED_ACTION_TYPES: ReadonlySet<ActionType> = new Set([
   'assert',
   'screenshot',
@@ -106,6 +109,9 @@ const SKIPPED_ACTION_TYPES: ReadonlySet<ActionType> = new Set([
 export function executeReplayStep(input: ReplayStepInput): ReplayStepOutcome {
   if (SKIPPED_ACTION_TYPES.has(input.actionType)) {
     return { status: 'skipped' }
+  }
+  if (input.actionType === 'upload') {
+    return { status: 'skipped', error: UPLOAD_REPLAY_SKIP_REASON }
   }
 
   // `navigate` is special — the recorded URL is in the payload, and we hand

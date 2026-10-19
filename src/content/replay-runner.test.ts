@@ -121,6 +121,28 @@ describe('executeReplayStep — DOM action dispatch', () => {
     }
   })
 
+  it('reports an upload step as skipped, explaining replay cannot attach files', () => {
+    document.body.innerHTML = '<input type="file" />'
+    const outcome = executeReplayStep({
+      actionType: 'upload',
+      primary: primary('input'),
+      fallbacks: [],
+      payload: { fileNames: ['me.png'], multiple: false },
+    })
+    expect(outcome.status).toBe('skipped')
+    expect(outcome.error).toBe('Skipped: replay does not support file upload')
+  })
+
+  it('skips an upload even when its element no longer resolves', () => {
+    document.body.innerHTML = '<div />'
+    const outcome = executeReplayStep({
+      actionType: 'upload',
+      primary: primary('input[type=file]'),
+      fallbacks: [],
+    })
+    expect(outcome.status).toBe('skipped')
+  })
+
   it('selects an option by value', () => {
     document.body.innerHTML = `
       <select id="country">

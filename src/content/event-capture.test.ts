@@ -114,3 +114,46 @@ describe('event-capture — richer interactions', () => {
     expect(types()).toEqual(['fill', 'click'])
   })
 })
+
+describe('event-capture — file upload', () => {
+  function chooseFiles(input: HTMLInputElement, names: string[]): void {
+    const files = names.map((n) => new File(['x'], n))
+    Object.defineProperty(input, 'files', { value: files, configurable: true })
+    // Browsers expose the chosen path as `C:\fakepath\<name>`; jsdom has no such mangling.
+    Object.defineProperty(input, 'value', {
+      value: `C:\\fakepath\\${names[0]}`,
+      configurable: true,
+    })
+    input.dispatchEvent(new Event('change', { bubbles: true }))
+  }
+
+  it('records a file input change as upload with file names only', () => {
+    document.body.innerHTML = `<input id="f" type="file" />`
+    chooseFiles(document.querySelector('input')!, ['avatar.png'])
+
+    expect(types()).toEqual(['upload'])
+    expect(sent[0].payload).toEqual({ fileNames: ['avatar.png'], multiple: false })
+    expect(JSON.stringify(sent[0].payload)).not.toContain('fakepath')
+  })
+
+  it('records every chosen file and the multiple flag', () => {
+    document.body.innerHTML = `<input id="f" type="file" multiple />`
+    chooseFiles(document.querySelector('input')!, ['a.pdf', 'b.pdf'])
+
+    expect(sent[0].payload).toEqual({ fileNames: ['a.pdf', 'b.pdf'], multiple: true })
+  })
+
+  it('does not record a fill when the file input is cleared', () => {
+    document.body.innerHTML = `<input id="f" type="file" />`
+    chooseFiles(document.querySelector('input')!, [])
+
+    expect(types()).toEqual([])
+  })
+
+  it('does not record the click that opens the file dialog', () => {
+    document.body.innerHTML = `<input id="f" type="file" />`
+    document.querySelector('input')!.click()
+
+    expect(types()).toEqual([])
+  })
+})

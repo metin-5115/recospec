@@ -16,6 +16,7 @@ export type ActionType =
   | 'select'
   | 'check'
   | 'uncheck'
+  | 'upload'
   | 'navigate'
   | 'hover'
   | 'scroll'
@@ -25,6 +26,12 @@ export type ActionType =
   | 'screenshot'
   | 'manual-coordinate'
   | 'network'
+
+/** Payload shape for `type: 'upload'` recorded actions (file names only — never local paths). */
+export interface UploadPayload {
+  fileNames: string[]
+  multiple: boolean
+}
 
 /** Payload shape for `type: 'network'` recorded actions. */
 export interface NetworkPayload {

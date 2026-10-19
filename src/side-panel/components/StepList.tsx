@@ -14,6 +14,7 @@ import {
   Pencil,
   Play,
   PlusCircle,
+  Upload,
   Video,
   X,
   XCircle,
@@ -84,6 +85,8 @@ function actionIcon(type: ActionType): IconComponent {
     case 'check':
     case 'uncheck':
       return Pencil
+    case 'upload':
+      return Upload
     case 'navigate':
       return Navigation
     case 'keypress':
