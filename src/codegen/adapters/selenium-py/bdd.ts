@@ -5,6 +5,8 @@ import { mapScenarioToGherkin, literalArgsFor, type GherkinStep } from '../../bd
 export { renderFeatureFile } from '../../bdd/feature-file'
 import { toPyIdentifier, toSnakeCase } from './naming'
 import { flowSlug } from '../../shared/flow-slug'
+import { dottedModule, relativeModule, resolveOutputDirs } from '../../export/output-layout'
+import type { RenderOptions } from '../registry'
 
 // ---------------------------------------------------------------------------
 // Cucumber pattern → pytest-bdd `parse` / `cfparse` pattern
@@ -167,7 +169,7 @@ function canonicalDecorator(step: GherkinStep): 'given' | 'when' | 'then' {
   return 'when'
 }
 
-export function renderStepsFile(scenario: IRScenario): string {
+export function renderStepsFile(scenario: IRScenario, options: RenderOptions = {}): string {
   const feature = mapScenarioToGherkin(scenario)
   const seenPatterns = new Set<string>()
   const stepDefs: string[] = []
@@ -203,6 +205,7 @@ export function renderStepsFile(scenario: IRScenario): string {
   // From tests/test_<slug>.py:
   //   ../features/<slug>.feature
   //   ../pages/<snake>
+  const dirs = resolveOutputDirs('selenium-py', options.dirs)
   const importLines: string[] = ['from pytest_bdd import scenarios, given, when, then, parsers']
   importLines.push('from selenium.webdriver.common.by import By')
   importLines.push('from selenium.webdriver.common.keys import Keys')
@@ -215,12 +218,17 @@ export function renderStepsFile(scenario: IRScenario): string {
   }
   if (pomImports.size > 0) {
     for (const name of Array.from(pomImports).sort()) {
-      importLines.push(`from pages.${toSnakeCase(name)} import ${name}`)
+      importLines.push(`from ${dottedModule(dirs.pages)}.${toSnakeCase(name)} import ${name}`)
     }
   }
 
   const head = importLines.join('\n')
-  const scenariosLine = `scenarios('../features/${flowSlug(scenario.name)}.feature')`
+  const featurePath = relativeModule(
+    dirs.tests,
+    dirs.features,
+    `${flowSlug(scenario.name)}.feature`,
+  )
+  const scenariosLine = `scenarios('${featurePath}')`
 
   return `${head}
 

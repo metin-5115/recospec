@@ -13,6 +13,7 @@ import { resolveTestData } from '../../planner/test-data-resolver'
 import { mocksFirst, renderStepInSpec } from './step'
 import { renderFillValueExpr } from './fill-value'
 import type { RenderOptions } from '../registry'
+import { relativeModule, resolveOutputDirs } from '../../export/output-layout'
 
 const INDENT = '    '
 
@@ -64,8 +65,12 @@ export function renderScenario(scenario: IRScenario, given: RenderOptions = {}):
   const flow = buildScenarioFlow(scenario)
   const used = pagesUsed(flow)
 
-  // The spec lives in tests/ and the page objects in pages/ (see resolveOutputPath).
-  const imports = used.map((p) => `import { ${p.className} } from '../pages/${p.className}';`)
+  // Page objects are imported from wherever resolveOutputPath puts them relative to the spec.
+  const dirs = resolveOutputDirs('playwright-ts', options.dirs)
+  const imports = used.map(
+    (p) =>
+      `import { ${p.className} } from '${relativeModule(dirs.tests, dirs.pages, p.className)}';`,
+  )
   const start = initialUrl(scenario, flow)
   const opening = start
     ? [`${INDENT}await page.goto(${JSON.stringify(routeWithin(options.baseUrl, start))});`]

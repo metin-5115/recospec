@@ -2,6 +2,8 @@ import type { GeneratedFile } from '@shared/types/generated'
 import type { IRScenario, IRPage } from '../../ir/types'
 import type { RenderOptions } from '../registry'
 import { nodeBaseUrlExpr } from '../../shared/base-url'
+import { flowSlug } from '../../shared/flow-slug'
+import { relativeModule, resolveOutputDirs } from '../../export/output-layout'
 import { mapScenarioToGherkin, literalArgsFor, type GherkinStep } from '../../bdd/gherkin-mapper'
 
 export { renderFeatureFile } from '../../bdd/feature-file'
@@ -91,7 +93,7 @@ function canonicalRegistrationKeyword(step: GherkinStep): 'Given' | 'When' | 'Th
   return 'When'
 }
 
-export function renderStepsFile(scenario: IRScenario): string {
+export function renderStepsFile(scenario: IRScenario, options: RenderOptions = {}): string {
   const feature = mapScenarioToGherkin(scenario)
   const seenPatterns = new Set<string>()
   const stepDefs: string[] = []
@@ -114,14 +116,16 @@ export function renderStepsFile(scenario: IRScenario): string {
     }
   }
 
-  // Step file lives at `cypress/e2e/<feature>/<feature>.steps.js`; POMs live
-  // at `cypress/pages/<Name>.js`. Relative import: two levels up.
+  // The step file lives at `<features>/<feature>/<feature>.steps.js` (see resolveOutputPath);
+  // page objects are imported from wherever they were written relative to it.
+  const dirs = resolveOutputDirs('cypress', options.dirs)
+  const stepsDir = `${dirs.features}/${flowSlug(scenario.name)}`
   const importLines = [
     `import { Given, When, Then } from '@badeball/cypress-cucumber-preprocessor';`,
   ]
   if (pomImports.size > 0) {
     for (const name of Array.from(pomImports).sort()) {
-      importLines.push(`import { ${name} } from '../../pages/${name}';`)
+      importLines.push(`import { ${name} } from '${relativeModule(stepsDir, dirs.pages, name)}';`)
     }
   }
 

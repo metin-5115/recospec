@@ -30,6 +30,7 @@ import { renderFillValueExpr } from './fill-value'
 import type { RenderOptions } from '../registry'
 import { navigationTarget } from '../../shared/scenario-flow'
 import { javaUrlExpr } from './base-url'
+import { javaPackages } from './packages'
 
 // ---------------------------------------------------------------------------
 // Naming helpers
@@ -430,7 +431,7 @@ export function renderPageObject(page: IRPage, options: RenderOptions = {}): str
   const allSteps = [...page.steps, ...(page.inferredMethods ?? []).flatMap((m) => m.steps)]
   const contextHelpers = renderContextHelpers(allSteps)
 
-  return `package pages;
+  return `package ${javaPackages(options.dirs).pages};
 
 import java.time.Duration;
 import org.openqa.selenium.By;

@@ -6,6 +6,7 @@ import { renderCypressMocks } from './mock'
 import { resolveTestData } from '../../planner/test-data-resolver'
 import { renderFillValueExpr } from './fill-value'
 import type { RenderOptions } from '../registry'
+import { relativeModule, resolveOutputDirs } from '../../export/output-layout'
 import { dateCtorFromIso } from '../../shared/date-literal'
 import {
   buildScenarioFlow,
@@ -111,8 +112,12 @@ export function renderScenario(scenario: IRScenario, given: RenderOptions = {}):
   const flow = buildScenarioFlow(scenario)
   const used = pagesUsed(flow)
 
-  // Spec in cypress/e2e/, page objects in cypress/pages/ (see resolveOutputPath).
-  const imports = used.map((p) => `import { ${p.className} } from '../pages/${p.className}';`)
+  // Page objects are imported from wherever resolveOutputPath puts them relative to the spec.
+  const dirs = resolveOutputDirs('cypress', options.dirs)
+  const imports = used.map(
+    (p) =>
+      `import { ${p.className} } from '${relativeModule(dirs.tests, dirs.pages, p.className)}';`,
+  )
   const header = imports.length > 0 ? `${imports.join('\n')}\n\n` : ''
 
   // Page-object methods register their own mocks; only inline pages need them here, and

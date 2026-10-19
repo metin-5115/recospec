@@ -13,6 +13,7 @@ import {
 import { resolveTestData } from '../../planner/test-data-resolver'
 import { renderFillValueExpr } from './fill-value'
 import { javaUrlExpr } from './base-url'
+import { javaPackages } from './packages'
 import type { RenderOptions } from '../registry'
 import {
   buildScenarioFlow,
@@ -217,7 +218,8 @@ export function renderScenario(scenario: IRScenario, given: RenderOptions = {}):
   const inlineSteps = flow.flatMap((item) => (item.kind === 'inline' ? item.page.steps : []))
   const hasInline = flow.some((item) => item.kind === 'inline')
 
-  const pageImports = used.map((p) => `import pages.${p.className};`).join('\n')
+  const packages = javaPackages(options.dirs)
+  const pageImports = used.map((p) => `import ${packages.pages}.${p.className};`).join('\n')
   const pageVars = used.map(
     (p) => `${INDENT}${p.className} ${toVarName(p.className)} = new ${p.className}(driver);`,
   )
@@ -265,7 +267,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
     ? '        wait = new WebDriverWait(driver, Duration.ofSeconds(10));\n'
     : ''
 
-  return `package tests;
+  return `package ${packages.tests};
 
 ${waitImports}import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;

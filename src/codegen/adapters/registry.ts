@@ -1,5 +1,6 @@
 import type { IRPage, IRScenario, TestDataConfig } from '../ir/types'
 import type { FrameworkId, GeneratedFile } from '@shared/types/generated'
+import type { OutputDirOverrides } from '../export/output-layout'
 
 export interface AdapterMetadata {
   language: string
@@ -31,6 +32,11 @@ export interface RenderOptions {
    * pytest `BASE_URL`) defaults to it; specs and page objects use routes relative to it.
    */
   baseUrl?: string
+  /**
+   * Folders the files will be written to when they differ from the framework's standard layout
+   * (the CLI's `paths` setting). Generated imports and package names are computed from them.
+   */
+  dirs?: OutputDirOverrides
 }
 
 export interface FrameworkAdapter {

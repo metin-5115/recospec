@@ -2,6 +2,7 @@ import type { GeneratedFile } from '@shared/types/generated'
 import type { IRScenario, IRPage } from '../../ir/types'
 import type { RenderOptions } from '../registry'
 import { nodeBaseUrlExpr } from '../../shared/base-url'
+import { relativeModule, resolveOutputDirs } from '../../export/output-layout'
 import { mapScenarioToGherkin, literalArgsFor, type GherkinStep } from '../../bdd/gherkin-mapper'
 
 export { renderFeatureFile } from '../../bdd/feature-file'
@@ -89,7 +90,7 @@ function canonicalRegistrationKeyword(step: GherkinStep): 'Given' | 'When' | 'Th
   return 'When'
 }
 
-export function renderStepsFile(scenario: IRScenario): string {
+export function renderStepsFile(scenario: IRScenario, options: RenderOptions = {}): string {
   const feature = mapScenarioToGherkin(scenario)
   const seenPatterns = new Set<string>()
   const stepDefs: string[] = []
@@ -115,10 +116,12 @@ export function renderStepsFile(scenario: IRScenario): string {
     }
   }
 
+  const dirs = resolveOutputDirs('playwright-ts', options.dirs)
   const importLines = [`import { createBdd } from 'playwright-bdd';`]
   if (pomImports.size > 0) {
     for (const name of Array.from(pomImports).sort()) {
-      importLines.push(`import { ${name} } from '../../pages/${name}';`)
+      const from = relativeModule(`${dirs.features}/steps`, dirs.pages, name)
+      importLines.push(`import { ${name} } from '${from}';`)
     }
   }
   importLines.push(`import { expect } from '@playwright/test';`)

@@ -1,5 +1,7 @@
 import type { GeneratedFile } from '@shared/types/generated'
 import type { IRScenario, IRPage } from '../../ir/types'
+import type { RenderOptions } from '../registry'
+import { javaPackages } from './packages'
 import { mapScenarioToGherkin, literalArgsFor, type GherkinStep } from '../../bdd/gherkin-mapper'
 
 export { renderFeatureFile } from '../../bdd/feature-file'
@@ -135,7 +137,7 @@ function canonicalAnnotation(step: GherkinStep): 'Given' | 'When' | 'Then' {
   return 'When'
 }
 
-export function renderStepsFile(scenario: IRScenario): string {
+export function renderStepsFile(scenario: IRScenario, options: RenderOptions = {}): string {
   const feature = mapScenarioToGherkin(scenario)
   const seenPatterns = new Set<string>()
   const stepMethods: string[] = []
@@ -170,7 +172,7 @@ export function renderStepsFile(scenario: IRScenario): string {
 
   const pomImportLines = Array.from(pomImports)
     .sort()
-    .map((name) => `import pages.${name};`)
+    .map((name) => `import ${javaPackages(options.dirs).pages}.${name};`)
     .join('\n')
   const pomImportBlock = pomImportLines ? `${pomImportLines}\n` : ''
 

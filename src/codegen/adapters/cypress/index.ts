@@ -104,8 +104,11 @@ export const cypressAdapter: FrameworkAdapter = {
   renderBddFeature(scenario) {
     return { filename: `${flowSlug(scenario.name)}.feature`, content: renderFeatureFile(scenario) }
   },
-  renderBddSteps(scenario) {
-    return { filename: `${flowSlug(scenario.name)}.steps.js`, content: renderStepsFile(scenario) }
+  renderBddSteps(scenario, options) {
+    return {
+      filename: `${flowSlug(scenario.name)}.steps.js`,
+      content: renderStepsFile(scenario, options),
+    }
   },
   renderBddScaffold(options) {
     return renderBddScaffoldFiles(options)

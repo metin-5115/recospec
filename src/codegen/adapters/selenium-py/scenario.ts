@@ -29,6 +29,7 @@ import {
 } from '../../shared/scenario-flow'
 import { toPyIdentifier, toSnakeCase } from './naming'
 import { pyUrlExpr } from './base-url'
+import { dottedModule, resolveOutputDirs } from '../../export/output-layout'
 
 export { toSnakeCase }
 
@@ -176,8 +177,9 @@ export function renderScenario(scenario: IRScenario, given: RenderOptions = {}):
   const inlineSteps = flow.flatMap((item) => (item.kind === 'inline' ? item.page.steps : []))
   const hasInline = flow.some((item) => item.kind === 'inline')
 
+  const pagesModule = dottedModule(resolveOutputDirs('selenium-py', options.dirs).pages)
   const pageImports = used
-    .map((p) => `from pages.${toSnakeCase(p.className)} import ${p.className}`)
+    .map((p) => `from ${pagesModule}.${toSnakeCase(p.className)} import ${p.className}`)
     .join('\n')
 
   const indent = '    '

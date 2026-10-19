@@ -40,8 +40,8 @@ export const seleniumJavaAdapter: FrameworkAdapter = {
   renderBddFeature(scenario) {
     return { filename: `${flowSlug(scenario.name)}.feature`, content: renderFeatureFile(scenario) }
   },
-  renderBddSteps(scenario) {
-    return { filename: 'StepDefinitions.java', content: renderStepsFile(scenario) }
+  renderBddSteps(scenario, options) {
+    return { filename: 'StepDefinitions.java', content: renderStepsFile(scenario, options) }
   },
   renderBddScaffold() {
     return renderBddScaffoldFiles()

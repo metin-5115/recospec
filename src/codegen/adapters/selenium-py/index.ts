@@ -36,11 +36,11 @@ export const seleniumPyAdapter: FrameworkAdapter = {
   renderBddFeature(scenario) {
     return { filename: `${flowSlug(scenario.name)}.feature`, content: renderFeatureFile(scenario) }
   },
-  renderBddSteps(scenario) {
+  renderBddSteps(scenario, options) {
     // `test_*.py` so zip-export routes it into `tests/` alongside conftest.py.
     return {
       filename: `test_${flowSnakeSlug(scenario.name)}.py`,
-      content: renderStepsFile(scenario),
+      content: renderStepsFile(scenario, options),
     }
   },
   renderBddScaffold() {
