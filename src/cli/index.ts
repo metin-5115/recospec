@@ -102,6 +102,7 @@ program
   .option('--only <groups>', `Emit only these groups (comma list): ${OUTPUT_GROUPS.join(', ')}`)
   .option('--no-test', 'Skip the test spec — write page objects only')
   .option('--no-page-objects', 'Skip page objects — write the test spec only')
+  .option('--no-auto-wait', 'Do not generate the waits detected during recording')
   .option('--no-self-healing', 'Do not wire fallback locators into the generated code')
   .option('--no-final-assertion', 'Do not add a "flow ended on this URL" assertion')
   .option('--force', 'Overwrite every conflicting file without prompting')
@@ -116,6 +117,8 @@ program
         bdd: Boolean(options.bdd),
         selection: parseAddSelection(options),
         selfHealing: options.selfHealing !== false,
+        // commander turns `--no-auto-wait` into `autoWait: false`.
+        autoWaitEnabled: options.autoWait !== false,
         // commander turns `--no-final-assertion` into `finalAssertion: false`.
         finalStateAssertion: options.finalAssertion !== false,
         force: Boolean(options.force),
