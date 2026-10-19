@@ -96,6 +96,11 @@ export default [
       ],
     },
   },
+  {
+    // The CLI talks to a terminal: console output is its interface, not debugging leftovers.
+    files: ['src/cli/**/*.ts'],
+    rules: { 'no-console': 'off' },
+  },
   prettierConfig,
   {
     ignores: ['dist/', 'node_modules/', '*.config.*', '*.cjs'],

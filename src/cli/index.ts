@@ -16,7 +16,6 @@ const PROMPT_MODES: PromptMode[] = ['slash', 'claude-md', 'prompt']
 
 function validatePromptMode(value: string): PromptMode {
   if (!PROMPT_MODES.includes(value as PromptMode)) {
-    // eslint-disable-next-line no-console
     console.error(`[recospec] invalid --mode ${value}. Choose one of: ${PROMPT_MODES.join(', ')}.`)
     process.exit(2)
   }
@@ -28,7 +27,6 @@ const CONTEXT_TASKS: LlmContextTask[] = ['codegen', 'heal', 'both']
 
 function validateChoice<T extends string>(flag: string, value: string, choices: readonly T[]): T {
   if (!choices.includes(value as T)) {
-    // eslint-disable-next-line no-console
     console.error(`[recospec] invalid --${flag} ${value}. Choose one of: ${choices.join(', ')}.`)
     process.exit(2)
   }
@@ -39,7 +37,6 @@ const FRAMEWORKS: FrameworkId[] = ['playwright-ts', 'cypress', 'selenium-py', 's
 
 function validateFramework(value: string): FrameworkId {
   if (!FRAMEWORKS.includes(value as FrameworkId)) {
-    // eslint-disable-next-line no-console
     console.error(
       `[recospec] invalid --framework ${value}. Choose one of: ${FRAMEWORKS.join(', ')}.`,
     )
@@ -66,7 +63,6 @@ function parseAddSelection(
       .filter(Boolean)
     for (const g of groups) {
       if (!(OUTPUT_GROUPS as readonly string[]).includes(g)) {
-        // eslint-disable-next-line no-console
         console.error(
           `[recospec] invalid --only group "${g}". Choose from: ${OUTPUT_GROUPS.join(', ')}.`,
         )
@@ -125,7 +121,6 @@ program
         dryRun: Boolean(options.dryRun),
       })
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error(`[recospec] ${(err as Error).message}`)
       process.exit(1)
     }
@@ -151,7 +146,6 @@ program
         force: Boolean(options.force),
       })
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error(`[recospec] ${(err as Error).message}`)
       process.exit(1)
     }
@@ -194,7 +188,6 @@ program
         output: options.output as string | undefined,
       })
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error(`[recospec] ${(err as Error).message}`)
       process.exit(1)
     }
@@ -237,14 +230,12 @@ program
         output: options.output as string | undefined,
       })
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error(`[recospec] ${(err as Error).message}`)
       process.exit(1)
     }
   })
 
 program.parseAsync(process.argv).catch((err) => {
-  // eslint-disable-next-line no-console
   console.error(`[recospec] fatal: ${(err as Error).message}`)
   process.exit(1)
 })

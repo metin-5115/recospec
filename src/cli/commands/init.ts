@@ -31,10 +31,8 @@ export async function runInit(opts: InitOptions): Promise<void> {
     const detected = detectFramework(opts.projectDir)
     if (detected) {
       framework = detected.framework
-      // eslint-disable-next-line no-console
       console.log(`[recospec] detected framework=${framework} via ${detected.source}`)
     } else {
-      // eslint-disable-next-line no-console
       console.warn(
         '[recospec] could not detect a framework — writing rc with no `framework` field. Pass --framework or hand-edit the rc later.',
       )
@@ -48,6 +46,5 @@ export async function runInit(opts: InitOptions): Promise<void> {
   }
 
   writeFileSync(rcPath, JSON.stringify(rc, null, 2) + '\n', 'utf8')
-  // eslint-disable-next-line no-console
   console.log(`[recospec] wrote ${rcPath}`)
 }

@@ -37,7 +37,6 @@ const FILE_EXTENSIONS: Record<LlmContextFormat, string> = { compact: 'llm.txt', 
  * can be piped straight into a local model.
  */
 function status(message: string): void {
-  // eslint-disable-next-line no-console
   console.error(`[recospec] ${message}`)
 }
 

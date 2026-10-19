@@ -91,26 +91,22 @@ export function renameForConflict(targetPath: string): string {
 export function printUnifiedDiff(oldText: string, newText: string): void {
   const oldLines = oldText.split('\n')
   const newLines = newText.split('\n')
-  // eslint-disable-next-line no-console
   console.log('--- existing\n+++ incoming')
   let i = 0
   let j = 0
   while (i < oldLines.length || j < newLines.length) {
     if (i < oldLines.length && j < newLines.length && oldLines[i] === newLines[j]) {
-      // eslint-disable-next-line no-console
       console.log(`  ${oldLines[i]}`)
       i++
       j++
       continue
     }
     if (j < newLines.length && !oldLines.includes(newLines[j], i)) {
-      // eslint-disable-next-line no-console
       console.log(`+ ${newLines[j]}`)
       j++
       continue
     }
     if (i < oldLines.length) {
-      // eslint-disable-next-line no-console
       console.log(`- ${oldLines[i]}`)
       i++
     }

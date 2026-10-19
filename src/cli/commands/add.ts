@@ -69,7 +69,6 @@ export async function runAdd(opts: AddOptions, reporter?: ConflictReporter): Pro
   const payload = loadJson(opts.json)
   const rc = loadRc(opts.projectDir)
   if (rc) {
-    // eslint-disable-next-line no-console
     console.log(`[recospec] using config from ${rc.source}`)
   }
   const framework = resolveFramework(opts, rc?.config.framework)
@@ -78,12 +77,10 @@ export async function runAdd(opts: AddOptions, reporter?: ConflictReporter): Pro
   // page-objects / test toggles, defaulting both on.
   const selection = normalizeSelection({ ...opts.selection, scaffold: false })
   if (!selection.pageObjects && !selection.test) {
-    // eslint-disable-next-line no-console
     console.log('[recospec] nothing to write — enable page objects and/or the test spec.')
     return
   }
 
-  // eslint-disable-next-line no-console
   console.log(
     `[recospec] session=${payload.session.name} framework=${framework} bdd=${bdd} target=${opts.projectDir}`,
   )
@@ -120,7 +117,6 @@ export async function runAdd(opts: AddOptions, reporter?: ConflictReporter): Pro
     else if (outcome === 'renamed') renamed++
   }
 
-  // eslint-disable-next-line no-console
   console.log(
     `[recospec] done — written=${written} merged=${merged} renamed=${renamed} skipped=${skipped}`,
   )
@@ -147,7 +143,6 @@ function loadJson(jsonPath: string): JsonExportPayload {
 function resolveFramework(opts: AddOptions, rcFramework: FrameworkId | undefined): FrameworkId {
   if (opts.framework) return opts.framework
   if (rcFramework) {
-    // eslint-disable-next-line no-console
     console.log(`[recospec] framework=${rcFramework} (from .recospecrc.json)`)
     return rcFramework
   }
@@ -157,7 +152,6 @@ function resolveFramework(opts: AddOptions, rcFramework: FrameworkId | undefined
       `Could not auto-detect a framework in ${opts.projectDir}. Pass --framework playwright-ts|cypress|selenium-py|selenium-java or run \`recospec init\` first.`,
     )
   }
-  // eslint-disable-next-line no-console
   console.log(`[recospec] auto-detected framework=${detected.framework} via ${detected.source}`)
   return detected.framework
 }
@@ -205,7 +199,6 @@ async function writeOne(
 ): Promise<WriteOutcome> {
   if (!existsSync(target.diskPath)) {
     if (opts.dryRun) {
-      // eslint-disable-next-line no-console
       console.log(`[recospec] would write (dry-run): ${target.diskPath}`)
       return 'skipped'
     }
@@ -215,7 +208,6 @@ async function writeOne(
 
   // Existing file — resolve the conflict.
   if (opts.dryRun) {
-    // eslint-disable-next-line no-console
     console.log(`[recospec] skip (dry-run): ${target.diskPath}`)
     return 'skipped'
   }
@@ -232,7 +224,6 @@ async function writeOne(
   })
 
   if (decision.action === 'skip') {
-    // eslint-disable-next-line no-console
     console.log(`[recospec] skipped ${target.diskPath}`)
     return 'skipped'
   }
@@ -242,7 +233,6 @@ async function writeOne(
   }
   if (decision.action === 'rename' && decision.renamedPath) {
     persist(decision.renamedPath, target.content)
-    // eslint-disable-next-line no-console
     console.log(`[recospec] wrote ${decision.renamedPath} (renamed to avoid conflict)`)
     return 'renamed'
   }
@@ -251,12 +241,10 @@ async function writeOne(
     try {
       const result = await runMerge(kind, existing, target.content)
       if (result.outcome === 'skipped') {
-        // eslint-disable-next-line no-console
         console.log(`[recospec] skipped ${target.diskPath} (merge fallback)`)
         return 'skipped'
       }
       persist(target.diskPath, result.source)
-      // eslint-disable-next-line no-console
       console.log(
         `[recospec] merged ${target.diskPath} — added=[${result.added.join(', ')}] skipped=[${result.skipped.join(
           ', ',
@@ -264,7 +252,6 @@ async function writeOne(
       )
       return 'merged'
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.warn(
         `[recospec] merge failed for ${target.diskPath}: ${(err as Error).message}. Falling back to .new file.`,
       )
