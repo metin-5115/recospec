@@ -11,7 +11,7 @@ Recospec is an open-source Chrome extension that records your browser interactio
 
 - **9-strategy locator engine** — `data-testid`, test attributes (`data-test`/`data-qa`/…), `aria-label`, role+name, label, text, id, css, xpath fallback chain — plus composed (anchor+target) and parameterized-template locators for repeated rows and dynamic values.
 - **Page Object Model output** — one class per page, inferred methods (e.g. `login(email, password)`).
-- **Self-healing locators** — every element ships with ranked fallbacks (inline comment) and the generated project includes a `selfHealingLocator` / `cy.selfHealing` helper that walks the chain at runtime.
+- **Self-healing locators** — every element ships with ranked fallbacks (inline comment). Playwright page objects and Cypress commands use them at run time through a generated `selfHealingLocator` / `cy.selfHealing` helper (it logs a warning when a fallback takes over; switch it off with _Runtime self-healing_). Selenium (Python, Java) has no runtime helper, so its fallbacks are _fallback suggestions_ in comments.
 - **Method inference v2** — 10 patterns (search, login, register, submitForm, fillForm, navigateFromMenu, …) with parameter-type inference; rename inline in the side panel before export.
 - **Network capture & mocks** — recorder transparently captures `fetch` and `XMLHttpRequest`; opt-in mock emission produces Playwright `page.route(...)` blocks.
 - **Visual regression** — capture page snapshots during recording; generated tests use Playwright's built-in `toHaveScreenshot()` or Cypress with `cypress-image-snapshot`. Baselines land under `tests/<flow-slug>.spec.ts-snapshots/` (Playwright) or `cypress/screenshots/` (Cypress) — commit them on first run.
