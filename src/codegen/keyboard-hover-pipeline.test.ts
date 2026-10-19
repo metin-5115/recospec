@@ -4,7 +4,7 @@ import { db } from '@storage/db'
 import { appendAction } from '@storage/action-repo'
 import { createSession } from '@storage/session-repo'
 import { generateForSession as generate } from '../background/generate-for-session'
-import { validatePythonSource } from './adapters/selenium-py/python-validate'
+import { validatePythonSources } from './adapters/selenium-py/python-validate'
 import { validateJavaSource } from './adapters/selenium-java/java-validate'
 import type { Session } from '@shared/types/session'
 import type { ActionType, RecordedAction } from '@shared/types/action'
@@ -109,10 +109,11 @@ describe('recorded Enter and hover reach every adapter', () => {
     'selenium-py (and the output parses as Python)',
     async () => {
       const code = await generate(SESSION_ID, 'selenium-py')
-      for (const f of code.files.filter((file) => file.filename.endsWith('.py'))) {
-        const result = validatePythonSource(f.content)
-        expect(result.ok, `${f.filename}: ${result.error}`).toBe(true)
-      }
+      const pyFiles = code.files.filter((file) => file.filename.endsWith('.py'))
+      const results = validatePythonSources(pyFiles.map((f) => f.content))
+      pyFiles.forEach((f, i) => {
+        expect(results[i]?.ok, `${f.filename}: ${results[i]?.error}`).toBe(true)
+      })
       const lines = await interestingLines('selenium-py')
       expect(lines.join('\n')).toContain('Keys.ENTER')
       expect(lines.join('\n')).toContain('ActionChains(')

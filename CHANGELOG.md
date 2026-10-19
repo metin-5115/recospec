@@ -44,6 +44,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Smaller, lazier bundles** — the side panel no longer loads JSZip and the codegen adapters until
+  you export (initial load ~780 KB → ~555 KB). The VS Code extension activates on its view, its
+  commands or a `.recospecrc.json` workspace instead of `onStartupFinished`, ships minified, and
+  loads the Babel/Gherkin merge engines on first use (activation bundle 2.36 MB → 283 KB). The CLI
+  bundle is minified (307 KB → 232 KB). `pnpm size` fails CI when a bundle outgrows its budget.
+- **Faster test suite** — generated Python is validated in one batched interpreter run, node and
+  DOM tests share worker threads, the latency benchmark moved to `pnpm bench`, and `pretest` is
+  replaced by `pnpm check` (typecheck + lint + tests). `pnpm test` went from ~52 s to ~25–35 s.
+
 - Redaction helpers shared by the prompt and LLM-context exports moved into `prompt-contract.ts`
   (no behaviour change).
 

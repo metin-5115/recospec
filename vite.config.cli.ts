@@ -51,7 +51,7 @@ export default defineConfig({
     ssr: true,
     outDir: 'dist/cli',
     emptyOutDir: true,
-    minify: false,
+    minify: true,
     lib: {
       entry: resolve(__dirname, 'src/cli/index.ts'),
       formats: ['es'],
@@ -60,6 +60,8 @@ export default defineConfig({
     rollupOptions: {
       output: {
         banner: '#!/usr/bin/env node',
+        // `scripts/package-cli.mjs` ships `index.js` alone, so lazy merge modules stay inlined.
+        inlineDynamicImports: true,
       },
     },
   },

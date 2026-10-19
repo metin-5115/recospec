@@ -4,12 +4,40 @@ import { resolve } from 'path'
 // Tests that touch the DOM run in jsdom; everything else (codegen, CLI, storage,
 // pure shared modules) runs in node, which skips ~10 ms of jsdom setup per file.
 // A new test that needs a DOM belongs under one of these globs.
+//
+// Isolation (a fresh module graph per file) is the dominant cost of the suite, so
+// the `node` and `dom` projects run on shared worker threads. React component tests
+// stay in their own `ui` project with a fresh process per file: several components
+// leave timers running past the test, which only surfaces once workers are reused.
+const UI_TEST_GLOBS = ['src/side-panel/**', 'src/popup/**', 'src/shared/hooks/**']
+
+// Tests that open the IndexedDB database share one global (`fake-indexeddb/auto`) and one Dexie
+// singleton. On the shared worker threads below they would see each other's rows, so they run
+// in their own project with a fresh process per file. A new test that imports `@storage/*`
+// or `fake-indexeddb` outside the UI globs belongs in this list.
+const IDB_TESTS = [
+  'src/background/assertion-handler.test.ts',
+  'src/background/event-aggregator.test.ts',
+  'src/background/replay-controller.test.ts',
+  'src/background/session-manager.test.ts',
+  'src/background/step-controller.test.ts',
+  'src/codegen/final-assertion-pipeline.test.ts',
+  'src/codegen/index.test.ts',
+  'src/codegen/interactions-pipeline.test.ts',
+  'src/codegen/keyboard-hover-pipeline.test.ts',
+  'src/codegen/negative-flow-pipeline.test.ts',
+  'src/codegen/syntax-smoke.test.ts',
+  'src/codegen/upload-pipeline.test.ts',
+  'src/storage/action-repo-ordering.test.ts',
+  'src/storage/action-repo.test.ts',
+  'src/storage/session-repo.test.ts',
+  'src/storage/session-versioning.test.ts',
+]
+
 const DOM_TEST_GLOBS = [
   'src/content/**',
   'src/locator-engine/**',
-  'src/side-panel/**',
-  'src/popup/**',
-  'src/shared/hooks/**',
+  ...UI_TEST_GLOBS,
   'benchmarks/**',
   'test-harness/**',
   // Pure module, but its round-trip tests parse real HTML via DOMParser.
@@ -21,9 +49,11 @@ const DOM_TEST_GLOBS = [
 const toTestGlob = (glob: string): string =>
   glob.endsWith('.test.ts') ? glob : `${glob}/*.test.{ts,tsx}`
 
-// Mutation-survival benchmark: runs in its own project so `pnpm test:ci` can skip
-// it (CI runs it separately via `pnpm bench`) while a plain `pnpm test` keeps it.
-const SURVIVAL_BENCH = 'benchmarks/survival.test.ts'
+// Benchmarks run in their own project so `pnpm test` / `pnpm test:ci` skip them
+// (CI runs them separately via `pnpm bench`). The latency budget in
+// performance.test.ts is wall-clock based and flaky under parallel load, and the
+// survival benchmark is a long mutation sweep — neither belongs in the unit suite.
+const BENCH_TESTS = ['benchmarks/survival.test.ts', 'benchmarks/performance.test.ts']
 
 const BASE_EXCLUDE = [
   '**/node_modules/**',
@@ -43,16 +73,37 @@ export default defineConfig({
         extends: true,
         test: {
           name: 'node',
-          exclude: [...BASE_EXCLUDE, ...DOM_TEST_GLOBS],
+          pool: 'threads',
+          exclude: [...BASE_EXCLUDE, ...DOM_TEST_GLOBS, ...IDB_TESTS],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'idb',
+          pool: 'forks',
+          include: IDB_TESTS,
+          exclude: BASE_EXCLUDE,
         },
       },
       {
         extends: true,
         test: {
           name: 'dom',
+          pool: 'threads',
           environment: 'jsdom',
-          include: DOM_TEST_GLOBS.map(toTestGlob),
-          exclude: [...BASE_EXCLUDE, SURVIVAL_BENCH],
+          include: DOM_TEST_GLOBS.filter((g) => !UI_TEST_GLOBS.includes(g)).map(toTestGlob),
+          exclude: [...BASE_EXCLUDE, ...BENCH_TESTS],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'ui',
+          pool: 'forks',
+          environment: 'jsdom',
+          include: UI_TEST_GLOBS.map(toTestGlob),
+          exclude: BASE_EXCLUDE,
         },
       },
       {
@@ -60,10 +111,15 @@ export default defineConfig({
         test: {
           name: 'bench',
           environment: 'jsdom',
-          include: [SURVIVAL_BENCH],
+          include: BENCH_TESTS,
         },
       },
     ],
+    // `isolate` only takes effect per pool, not per project: a project chooses its pool.
+    poolOptions: {
+      threads: { isolate: false },
+      forks: { isolate: true },
+    },
     setupFiles: ['./src/test-setup.ts'],
     exclude: BASE_EXCLUDE,
     coverage: {

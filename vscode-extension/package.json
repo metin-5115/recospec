@@ -31,7 +31,17 @@
   "icon": "icons/recospec.png",
   "main": "./dist/extension.cjs",
   "activationEvents": [
-    "onStartupFinished"
+    "onView:recospec.recordings",
+    "workspaceContains:.recospecrc.json",
+    "onCommand:recospec.record",
+    "onCommand:recospec.init",
+    "onCommand:recospec.applyJson",
+    "onCommand:recospec.showPrompt",
+    "onCommand:recospec.recordings.refresh",
+    "onCommand:recospec.recordings.apply",
+    "onCommand:recospec.recordings.reveal",
+    "onCommand:recospec.recordings.delete",
+    "onCommand:recospec.exportCorrections"
   ],
   "contributes": {
     "commands": [

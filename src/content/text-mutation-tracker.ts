@@ -79,6 +79,8 @@ export function stopTextMutationTracking(): void {
   observer?.disconnect()
   observer = null
   pending = []
+  // A frame requested before the stop may never run; a stale flag would block the next session.
+  isFlushScheduled = false
 }
 
 /** Did this element's (or a near descendant's) text change during the session? */

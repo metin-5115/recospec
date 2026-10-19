@@ -4,7 +4,7 @@ import { db } from '@storage/db'
 import { appendAction } from '@storage/action-repo'
 import { createSession } from '@storage/session-repo'
 import { generateForSession as generate } from '../background/generate-for-session'
-import { validatePythonSource } from './adapters/selenium-py/python-validate'
+import { validatePythonSources } from './adapters/selenium-py/python-validate'
 import { validateJavaSource } from './adapters/selenium-java/java-validate'
 import type { Session } from '@shared/types/session'
 import type { ActionType, RecordedAction } from '@shared/types/action'
@@ -119,10 +119,10 @@ describe('recorded select / check / hover / dblclick reach every adapter', () =>
       expect(all).toContain('.is_selected()')
       expect(all).toContain('ActionChains(')
       expect(pyFiles.length).toBeGreaterThan(0)
-      for (const f of pyFiles) {
-        const result = validatePythonSource(f.content)
-        expect(result.ok, `${f.filename}: ${result.error}`).toBe(true)
-      }
+      const results = validatePythonSources(pyFiles.map((f) => f.content))
+      pyFiles.forEach((f, i) => {
+        expect(results[i]?.ok, `${f.filename}: ${results[i]?.error}`).toBe(true)
+      })
     },
     PROCESS_SPAWN_TIMEOUT_MS,
   )

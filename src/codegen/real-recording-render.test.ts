@@ -8,7 +8,7 @@ import './adapters/selenium-py'
 import './adapters/selenium-java'
 import { syntaxErrors } from './ts-syntax.test-util'
 import { typeErrors } from './ts-typecheck.test-util'
-import { validatePythonSource } from './adapters/selenium-py/python-validate'
+import { validatePythonSources } from './adapters/selenium-py/python-validate'
 import { toSnakeCase } from './adapters/selenium-py/scenario'
 import { validateJavaSource } from './adapters/selenium-java/java-validate'
 import type { JsonExportPayload } from './export/json-export'
@@ -340,10 +340,10 @@ describe.each(Object.entries(RECORDINGS))('real %s recording', (_label, recordin
     for (const name of recordedNames(recording)) {
       expect(code).not.toContain(`By.CSS_SELECTOR, '${name}'`)
     }
-    for (const f of files) {
-      const result = validatePythonSource(f.content)
-      expect(result.ok, `${f.filename}: ${result.error ?? ''}`).toBe(true)
-    }
+    const results = validatePythonSources(files.map((f) => f.content))
+    files.forEach((f, i) => {
+      expect(results[i]?.ok, `${f.filename}: ${results[i]?.error ?? ''}`).toBe(true)
+    })
   })
 
   describe('Selenium Python scenario', () => {

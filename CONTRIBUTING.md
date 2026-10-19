@@ -27,6 +27,8 @@ Useful scripts:
 | Command             | What it does                     |
 | ------------------- | -------------------------------- |
 | `pnpm test`         | Vitest unit suite (target: <10s) |
+| `pnpm check`        | Typecheck + lint + unit suite    |
+| `pnpm bench`        | Benchmarks (survival + latency)  |
 | `pnpm test --watch` | Watch mode while developing      |
 | `pnpm build`        | Chrome extension build           |
 | `pnpm build:e2e`    | Extension build for E2E tests    |

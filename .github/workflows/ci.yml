@@ -43,3 +43,13 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      # Order matters: `pnpm build` wipes dist/, and the VS Code build mirrors it.
+      - name: Build VS Code extension
+        run: pnpm build:vscode
+
+      - name: Build CLI
+        run: pnpm build:cli
+
+      - name: Bundle size gate
+        run: pnpm size

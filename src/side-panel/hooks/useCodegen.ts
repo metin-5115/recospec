@@ -3,8 +3,6 @@ import { useShallow } from 'zustand/react/shallow'
 import { useSessionStore } from '../sessionStore'
 import { onUIMessage } from '@shared/messaging/listen'
 import { trySendToBackground } from '@shared/messaging/send'
-import { downloadZipExport } from '../download'
-import { generateForSession } from '@/background/generate-for-session'
 import { isEmptySelection } from '@shared/types/generated'
 import { CODEGEN_MAX_ATTEMPTS, CODEGEN_RETRY_DELAY_MS } from '@shared/constants'
 import type {
@@ -145,7 +143,10 @@ export function useCodegen() {
         return
       }
       try {
+        // Adapters and the ZIP writer are only needed for an export; keep them out of the initial load.
+        const { generateForSession } = await import('@/background/generate-for-session')
         const code = await generateForSession(sessionId, selectedFramework, generateOptions)
+        const { downloadZipExport } = await import('../download')
         await downloadZipExport(session, code)
       } catch (err) {
         setCodeGenError(err instanceof Error ? err.message : 'ZIP export failed')

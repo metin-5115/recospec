@@ -6,7 +6,7 @@ import '../adapters/selenium-java'
 import { getAdapter, type RenderOptions } from '../adapters/registry'
 import { groupIntoPages } from '../planner/page-grouper'
 import { recordedOrigin } from '../shared/scenario-flow'
-import { validatePythonSource } from '../adapters/selenium-py/python-validate'
+import { validatePythonSources } from '../adapters/selenium-py/python-validate'
 import type { FrameworkId } from '@shared/types/generated'
 import type { IRElement, IRScenario, IRStep } from '../ir/types'
 
@@ -111,8 +111,8 @@ describe('generated projects have one base URL', () => {
     it('still produces valid Python', () => {
       const r = render('selenium-py', scenario)
       const conftest = r.scaffold.find((f) => f.filename === 'conftest.py')?.content ?? ''
-      for (const source of [r.spec, ...r.pages, conftest]) {
-        const result = validatePythonSource(source)
+      const sources = [r.spec, ...r.pages, conftest]
+      for (const result of validatePythonSources(sources)) {
         expect(result.ok, result.error).toBe(true)
       }
     })

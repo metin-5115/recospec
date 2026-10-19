@@ -91,7 +91,8 @@ export default defineConfig({
     ssr: true,
     outDir: 'vscode-extension/dist',
     emptyOutDir: true,
-    minify: false,
+    // Minified: the bundle is parsed on every activation. Sourcemaps keep stack traces readable.
+    minify: true,
     sourcemap: true,
     lib: {
       entry: resolve(__dirname, 'src/vscode-ext/extension.ts'),
@@ -104,6 +105,8 @@ export default defineConfig({
         format: 'cjs',
         exports: 'named',
         entryFileNames: 'extension.cjs',
+        // Dynamic imports (Babel, Gherkin merge engines) stay separate files, loaded on first use.
+        chunkFileNames: 'chunks/[name]-[hash].cjs',
       },
     },
   },

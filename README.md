@@ -2,7 +2,7 @@
 
 [![Release](https://img.shields.io/badge/release-v0.8.2-6366f1)](https://github.com/metin-5115/recospec/releases/tag/v0.8.2)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-1313%20passing-brightgreen)](#performance)
+[![Tests](https://img.shields.io/badge/tests-1898%20passing-brightgreen)](#performance)
 [![VS Code](https://img.shields.io/badge/VS_Code-extension-007ACC)](#vs-code-extension-v082)
 
 Recospec is an open-source Chrome extension that records your browser interactions and generates production-ready test automation code with smart locator strategies and automatic Page Object Model output — no manual editing required.
@@ -189,16 +189,27 @@ pnpm package:vscode # → releases/recospec-0.8.2.vsix
 
 ## Performance
 
-Measured via `benchmarks/performance.test.ts` (jsdom, run on every CI pass):
+Latency is measured by `benchmarks/performance.test.ts` (jsdom, `pnpm bench`, run on every CI
+pass). Sizes are measured by `pnpm size` (`scripts/check-bundle-size.mjs`), which CI runs after
+the three builds and fails when a budget is exceeded. KB = 1000 bytes.
 
-| Metric                                       | Result      | Budget   |
-| -------------------------------------------- | ----------- | -------- |
-| Single locator evaluate (p99, simple form)   | **~3.2 ms** | < 5 ms   |
-| Single locator evaluate (max, 1000-elem DOM) | **~340 ms** | < 500 ms |
-| CLI bundle (`pnpm build:cli`, uncompressed)  | **~203 KB** | < 250 KB |
-| Chrome dist JS (uncompressed)                | **~970 KB** | —        |
-| VS Code bundle (`pnpm build:vscode`)         | **~2.1 MB** | — (CJS)  |
-| Unit tests passing                           | **1313**    | —        |
+| Metric                                                | Result       | Budget             |
+| ----------------------------------------------------- | ------------ | ------------------ |
+| Single locator evaluate (p99, simple form)            | **~2 ms**    | < 5 ms             |
+| Single locator evaluate (max, 1000-elem DOM)          | **~45 ms**   | < 500 ms           |
+| Chrome extension JS, all chunks (gzip)                | **~264 KB**  | < 500 KB           |
+| Chrome extension JS, all chunks (raw)                 | **~881 KB**  | < 900 KB (ceiling) |
+| Side panel JS loaded on open (raw)                    | **~555 KB**  | —                  |
+| CLI bundle (`pnpm build:cli`, minified)               | **~232 KB**  | < 250 KB           |
+| VS Code activation bundle (`extension.cjs`, minified) | **~283 KB**  | < 400 KB           |
+| VS Code merge engines (loaded on first merge)         | **~987 KB**  | —                  |
+| Unit tests (`pnpm test`, 16 cores)                    | **~25–35 s** | — (target < 10 s)  |
+| Tests passing                                         | **1898**     | —                  |
+
+The side panel loads the ZIP writer (JSZip) and the codegen adapters only when you export, and
+the VS Code extension activates on its view, its commands, or a `.recospecrc.json` workspace
+instead of on every startup. The Chrome service worker still loads its codegen code eagerly:
+dynamic `import()` is not allowed in service workers.
 
 ## Screenshots
 
@@ -225,8 +236,10 @@ pnpm install
 ```bash
 pnpm typecheck        # TypeScript type check (src + tests)
 pnpm lint             # ESLint (zero warnings policy)
-pnpm test             # Unit tests (runs typecheck first)
+pnpm test             # Unit tests (no typecheck; see pnpm check)
 pnpm test:ci          # Unit tests with coverage report
+pnpm check            # Typecheck + lint + unit tests in one go
+pnpm bench            # Mutation-survival and latency benchmarks
 pnpm test:e2e         # E2E tests (requires built extension)
 ```
 

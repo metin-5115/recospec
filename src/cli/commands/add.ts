@@ -11,10 +11,8 @@ import type { ConflictReporter } from '@codegen/apply/conflict-reporter'
 import { detectFramework } from '../detect-framework'
 import { loadRc } from '../config-loader'
 import { createTerminalReporter } from '../conflict-resolver'
-import { mergeTsPageObject } from '../merge/ts-page-object'
 import { mergePyPageObject } from '../merge/py-page-object'
 import { mergeJavaPageObject } from '../merge/java-page-object'
-import { mergeFeatureFile } from '../merge/feature-file'
 
 /** The generation options `add` passes through unchanged; everything else is about the files it writes. */
 type PassThroughOptions = Pick<
@@ -276,7 +274,9 @@ async function runMerge(
   existing: string,
   incoming: string,
 ): Promise<MergeOutcome> {
+  // Babel and Gherkin are heavy; load them only for the merge kinds that need them.
   if (kind === 'ts-page') {
+    const { mergeTsPageObject } = await import('../merge/ts-page-object')
     const r = mergeTsPageObject(existing, incoming)
     return { source: r.source, added: r.added, skipped: r.skipped }
   }
@@ -292,6 +292,7 @@ async function runMerge(
     return { source: r.source, added: r.added, skipped: r.skipped }
   }
   if (kind === 'feature') {
+    const { mergeFeatureFile } = await import('../merge/feature-file')
     const r = mergeFeatureFile(existing, incoming)
     return { source: r.source, added: r.added, skipped: r.skipped }
   }

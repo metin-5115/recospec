@@ -50,4 +50,23 @@ describe('text-mutation-tracker', () => {
 
     expect(frames).toHaveLength(1)
   })
+
+  it('schedules a fresh frame after a restart even if the previous frame never ran', async () => {
+    const frames: FrameRequestCallback[] = []
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+      frames.push(cb)
+      return frames.length
+    })
+    document.body.innerHTML = '<div id="d"><span>1</span></div>'
+    startTextMutationTracking()
+    document.querySelector('span')!.firstChild!.textContent = '2'
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    stopTextMutationTracking()
+
+    startTextMutationTracking()
+    document.querySelector('span')!.firstChild!.textContent = '3'
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(frames).toHaveLength(2)
+  })
 })

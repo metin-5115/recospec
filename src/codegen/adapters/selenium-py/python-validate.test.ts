@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { validatePythonSource } from './python-validate'
+import { validatePythonSource, validatePythonSources } from './python-validate'
 import { renderPageObject } from './page-object'
 import { renderScenario } from './scenario'
 import type { IRElement, IRPage, IRScenario, InferredMethod } from '../../ir/types'
@@ -119,5 +119,29 @@ describe('selenium-py — Python syntax validation', () => {
     const scenario: IRScenario = { name: 'empty', pages: [empty] }
     expectParsed(renderScenario(scenario), 'empty scenario')
     expectParsed(renderPageObject(empty), 'empty page')
+  })
+})
+
+describe('validatePythonSources (batch)', () => {
+  it('returns one result per source, in order, from a single parse run', () => {
+    const results = validatePythonSources([
+      'x = 1\n',
+      'def broken(:\n    pass',
+      'print("héllo ✓")\n',
+    ])
+    expect(results).toHaveLength(3)
+    if (results.every((r) => r.skipped)) return
+    expect(results.map((r) => r.ok)).toEqual([true, false, true])
+    expect(results[1]?.error).toMatch(/SyntaxError/)
+  })
+
+  it('returns an empty list for no sources', () => {
+    expect(validatePythonSources([])).toEqual([])
+  })
+
+  it('agrees with the single-source validator', () => {
+    const source = renderPageObject(loginPage)
+    const [batch] = validatePythonSources([source])
+    expect(batch?.ok).toBe(validatePythonSource(source).ok)
   })
 })
