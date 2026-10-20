@@ -15,6 +15,7 @@ import { resolveTestData } from '../../planner/test-data-resolver'
 import { renderFillValueExpr } from './fill-value'
 import { javaUrlExpr } from './base-url'
 import { javaPackages } from './packages'
+import { javaTestDataImport } from './test-data'
 import type { RenderOptions } from '../registry'
 import {
   buildScenarioFlow,
@@ -253,7 +254,9 @@ export function renderScenario(scenario: IRScenario, given: RenderOptions = {}):
   const methodSuffix = toJavaMethodName(scenario.name)
   const className = `${flowPascalName(scenario.name)}Test`
   const interactionImports = javaInteractionImports(inlineSteps)
-  const extraImports = `${interactionImports}${contextImports}${pageImports}`
+  const testDataImport = javaTestDataImport(`${stepLines}${contextHelpers}`)
+  const ownImports = [pageImports, testDataImport.trimEnd()].filter(Boolean).join('\n')
+  const extraImports = `${interactionImports}${contextImports}${ownImports}`
 
   // Inline steps locate elements themselves; a test that only calls page objects needs neither
   // the locator types nor an explicit wait.

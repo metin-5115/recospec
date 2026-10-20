@@ -2,6 +2,7 @@ import { normalizeActions } from './normalizer/action-normalizer'
 import { groupIntoPages } from './planner/page-grouper'
 import { appendFinalStateAssertion } from './planner/final-assertion'
 import { withFillVariants } from './planner/fill-variants'
+import { buildDefaultTestDataConfig } from './planner/test-data-resolver'
 import './adapters'
 import { getAdapter, type RenderOptions } from './adapters/registry'
 import { flowSlug } from './shared/flow-slug'
@@ -35,6 +36,21 @@ export interface GenerateSession {
   sessionId?: string
   name?: string
   startUrl?: string
+}
+
+/**
+ * The test data the scaffold ships an example file for. A caller that never opened the test-data
+ * panel passes none (or an empty list), yet the fill steps still read environment variables for the
+ * credentials they detect — so seed the same detection here, or the example file would be missing.
+ */
+function seededTestData(
+  config: GenerateOptions['testData'],
+  steps: ReturnType<typeof normalizeActions>['flatSteps'],
+): GenerateOptions['testData'] {
+  if (config?.params.length) return config
+  const fillElements = steps.flatMap((s) => (s.action === 'fill' && s.element ? [s.element] : []))
+  const seeded = buildDefaultTestDataConfig(fillElements)
+  return seeded.params.length ? seeded : config
 }
 
 /**
@@ -80,7 +96,7 @@ export function generateFromActions(
   const renderOptions: RenderOptions = {
     includeMocks: options.includeMocks,
     selfHealing: options.selfHealing !== false,
-    testData: withFillVariants(options.testData, normalized),
+    testData: withFillVariants(seededTestData(options.testData, normalized), normalized),
     bdd: options.bdd,
     flowSlug: flowSlug(scenario.name),
     baseUrl: recordedOrigin(scenario),

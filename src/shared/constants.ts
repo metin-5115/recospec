@@ -237,10 +237,12 @@ export const STRATEGY_DISPLAY_NAME: Record<LocatorStrategyName, string> = {
   layout: 'layout',
 }
 
+/** The project's public repository — the link a generated project's README points back to. */
+export const RECOSPEC_REPO_URL = 'https://github.com/metin-5115/recospec' as const
+
 export const EXTERNAL_URLS = {
-  reportBug: 'https://github.com/metin-5115/recospec/issues/new?template=bug_report.yml',
-  sendFeedback:
-    'https://github.com/metin-5115/recospec/issues/new?template=feedback.yml&title=Feedback%3A%20',
+  reportBug: `${RECOSPEC_REPO_URL}/issues/new?template=bug_report.yml`,
+  sendFeedback: `${RECOSPEC_REPO_URL}/issues/new?template=feedback.yml&title=Feedback%3A%20`,
 } as const
 
 /** Packages that expose Playwright's `chromium`, in the order the VS Code extension tries them. */
@@ -263,6 +265,15 @@ export const NAVIGABLE_URL_PATTERN = /^(https?|file):/i
 
 /** Environment variable that points a generated test project at another deployment. */
 export const BASE_URL_ENV_VAR = 'BASE_URL' as const
+
+/** `process.loadEnvFile` (what a generated Playwright config uses to read `.env`) arrived in Node 20.12. */
+export const PLAYWRIGHT_MIN_NODE_VERSION = '20.12.0' as const
+
+/** Where a generated Selenium Java project keeps its test data, relative to the project root. */
+export const JAVA_TEST_DATA_PROPERTIES_PATH = 'src/test/resources/test-data.properties' as const
+/** The Java package and file of the helper that reads that data (env first, then the properties file). */
+export const JAVA_TEST_DATA_PACKAGE = 'support' as const
+export const JAVA_TEST_DATA_HELPER_PATH = 'src/main/java/support/TestData.java' as const
 
 /** Base URL written into a generated project config when the recording had no http(s) origin. */
 export const DEFAULT_BASE_URL = 'http://localhost:3000' as const

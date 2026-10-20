@@ -6,6 +6,7 @@ import { renderScenario, toJavaMethodName } from './scenario'
 import { renderScaffold } from './scaffold'
 import { flowPascalName, flowSlug } from '../../shared/flow-slug'
 import { renderFeatureFile, renderStepsFile, renderBddScaffoldFiles } from './bdd'
+import { withTestDataHelper } from './test-data'
 
 export { renderPageObject, renderScenario, renderScaffold, toJavaMethodName }
 
@@ -19,10 +20,13 @@ export const seleniumJavaAdapter: FrameworkAdapter = {
     packageName: 'org.seleniumhq.selenium:selenium-java',
   },
   postProcess(files, options) {
-    if (!options?.bdd) return files
+    // Page objects and tests call `TestData.get(...)`; the CLI skips the scaffold, so ship the
+    // helper whenever the generated code needs it.
+    const withHelper = withTestDataHelper(files)
+    if (!options?.bdd) return withHelper
     // BDD mode drives test discovery via JUnit Platform Suite (CucumberRunner)
     // — testng.xml from the vanilla scaffold is dead weight; strip it.
-    return files.filter((f) => f.filename !== 'testng.xml')
+    return withHelper.filter((f) => f.filename !== 'testng.xml')
   },
   renderPageObject(page: IRPage, options?: RenderOptions): GeneratedFile {
     return {

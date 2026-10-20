@@ -4,6 +4,7 @@ import type { RenderOptions } from '../registry'
 import { FLOW_SLUG_FALLBACK } from '../../shared/flow-slug'
 import { nodeBaseUrlExpr } from '../../shared/base-url'
 import { renderFixturesScaffold } from '../../shared/upload-fixtures'
+import { PLAYWRIGHT_ENGINES, PLAYWRIGHT_ENV_LOADER, PLAYWRIGHT_GITIGNORE } from './env-loading'
 
 function renderEnvExample(options: RenderOptions): GeneratedFile | null {
   const params = options.testData?.params.filter((p) => p.useEnvVar) ?? []
@@ -19,6 +20,7 @@ export function renderScaffold(options: RenderOptions = {}): GeneratedFile[] {
       name: 'recospec-generated-tests',
       version: '1.0.0',
       private: true,
+      engines: PLAYWRIGHT_ENGINES,
       scripts: {
         test: 'playwright test',
         'test:headed': 'playwright test --headed',
@@ -36,6 +38,7 @@ export function renderScaffold(options: RenderOptions = {}): GeneratedFile[] {
 
   const playwrightConfig = `import { defineConfig, devices } from '@playwright/test';
 
+${PLAYWRIGHT_ENV_LOADER}
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
@@ -76,6 +79,7 @@ export default defineConfig({
     { filename: 'package.json', content: packageJson },
     { filename: 'playwright.config.ts', content: playwrightConfig },
     { filename: 'tsconfig.json', content: tsConfig },
+    { filename: '.gitignore', content: PLAYWRIGHT_GITIGNORE },
     { filename: 'utils/locator.ts', content: PLAYWRIGHT_SELF_HEALING_TS },
     {
       filename: `tests/${options.flowSlug ?? FLOW_SLUG_FALLBACK}.spec.ts-snapshots/.gitkeep`,

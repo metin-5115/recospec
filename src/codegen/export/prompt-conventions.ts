@@ -65,7 +65,7 @@ export const FRAMEWORK_CONVENTIONS: Record<FrameworkId, FrameworkConvention> = {
   'selenium-java': {
     label: 'Selenium Java (TestNG)',
     runCommand: 'mvn test',
-    envLookup: 'System.getenv().getOrDefault("X", "change-me")',
+    envLookup: 'TestData.get("X", "change-me")',
     pageObjectPath: (className) => `src/main/java/pages/${className}.java`,
     scenarioPath: (slug) => `src/test/java/tests/${pascalCase(slug)}Test.java`,
     rules: [

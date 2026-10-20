@@ -127,7 +127,7 @@ describe('selenium-java renderScenario', () => {
       inferredMethods: inferMethods(steps),
     }
     const out = renderScenario({ name: 'Secret flow', pages: [page] })
-    expect(out).toContain('System.getenv().getOrDefault("RECOSPEC_PASSWORD", "change-me")')
+    expect(out).toContain('TestData.get("RECOSPEC_PASSWORD", "change-me")')
     expect(out).not.toContain('hunter2')
   })
 

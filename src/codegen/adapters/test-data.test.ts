@@ -181,9 +181,9 @@ describe('test-data parameterization — selenium-py', () => {
 })
 
 describe('test-data parameterization — selenium-java', () => {
-  it('renders System.getenv().getOrDefault for password fields', () => {
+  it('renders TestData.get (env, then test-data.properties) for password fields', () => {
     const out = seleniumJavaAdapter.renderScenario(scenario)
-    expect(out.content).toContain(`System.getenv().getOrDefault("RECOSPEC_PASSWORD", "change-me")`)
+    expect(out.content).toContain(`TestData.get("RECOSPEC_PASSWORD", "change-me")`)
   })
 
   it('emits test-data.properties.example under src/test/resources when params exist', () => {

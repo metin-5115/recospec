@@ -32,6 +32,7 @@ import type { RenderOptions } from '../registry'
 import { navigationTarget } from '../../shared/scenario-flow'
 import { javaUrlExpr } from './base-url'
 import { javaPackages } from './packages'
+import { javaTestDataImport } from './test-data'
 
 // ---------------------------------------------------------------------------
 // Naming helpers
@@ -449,7 +450,7 @@ import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.PageFactory;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-${javaInteractionImports(allSteps)}${javaContextImports(allSteps)}
+${javaInteractionImports(allSteps)}${javaContextImports(allSteps)}${javaTestDataImport(`${accessorsBlock}${methodsBlock}`)}
 public class ${page.className} {
 ${collisionComment}    private final WebDriver driver;
     private final WebDriverWait wait;

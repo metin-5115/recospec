@@ -1,6 +1,7 @@
 import type { GeneratedFile } from '@shared/types/generated'
 import type { RenderOptions } from '../registry'
 import { renderFixturesScaffold } from '../../shared/upload-fixtures'
+import { JAVA_TEST_DATA_PROPERTIES_PATH } from '@shared/constants'
 
 const POM_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
@@ -73,6 +74,7 @@ const GITIGNORE = `target/
 *.iml
 .vscode/
 screenshots/
+${JAVA_TEST_DATA_PROPERTIES_PATH}
 `
 
 export function renderScaffold(options: RenderOptions = {}): GeneratedFile[] {
@@ -87,7 +89,7 @@ export function renderScaffold(options: RenderOptions = {}): GeneratedFile[] {
     const header = '# Recospec — copy to test-data.properties and fill in values.\n'
     const body = params.map((p) => `${p.envVarName}=${p.isSecret ? '' : p.defaultValue}`).join('\n')
     files.push({
-      filename: 'src/test/resources/test-data.properties.example',
+      filename: `${JAVA_TEST_DATA_PROPERTIES_PATH}.example`,
       content: `${header}${body}\n`,
     })
   }

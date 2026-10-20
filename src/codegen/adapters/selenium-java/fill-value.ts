@@ -1,6 +1,7 @@
 import type { IRElement, TestDataConfig } from '../../ir/types'
 import { resolveTestData } from '../../planner/test-data-resolver'
 import { javaStr } from './locator'
+import { javaTestDataExpr } from './test-data'
 
 /** Render the value-substitution expression for a Selenium Java `sendKeys` call. */
 export function renderFillValueExpr(
@@ -10,5 +11,5 @@ export function renderFillValueExpr(
 ): string {
   const r = resolveTestData(el, recordedValue, testData)
   if (!r.useEnvVar) return javaStr(r.literal)
-  return `System.getenv().getOrDefault(${javaStr(r.envVarName)}, ${javaStr(r.defaultValue)})`
+  return javaTestDataExpr(r.envVarName, r.defaultValue)
 }

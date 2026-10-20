@@ -3,6 +3,7 @@ import { isUrlAssertionStep } from '../../shared/page-assertion'
 import type { IRScenario, IRPage } from '../../ir/types'
 import type { RenderOptions } from '../registry'
 import { nodeBaseUrlExpr } from '../../shared/base-url'
+import { PLAYWRIGHT_ENGINES, PLAYWRIGHT_ENV_LOADER } from './env-loading'
 import { relativeModule, resolveOutputDirs } from '../../export/output-layout'
 import {
   mapScenarioToGherkin,
@@ -156,6 +157,7 @@ function renderBddPlaywrightConfig(options: RenderOptions): string {
   return `import { defineConfig, devices } from '@playwright/test';
 import { defineBddConfig } from 'playwright-bdd';
 
+${PLAYWRIGHT_ENV_LOADER}
 const testDir = defineBddConfig({
   features: 'features/*.feature',
   steps: ['features/steps/*.ts'],
@@ -186,6 +188,7 @@ function renderBddPackageJson(): string {
       name: 'recospec-generated-tests',
       version: '1.0.0',
       private: true,
+      engines: PLAYWRIGHT_ENGINES,
       scripts: {
         bddgen: 'bddgen',
         test: 'bddgen && playwright test',

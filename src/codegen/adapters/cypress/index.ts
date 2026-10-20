@@ -12,6 +12,12 @@ import { renderFeatureFile, renderStepsFile, renderBddScaffoldFiles } from './bd
 
 export { renderPageObject, renderScenario, renderLocator }
 
+// The real cypress.env.json holds the user's credentials; only its .example is committed.
+const CYPRESS_GITIGNORE = `node_modules/
+cypress/videos/
+cypress.env.json
+`
+
 export function renderScaffold(options: RenderOptions = {}): GeneratedFile[] {
   const packageJson = JSON.stringify(
     {
@@ -68,6 +74,7 @@ addMatchImageSnapshotCommand({
     { filename: 'cypress/support/e2e.js', content: supportFile },
     { filename: 'cypress/support/locator.js', content: CYPRESS_SELF_HEALING_JS },
     { filename: 'cypress/screenshots/.gitkeep', content: '' },
+    { filename: '.gitignore', content: CYPRESS_GITIGNORE },
     ...renderFixturesScaffold(options),
   ]
   const params = options.testData?.params.filter((p) => p.useEnvVar) ?? []
