@@ -128,6 +128,21 @@ export const SECRET_PARAM_DEFAULT_VALUE = 'change-me' as const
 /** Prefix for environment variable names emitted by adapters. */
 export const ENV_VAR_PREFIX = 'RECOSPEC_' as const
 
+/** Marks an environment-variable reference in a `.feature` file: `"$RECOSPEC_PASSWORD"`. */
+export const FEATURE_SECRET_REF_PREFIX = '$' as const
+
+/** Label inside the placeholder that replaces a secret value in a JSON export. */
+export const SECRET_MASK_LABEL = 'REDACTED' as const
+
+/**
+ * Joins the variable name and the ordinal of a further distinct value in the same field. It cannot
+ * occur in an environment variable name, so a mask never collides with a real one.
+ */
+export const SECRET_MASK_ORDINAL_SEPARATOR = '#' as const
+
+/** Secrets shorter than this are not scanned for in output (a 1-3 character value is not worth a false alarm). */
+export const MIN_GUARDED_SECRET_LENGTH = 4 as const
+
 /** How long a "Copied!" confirmation stays visible in the side panel. */
 export const COPY_FEEDBACK_MS = 2_000 as const
 

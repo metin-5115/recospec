@@ -69,7 +69,9 @@ describe('renderFeatureFile (Cypress BDD)', () => {
     expect(sc?.name).toBe('User can log in')
     const stepKeywords = sc?.steps.map((s) => s.keyword.trim())
     expect(stepKeywords).toEqual(['Given', 'When'])
-    expect(sc?.steps[1].text).toBe('I log in with email "admin@example.com" and password "secret"')
+    expect(sc?.steps[1].text).toBe(
+      'I log in with email "$RECOSPEC_EMAIL" and password "$RECOSPEC_PASSWORD"',
+    )
   })
 
   it('feature header lists the scenario name', () => {
@@ -103,7 +105,7 @@ describe('renderStepsFile (Cypress BDD)', () => {
   it('step body instantiates POM and calls the inferred method (no await)', () => {
     const content = renderStepsFile(scenario)
     expect(content).toContain('const loginPage = new LoginPage();')
-    expect(content).toContain('loginPage.login(arg1, arg2);')
+    expect(content).toContain('loginPage.login(secretValue(arg1), secretValue(arg2));')
     // Cypress chainables are not promises — no `await`.
     expect(content).not.toMatch(/\bawait\s+loginPage/)
   })

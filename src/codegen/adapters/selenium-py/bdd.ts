@@ -8,6 +8,8 @@ import {
   type GherkinStep,
 } from '../../bdd/gherkin-mapper'
 import { UPLOAD_FIXTURES_DIR } from '../../shared/upload-fixtures'
+import { FEATURE_SECRET_REF_PREFIX, SECRET_PARAM_DEFAULT_VALUE } from '@shared/constants'
+import { resolveSecretArgs } from '../../bdd/secret-args'
 
 export { renderFeatureFile } from '../../bdd/feature-file'
 import { toPyIdentifier, toSnakeCase } from './naming'
@@ -188,11 +190,18 @@ function canonicalDecorator(step: GherkinStep): 'given' | 'when' | 'then' {
   return 'when'
 }
 
+/** Turns the `$ENV_VAR` a feature holds for a secret into the variable's value. */
+const SECRET_VALUE_HELPER = `def secret_value(ref):
+    if not ref.startswith(${JSON.stringify(FEATURE_SECRET_REF_PREFIX)}):
+        return ref
+    return os.environ.get(ref[1:], ${JSON.stringify(SECRET_PARAM_DEFAULT_VALUE)})`
+
 export function renderStepsFile(scenario: IRScenario, options: RenderOptions = {}): string {
   const feature = mapScenarioToGherkin(scenario)
   const seenPatterns = new Set<string>()
   const stepDefs: string[] = []
   const pomImports = new Set<string>()
+  let usesSecrets = false
   let stepCounter = 0
 
   for (const sc of feature.scenarios) {
@@ -208,7 +217,11 @@ export function renderStepsFile(scenario: IRScenario, options: RenderOptions = {
       stepCounter++
       const fnName = `_step_${stepCounter}`
       const fnArgs = ['driver', ...conv.argNames].join(', ')
-      const body = renderStepBody(step, conv.argNames)
+      usesSecrets ||= Boolean(step.secrets?.some(Boolean))
+      const body = renderStepBody(
+        step,
+        resolveSecretArgs(step, conv.argNames, (n) => `secret_value(${n})`),
+      )
 
       stepDefs.push(
         `@${decorator}(${parserCall}(${JSON.stringify(conv.pattern)}))\n` +
@@ -229,7 +242,7 @@ export function renderStepsFile(scenario: IRScenario, options: RenderOptions = {
   importLines.push('from selenium.webdriver.common.by import By')
   importLines.push('from selenium.webdriver.common.keys import Keys')
   const stepsText = stepDefs.join('\n')
-  if (/\bos\.path\b/.test(stepsText)) importLines.unshift('import os')
+  if (usesSecrets || /\bos\.path\b/.test(stepsText)) importLines.unshift('import os')
   if (/\bWebDriverWait\(/.test(stepsText)) {
     importLines.push('from selenium.webdriver.support.ui import WebDriverWait')
   }
@@ -257,7 +270,7 @@ export function renderStepsFile(scenario: IRScenario, options: RenderOptions = {
 
 ${scenariosLine}
 
-
+${usesSecrets ? `\n${SECRET_VALUE_HELPER}\n\n` : ''}
 ${stepDefs.join('\n\n\n')}
 `
 }

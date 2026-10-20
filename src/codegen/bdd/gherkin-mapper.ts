@@ -1,7 +1,17 @@
 import type { InferredMethod, IRPage, IRScenario, IRStep, IRParamType } from '../ir/types'
+import { FEATURE_SECRET_REF_PREFIX } from '@shared/constants'
 import { urlStaticPrefix } from '../shared/url-assertion'
+import { deriveFillVariants, fillVariantFor, type FillVariant } from '../planner/fill-variants'
+import { getEnvVarName, getParameterName, isSensitiveField } from '../planner/sensitive-detector'
 
 export type GherkinKeyword = 'Given' | 'When' | 'Then' | 'And'
+
+/** A secret parameter: the feature names the environment variable, never the recorded value. */
+export interface SecretParam {
+  envVarName: string
+  /** Name the value has in the generated test-data config (Cypress reads it by this key). */
+  paramName: string
+}
 
 export interface GherkinStep {
   keyword: GherkinKeyword
@@ -13,6 +23,11 @@ export interface GherkinStep {
   params: Array<string | number | boolean>
   /** TS-level type for each parameter (used by adapters to type step args). */
   paramTypes: IRParamType[]
+  /**
+   * Parallel to `params`: set where the parameter is a secret. Its entry in `params` (and in the
+   * text) is then the `$ENV_VAR` reference, which the step definition resolves when the test runs.
+   */
+  secrets?: Array<SecretParam | undefined>
   /** Page that owns this step — adapters use it to instantiate the right POM. */
   page?: IRPage
   /** Inferred method backing this step (when method-level mapping was used). */
@@ -48,6 +63,26 @@ function renderValueLiteral(v: string | number | boolean): string {
   if (typeof v === 'number') return String(v)
   if (typeof v === 'boolean') return JSON.stringify(String(v))
   return JSON.stringify(v)
+}
+
+/** The `$ENV_VAR` text a `.feature` file holds in place of a secret value. */
+export function secretRef(secret: SecretParam): string {
+  return `${FEATURE_SECRET_REF_PREFIX}${secret.envVarName}`
+}
+
+/** `undefined` for a value that is not a secret. */
+function secretFor(
+  variants: readonly FillVariant[],
+  step: IRStep | undefined,
+): SecretParam | undefined {
+  const element = step?.element
+  if (!step || !isSensitiveField(element)) return undefined
+  const variant = fillVariantFor(variants, element, step.value ?? '')
+  const baseName = getParameterName(element)
+  return {
+    envVarName: variant?.envVarName ?? getEnvVarName(baseName),
+    paramName: variant?.paramName ?? baseName,
+  }
 }
 
 function humanizeIdentifier(raw: string): string {
@@ -89,36 +124,39 @@ function elementDisplayName(step: IRStep): string {
 interface NamedTemplate {
   keyword: GherkinKeyword
   /** `text` and `pattern` are returned by `render` since both depend on values. */
-  render: (method: InferredMethod) => { text: string; pattern: string }
+  render: (
+    method: InferredMethod,
+    secrets: Array<SecretParam | undefined>,
+  ) => { text: string; pattern: string }
 }
 
 const METHOD_TEMPLATES: Record<string, NamedTemplate> = {
   login: {
     keyword: 'When',
-    render: (m) => ({
-      text: `I log in with email ${quoted(m, 0)} and password ${quoted(m, 1)}`,
+    render: (m, s) => ({
+      text: `I log in with email ${quoted(m, s, 0)} and password ${quoted(m, s, 1)}`,
       pattern: `I log in with email ${ph(m, 0)} and password ${ph(m, 1)}`,
     }),
   },
   register: {
     keyword: 'When',
-    render: (m) => ({
-      text: `I register with email ${quoted(m, 0)} and password ${quoted(m, 1)}`,
+    render: (m, s) => ({
+      text: `I register with email ${quoted(m, s, 0)} and password ${quoted(m, s, 1)}`,
       pattern: `I register with email ${ph(m, 0)} and password ${ph(m, 1)}`,
     }),
   },
   search: {
     keyword: 'When',
-    render: (m) => ({
-      text: `I search for ${quoted(m, 0)}`,
+    render: (m, s) => ({
+      text: `I search for ${quoted(m, s, 0)}`,
       pattern: `I search for ${ph(m, 0)}`,
     }),
   },
   submitForm: {
     keyword: 'When',
-    render: (m) => ({
+    render: (m, s) => ({
       text: m.params.length
-        ? `I submit the form with ${m.params.map((_, i) => quoted(m, i)).join(' and ')}`
+        ? `I submit the form with ${m.params.map((_, i) => quoted(m, s, i)).join(' and ')}`
         : 'I submit the form',
       pattern: m.params.length
         ? `I submit the form with ${m.params.map((_, i) => ph(m, i)).join(' and ')}`
@@ -127,9 +165,9 @@ const METHOD_TEMPLATES: Record<string, NamedTemplate> = {
   },
   fillForm: {
     keyword: 'When',
-    render: (m) => ({
+    render: (m, s) => ({
       text: m.params.length
-        ? `I fill the form with ${m.params.map((_, i) => quoted(m, i)).join(' and ')}`
+        ? `I fill the form with ${m.params.map((_, i) => quoted(m, s, i)).join(' and ')}`
         : 'I fill the form',
       pattern: m.params.length
         ? `I fill the form with ${m.params.map((_, i) => ph(m, i)).join(' and ')}`
@@ -145,29 +183,29 @@ const METHOD_TEMPLATES: Record<string, NamedTemplate> = {
   },
   selectFromMenu: {
     keyword: 'When',
-    render: (m) => ({
-      text: `I select ${quoted(m, 0)} from the menu`,
+    render: (m, s) => ({
+      text: `I select ${quoted(m, s, 0)} from the menu`,
       pattern: `I select ${ph(m, 0)} from the menu`,
     }),
   },
   navigateFromMenu: {
     keyword: 'When',
-    render: (m) => ({
-      text: `I navigate to ${quoted(m, 0)} from the menu`,
+    render: (m, s) => ({
+      text: `I navigate to ${quoted(m, s, 0)} from the menu`,
       pattern: `I navigate to ${ph(m, 0)} from the menu`,
     }),
   },
   openItem: {
     keyword: 'When',
-    render: (m) => ({
-      text: `I open ${quoted(m, 0)}`,
+    render: (m, s) => ({
+      text: `I open ${quoted(m, s, 0)}`,
       pattern: `I open ${ph(m, 0)}`,
     }),
   },
   confirmAction: {
     keyword: 'When',
-    render: (m) => ({
-      text: `I confirm ${quoted(m, 0)}`,
+    render: (m, s) => ({
+      text: `I confirm ${quoted(m, s, 0)}`,
       pattern: `I confirm ${ph(m, 0)}`,
     }),
   },
@@ -190,7 +228,13 @@ function paramValueFromStep(method: InferredMethod, idx: number): string {
   return step?.value ?? `value${idx + 1}`
 }
 
-function quoted(method: InferredMethod, idx: number): string {
+function quoted(
+  method: InferredMethod,
+  secrets: Array<SecretParam | undefined>,
+  idx: number,
+): string {
+  const secret = secrets[idx]
+  if (secret) return renderValueLiteral(secretRef(secret))
   const fillSteps = method.steps.filter(isValueStep)
   const value = fillSteps[idx]?.value ?? paramValueFromStep(method, idx)
   return renderValueLiteral(value)
@@ -228,8 +272,8 @@ function defaultMethodTemplate(method: InferredMethod): NamedTemplate {
     const subject = humanizeIdentifier(name.slice('fill'.length)).toLowerCase() || 'field'
     return {
       keyword: 'When',
-      render: (m) => {
-        const value = m.params.length ? quoted(m, 0) : '""'
+      render: (m, s) => {
+        const value = m.params.length ? quoted(m, s, 0) : '""'
         // The subject is part of the pattern so every field gets its own step
         // definition; only the value is a placeholder (one placeholder = one param).
         const placeholder = m.params.length ? ph(m, 0) : '""'
@@ -244,8 +288,8 @@ function defaultMethodTemplate(method: InferredMethod): NamedTemplate {
     const subject = humanizeIdentifier(name.slice('select'.length)).toLowerCase() || 'option'
     return {
       keyword: 'When',
-      render: (m) => ({
-        text: `I select ${quoted(m, 0)} from the ${subject}`,
+      render: (m, s) => ({
+        text: `I select ${quoted(m, s, 0)} from the ${subject}`,
         pattern: `I select ${ph(m, 0)} from the ${subject}`,
       }),
     }
@@ -350,7 +394,11 @@ export function literalArgsFor(
 export const UPLOAD_FILE_SEPARATOR = ', '
 
 /** Map a single IR step to a Gherkin step (used for step-level scenarios). */
-export function mapIRStepToGherkin(step: IRStep, keyword: GherkinKeyword): GherkinStep {
+export function mapIRStepToGherkin(
+  step: IRStep,
+  keyword: GherkinKeyword,
+  variants: readonly FillVariant[] = [],
+): GherkinStep {
   if (step.action === 'navigate' && step.url) {
     return {
       keyword,
@@ -376,26 +424,30 @@ export function mapIRStepToGherkin(step: IRStep, keyword: GherkinKeyword): Gherk
   if (step.action === 'fill' && step.element) {
     const role = elementRoleLabel(step.element.tagName, step.element.inputType)
     const label = elementDisplayName(step)
-    const value = step.value ?? ''
+    const secret = secretFor(variants, step)
+    const value = secret ? secretRef(secret) : (step.value ?? '')
     return {
       keyword,
       text: `I fill the ${JSON.stringify(label)} ${role} with ${JSON.stringify(value)}`,
       pattern: `I fill the {string} ${role} with {string}`,
       params: [label, value],
       paramTypes: ['string', 'string'],
+      secrets: secret ? [undefined, secret] : undefined,
       sourceSteps: [step],
     }
   }
   if (step.action === 'select' && step.element) {
     const role = elementRoleLabel(step.element.tagName, step.element.inputType)
     const label = elementDisplayName(step)
-    const value = step.value ?? ''
+    const secret = secretFor(variants, step)
+    const value = secret ? secretRef(secret) : (step.value ?? '')
     return {
       keyword,
       text: `I select ${JSON.stringify(value)} from the ${JSON.stringify(label)} ${role}`,
       pattern: `I select {string} from the {string} ${role}`,
       params: [value, label],
       paramTypes: ['string', 'string'],
+      secrets: secret ? [secret, undefined] : undefined,
       sourceSteps: [step],
     }
   }
@@ -549,9 +601,12 @@ export function mapInferredMethodToGherkin(
   method: InferredMethod,
   page: IRPage,
   previousCanonical: CanonicalKeyword | null,
+  variants: readonly FillVariant[] = [],
 ): GherkinStep {
   const template = resolveTemplate(method)
-  const rendered = template.render(method)
+  const valueSteps = method.steps.filter(isValueStep)
+  const secrets = method.params.map((_, idx) => secretFor(variants, valueSteps[idx]))
+  const rendered = template.render(method, secrets)
 
   // Derive parameter values (in declaration order) from method.steps.
   const fillSteps = method.steps.filter(isValueStep)
@@ -564,7 +619,8 @@ export function mapInferredMethodToGherkin(
       if (toggleStep) return toggleStep.action === 'check'
       return raw === undefined ? false : raw === 'true' || raw === 'on'
     }
-    return raw ?? ''
+    const secret = secrets[idx]
+    return secret ? secretRef(secret) : (raw ?? '')
   })
 
   const canonical: CanonicalKeyword = template.keyword === 'Then' ? 'Then' : 'When'
@@ -576,6 +632,7 @@ export function mapInferredMethodToGherkin(
     pattern: rendered.pattern,
     params: values,
     paramTypes: method.paramTypes ?? method.params.map(() => 'string'),
+    secrets: secrets.some(Boolean) ? secrets : undefined,
     page,
     method,
     sourceSteps: method.steps,
@@ -600,6 +657,8 @@ export function mapInferredMethodToGherkin(
 export function mapScenarioToGherkin(scenario: IRScenario): GherkinFeature {
   const steps: GherkinStep[] = []
   let prevCanonical: CanonicalKeyword | null = null
+  // Distinct values of a secret field get their own variable, exactly as in the plain test.
+  const variants = deriveFillVariants(scenario.pages.flatMap((p) => p.steps))
 
   scenario.pages.forEach((page) => {
     const navStep = page.steps.find((s) => s.action === 'navigate')
@@ -622,7 +681,7 @@ export function mapScenarioToGherkin(scenario: IRScenario): GherkinFeature {
 
     if (page.inferredMethods && page.inferredMethods.length > 0) {
       for (const method of page.inferredMethods) {
-        const gStep = mapInferredMethodToGherkin(method, page, prevCanonical)
+        const gStep = mapInferredMethodToGherkin(method, page, prevCanonical, variants)
         steps.push(gStep)
         const template = resolveTemplate(method)
         prevCanonical = template.keyword === 'Then' ? 'Then' : 'When'
@@ -633,7 +692,7 @@ export function mapScenarioToGherkin(scenario: IRScenario): GherkinFeature {
         if (SKIPPABLE_ACTIONS.has(step.action)) continue
         const canonical = canonicalFor(step.action, prevCanonical === null)
         const emittedKeyword = emit(canonical, prevCanonical)
-        const gStep = mapIRStepToGherkin(step, emittedKeyword)
+        const gStep = mapIRStepToGherkin(step, emittedKeyword, variants)
         gStep.page = page
         steps.push(gStep)
         prevCanonical = canonical

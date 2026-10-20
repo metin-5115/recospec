@@ -12,6 +12,8 @@ import {
   type GherkinStep,
 } from '../../bdd/gherkin-mapper'
 import { UPLOAD_FIXTURES_DIR } from '../../shared/upload-fixtures'
+import { FEATURE_SECRET_REF_PREFIX, SECRET_PARAM_DEFAULT_VALUE } from '@shared/constants'
+import { resolveSecretArgs } from '../../bdd/secret-args'
 
 export { renderFeatureFile } from '../../bdd/feature-file'
 
@@ -107,11 +109,28 @@ function canonicalRegistrationKeyword(step: GherkinStep): 'Given' | 'When' | 'Th
   return 'When'
 }
 
+/** Turns the `$ENV_VAR` a feature holds for a secret into its value from `cypress.env.json`. */
+function secretValueHelper(keys: ReadonlyMap<string, string>): string {
+  const table = Array.from(
+    keys,
+    ([envVar, key]) => `  ${JSON.stringify(envVar)}: ${JSON.stringify(key)},`,
+  )
+  return `const SECRET_KEYS = {
+${table.join('\n')}
+};
+
+const secretValue = (ref) =>
+  ref.startsWith(${JSON.stringify(FEATURE_SECRET_REF_PREFIX)})
+    ? Cypress.env(SECRET_KEYS[ref.slice(1)]) || ${JSON.stringify(SECRET_PARAM_DEFAULT_VALUE)}
+    : ref;`
+}
+
 export function renderStepsFile(scenario: IRScenario, options: RenderOptions = {}): string {
   const feature = mapScenarioToGherkin(scenario)
   const seenPatterns = new Set<string>()
   const stepDefs: string[] = []
   const pomImports = new Set<string>()
+  const secretKeys = new Map<string, string>()
 
   for (const sc of feature.scenarios) {
     for (const step of sc.steps) {
@@ -124,7 +143,13 @@ export function renderStepsFile(scenario: IRScenario, options: RenderOptions = {
       const names = Array.from({ length: count }, (_, i) => `arg${i + 1}`)
       const fnArgs = names.join(', ')
 
-      const body = renderStepBody(step, names)
+      for (const secret of step.secrets ?? []) {
+        if (secret) secretKeys.set(secret.envVarName, secret.paramName)
+      }
+      const body = renderStepBody(
+        step,
+        resolveSecretArgs(step, names, (n) => `secretValue(${n})`),
+      )
       const keyword = canonicalRegistrationKeyword(step)
       stepDefs.push(`${keyword}(${JSON.stringify(step.pattern)}, (${fnArgs}) => {\n${body}\n});`)
     }
@@ -143,9 +168,11 @@ export function renderStepsFile(scenario: IRScenario, options: RenderOptions = {
     }
   }
 
+  const helper = secretKeys.size > 0 ? `${secretValueHelper(secretKeys)}\n\n` : ''
+
   return `${importLines.join('\n')}
 
-${stepDefs.join('\n\n')}
+${helper}${stepDefs.join('\n\n')}
 `
 }
 

@@ -12,6 +12,8 @@ import {
   type GherkinStep,
 } from '../../bdd/gherkin-mapper'
 import { UPLOAD_FIXTURES_DIR } from '../../shared/upload-fixtures'
+import { FEATURE_SECRET_REF_PREFIX, SECRET_PARAM_DEFAULT_VALUE } from '@shared/constants'
+import { resolveSecretArgs } from '../../bdd/secret-args'
 
 export { renderFeatureFile } from '../../bdd/feature-file'
 
@@ -105,11 +107,18 @@ function canonicalRegistrationKeyword(step: GherkinStep): 'Given' | 'When' | 'Th
   return 'When'
 }
 
+/** Turns the `$ENV_VAR` a feature holds for a secret into the variable's value. */
+const SECRET_VALUE_HELPER = `const secretValue = (ref: string): string =>
+  ref.startsWith(${JSON.stringify(FEATURE_SECRET_REF_PREFIX)})
+    ? (process.env[ref.slice(1)] ?? ${JSON.stringify(SECRET_PARAM_DEFAULT_VALUE)})
+    : ref;`
+
 export function renderStepsFile(scenario: IRScenario, options: RenderOptions = {}): string {
   const feature = mapScenarioToGherkin(scenario)
   const seenPatterns = new Set<string>()
   const stepDefs: string[] = []
   const pomImports = new Set<string>()
+  let usesSecrets = false
 
   for (const sc of feature.scenarios) {
     for (const step of sc.steps) {
@@ -123,7 +132,11 @@ export function renderStepsFile(scenario: IRScenario, options: RenderOptions = {
       const typedParams = names.map((n, i) => `${n}: ${types[i] ?? 'string'}`).join(', ')
       const fnArgs = typedParams ? `{ page }, ${typedParams}` : `{ page }`
 
-      const body = renderStepBody(step, names)
+      usesSecrets ||= Boolean(step.secrets?.some(Boolean))
+      const body = renderStepBody(
+        step,
+        resolveSecretArgs(step, names, (n) => `secretValue(${n})`),
+      )
       const keyword = canonicalRegistrationKeyword(step)
       stepDefs.push(
         `${keyword}(${JSON.stringify(step.pattern)}, async (${fnArgs}) => {\n${body}\n});`,
@@ -144,7 +157,13 @@ export function renderStepsFile(scenario: IRScenario, options: RenderOptions = {
   return `${importLines.join('\n')}
 
 const { Given, When, Then } = createBdd();
-
+${
+  usesSecrets
+    ? `
+${SECRET_VALUE_HELPER}
+`
+    : ''
+}
 ${stepDefs.join('\n\n')}
 `
 }

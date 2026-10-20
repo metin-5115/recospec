@@ -174,14 +174,23 @@ export function withFillVariants(
   }
 }
 
+/** Variant a recorded value of a sensitive field belongs to; `undefined` for the regular one. */
+export function fillVariantFor(
+  variants: readonly FillVariant[],
+  element: IRElement | undefined,
+  value: string,
+): FillVariant | undefined {
+  const key = testDataKey(element)
+  if (!key) return undefined
+  const fingerprint = valueFingerprint(value)
+  return variants.find((v) => v.baseKey === key && v.valueFingerprint === fingerprint)
+}
+
 /** Environment variable of a recorded value that has its own variant; `undefined` for the regular one. */
 export function fillEnvVarName(
   variants: readonly FillVariant[],
   element: IRElement | undefined,
   value: string,
 ): string | undefined {
-  const key = testDataKey(element)
-  if (!key) return undefined
-  const fingerprint = valueFingerprint(value)
-  return variants.find((v) => v.baseKey === key && v.valueFingerprint === fingerprint)?.envVarName
+  return fillVariantFor(variants, element, value)?.envVarName
 }

@@ -23,6 +23,14 @@ const emailEl: IRElement = {
   inputType: 'email',
 }
 
+const searchEl: IRElement = {
+  name: 'searchInput',
+  locatorStrategy: 'testid',
+  locatorValue: '[data-testid="search"]',
+  tagName: 'input',
+  inputType: 'search',
+}
+
 const passwordEl: IRElement = {
   name: 'passwordInput',
   locatorStrategy: 'testid',
@@ -77,9 +85,19 @@ describe('mapIRStepToGherkin', () => {
       ir({ action: 'fill', element: emailEl, value: 'admin@example.com' }),
       'When',
     )
-    expect(out.text).toBe('I fill the "email" field with "admin@example.com"')
+    expect(out.text).toBe('I fill the "email" field with "$RECOSPEC_EMAIL"')
     expect(out.pattern).toBe('I fill the {string} field with {string}')
-    expect(out.params).toEqual(['email', 'admin@example.com'])
+    expect(out.params).toEqual(['email', '$RECOSPEC_EMAIL'])
+    expect(out.secrets?.[1]).toEqual({ envVarName: 'RECOSPEC_EMAIL', paramName: 'email' })
+  })
+
+  it('fill search box → keeps the recorded query', () => {
+    const out = mapIRStepToGherkin(
+      ir({ action: 'fill', element: searchEl, value: 'shoes' }),
+      'When',
+    )
+    expect(out.text).toBe('I fill the "search" field with "shoes"')
+    expect(out.secrets).toBeUndefined()
   })
 
   it('keypress → When I press {string}', () => {
@@ -180,9 +198,9 @@ describe('mapInferredMethodToGherkin', () => {
     }
     const out = mapInferredMethodToGherkin(method, page, null)
     expect(out.keyword).toBe('When')
-    expect(out.text).toBe('I log in with email "admin@example.com" and password "secret"')
+    expect(out.text).toBe('I log in with email "$RECOSPEC_EMAIL" and password "$RECOSPEC_PASSWORD"')
     expect(out.pattern).toBe('I log in with email {string} and password {string}')
-    expect(out.params).toEqual(['admin@example.com', 'secret'])
+    expect(out.params).toEqual(['$RECOSPEC_EMAIL', '$RECOSPEC_PASSWORD'])
   })
 
   it('search method → When I search for', () => {
@@ -191,7 +209,7 @@ describe('mapInferredMethodToGherkin', () => {
       params: ['query'],
       paramTypes: ['string'],
       steps: [
-        { id: 's1', action: 'fill', element: emailEl, value: 'playwright' },
+        { id: 's1', action: 'fill', element: searchEl, value: 'playwright' },
         { id: 's2', action: 'keypress', key: 'Enter' },
       ],
     }
@@ -212,7 +230,9 @@ describe('mapInferredMethodToGherkin', () => {
       ],
     }
     const out = mapInferredMethodToGherkin(method, page, null)
-    expect(out.text).toBe('I register with email "new@user.com" and password "p@ss"')
+    expect(out.text).toBe(
+      'I register with email "$RECOSPEC_EMAIL" and password "$RECOSPEC_PASSWORD"',
+    )
   })
 
   it('acceptAndSubmit → no placeholders', () => {
@@ -244,7 +264,7 @@ describe('mapInferredMethodToGherkin', () => {
     }
     const out = mapInferredMethodToGherkin(method, page, null)
     expect(out.pattern).toBe('I log in with email {string} and password {string}')
-    expect(out.params).toEqual(['second@admin.com', 'pw2'])
+    expect(out.params).toEqual(['$RECOSPEC_EMAIL', '$RECOSPEC_PASSWORD'])
   })
 
   it('verifyX method → Then keyword', () => {
@@ -327,7 +347,9 @@ describe('mapScenarioToGherkin', () => {
     // Given (page-entry) + When (login)
     expect(lines.map((l) => l.keyword)).toEqual(['Given', 'When'])
     expect(lines[0].text).toBe('I am on the "Login" page')
-    expect(lines[1].text).toBe('I log in with email "a@b.com" and password "pw"')
+    expect(lines[1].text).toBe(
+      'I log in with email "$RECOSPEC_EMAIL" and password "$RECOSPEC_PASSWORD"',
+    )
   })
 
   it('falls back to per-step mapping when page has no inferred methods', () => {

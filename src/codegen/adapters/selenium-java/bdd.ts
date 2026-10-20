@@ -10,6 +10,8 @@ import {
   type GherkinStep,
 } from '../../bdd/gherkin-mapper'
 import { UPLOAD_FIXTURES_DIR } from '../../shared/upload-fixtures'
+import { FEATURE_SECRET_REF_PREFIX, SECRET_PARAM_DEFAULT_VALUE } from '@shared/constants'
+import { resolveSecretArgs } from '../../bdd/secret-args'
 
 export { renderFeatureFile } from '../../bdd/feature-file'
 
@@ -157,11 +159,20 @@ function canonicalAnnotation(step: GherkinStep): 'Given' | 'When' | 'Then' {
   return 'When'
 }
 
+/** Turns the `$ENV_VAR` a feature holds for a secret into the variable's value. */
+const SECRET_VALUE_HELPER = `    private static String secretValue(String ref) {
+        if (!ref.startsWith(${JSON.stringify(FEATURE_SECRET_REF_PREFIX)})) {
+            return ref;
+        }
+        return System.getenv().getOrDefault(ref.substring(1), ${JSON.stringify(SECRET_PARAM_DEFAULT_VALUE)});
+    }`
+
 export function renderStepsFile(scenario: IRScenario, options: RenderOptions = {}): string {
   const feature = mapScenarioToGherkin(scenario)
   const seenPatterns = new Set<string>()
   const stepMethods: string[] = []
   const pomImports = new Set<string>()
+  let usesSecrets = false
   let stepCounter = 0
 
   for (const sc of feature.scenarios) {
@@ -177,7 +188,11 @@ export function renderStepsFile(scenario: IRScenario, options: RenderOptions = {
       const annotation = canonicalAnnotation(step)
       stepCounter++
       const methodName = `step${stepCounter}`
-      const body = renderStepBody(step, argNames)
+      usesSecrets ||= Boolean(step.secrets?.some(Boolean))
+      const body = renderStepBody(
+        step,
+        resolveSecretArgs(step, argNames, (n) => `secretValue(${n})`),
+      )
 
       stepMethods.push(
         `    @${annotation}(${JSON.stringify(step.pattern)})\n` +
@@ -243,7 +258,7 @@ public class StepDefinitions {
         }
     }
 
-${stepMethods.join('\n\n')}
+${usesSecrets ? `${SECRET_VALUE_HELPER}\n\n` : ''}${stepMethods.join('\n\n')}
 }
 `
 }

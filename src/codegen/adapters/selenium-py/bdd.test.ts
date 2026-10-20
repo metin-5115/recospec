@@ -70,7 +70,9 @@ describe('renderFeatureFile (Selenium-py BDD)', () => {
     expect(sc?.name).toBe('User can log in')
     const stepKeywords = sc?.steps.map((s) => s.keyword.trim())
     expect(stepKeywords).toEqual(['Given', 'When'])
-    expect(sc?.steps[1].text).toBe('I log in with email "admin@example.com" and password "secret"')
+    expect(sc?.steps[1].text).toBe(
+      'I log in with email "$RECOSPEC_EMAIL" and password "$RECOSPEC_PASSWORD"',
+    )
   })
 
   it('feature header lists the scenario name', () => {
@@ -111,7 +113,7 @@ describe('renderStepsFile (Selenium-py BDD)', () => {
   it('step body instantiates POM and calls the inferred method (no await — sync)', () => {
     const content = renderStepsFile(scenario)
     expect(content).toContain('login_page = LoginPage(driver)')
-    expect(content).toContain('login_page.login(arg1, arg2)')
+    expect(content).toContain('login_page.login(secret_value(arg1), secret_value(arg2))')
     expect(content).not.toMatch(/\bawait\b/)
   })
 
@@ -126,7 +128,7 @@ describe('renderStepsFile (Selenium-py BDD)', () => {
       ],
     }
     const content = renderStepsFile(renamed)
-    expect(content).toContain('login_page.submit_form(arg1, arg2)')
+    expect(content).toContain('login_page.submit_form(secret_value(arg1), secret_value(arg2))')
     expect(content).not.toContain('submitForm')
   })
 
