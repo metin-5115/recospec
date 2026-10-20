@@ -18,7 +18,10 @@ To generate test code, Recospec processes data **locally, in your browser**:
 - **Text you enter into form fields** — needed to reproduce the flow in the
   generated test. Fields detected as sensitive (password, token, secret, API key,
   email) are automatically replaced with environment-variable placeholders in the
-  generated code; their values are not written into the output.
+  generated code; their values are not written into the output. The same fields are masked
+  (`[REDACTED:…]`) in the JSON export, and appear as `$ENV_VAR` references in BDD
+  `.feature` files. Text typed into fields that are not classified as sensitive is exported
+  as recorded.
 - **Captured network requests** — while you record, Recospec records the method, URL,
   status and a size-capped (50 KB) response body of the page's own `fetch`/`XMLHttpRequest`
   calls, used to generate optional mocks and to detect waits. This is **on by default** and can

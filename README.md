@@ -106,6 +106,25 @@ locations (`features/` for Playwright TS, `cypress/e2e/` for Cypress,
 `features/` for Selenium Py, `src/test/resources/features/` for Selenium
 Java).
 
+### Secrets and privacy
+
+Fields that look sensitive — a `password` input, or a name, id, test id or autocomplete value matching
+password, secret, token, API key, email, card number, CVV or expiry — never leave the recording in
+plain text:
+
+- **Generated tests** read them from `RECOSPEC_*` environment variables (Cypress: `cypress.env.json`).
+- **`.feature` files** hold a `"$RECOSPEC_PASSWORD"` reference instead of the value; the step
+  definitions resolve it when the test runs. A second, different password in the same recording gets
+  its own variable (`$RECOSPEC_PASSWORD_INVALID`, `$RECOSPEC_PASSWORD_2`).
+- **`JSON for CLI`** replaces the value with `[REDACTED:RECOSPEC_PASSWORD]` (`…#2` for a further
+  distinct value in the same field). `recospec add` and `recospec prompt` work from the masked file
+  unchanged. There is no switch to export the raw values.
+
+What is **not** masked: anything typed into a field that is not classified as sensitive (a search
+box, a free-text "notes" field, a field called `code`), assertion text, page titles and URLs, and the
+element labels. If such a field holds something private, review the JSON and the `.feature` before
+sharing them. Values under 4 characters are masked but not scanned for by the leak guard.
+
 ### File names, base URL and folders
 
 - **One file per flow.** Specs are named after the recorded flow, so a second

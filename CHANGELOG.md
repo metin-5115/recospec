@@ -52,6 +52,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Recorded passwords were written in plain text into `.feature` files and the JSON export** —
+  the BDD mapper copied every fill value into the Gherkin line, and `JSON for CLI` wrote the raw
+  actions. Sensitive fields (the classifier the plain tests already use: password, email, token,
+  API key, card data, …) are now a `"$RECOSPEC_*"` reference in the `.feature` file, resolved by the
+  step definitions of all four frameworks at run time, and `[REDACTED:RECOSPEC_*]` in the JSON
+  export, which also drops a prefilled `value` attribute and re-masks old response bodies. Distinct
+  values of one field stay distinct, so wrong-password flows keep their own variable and
+  `recospec add` generates the same code from the masked file. Both outputs fail with an error
+  instead of being written if a recorded secret is still in them. The side panel says so next to
+  _JSON for CLI_; there is no setting to turn the masking off. Text typed into fields that are not
+  classified as sensitive is still exported as recorded (see the README's _Secrets and privacy_).
 - **`recospec add` wrote page objects that could not load** — with runtime self-healing on, a
   Playwright page object imports `../utils/locator` (a Cypress command calls `cy.selfHealing`), but
   `add` skips the scaffold, so the helper never reached the project and the first run failed with
