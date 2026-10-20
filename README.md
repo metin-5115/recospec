@@ -54,7 +54,7 @@ Then load the extension in Chrome:
 | Selenium Java   | `BASE_URL=http://localhost:3000 mvn test`                                                              |
 
 `BASE_URL` is optional: without it the tests open the origin you recorded. On Windows PowerShell set it first (`$env:BASE_URL = 'http://localhost:3000'`).
-Credentials you typed are never written to the tests; the generated code reads `RECOSPEC_*` environment variables instead (see the generated `.env.example`).
+Credentials you typed are never written to the tests; the generated code reads `RECOSPEC_*` values instead. Copy the generated example file and fill it in: `.env.example` → `.env` (Playwright, which loads it with Node 20.12+'s `process.loadEnvFile`, and Selenium Python), `cypress.env.json.example` → `cypress.env.json` (Cypress), `src/test/resources/test-data.properties.example` → `test-data.properties` (Selenium Java). A real environment variable always wins over the file, and the real files are git-ignored.
 
 <!-- Add these once the files exist in docs/media/ (see docs/media/README.md):
 ![Recording a flow in the side panel](docs/media/record.gif)
