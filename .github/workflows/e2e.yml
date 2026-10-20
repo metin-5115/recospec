@@ -26,5 +26,6 @@ jobs:
       - name: Install Playwright Chromium
         run: pnpm exec playwright install chromium --with-deps
 
+      # @slow specs (the generated project must run green) run nightly, see nightly.yml.
       - name: Run E2E tests
-        run: xvfb-run --auto-servernum pnpm test:e2e
+        run: xvfb-run --auto-servernum pnpm test:e2e --grep-invert @slow

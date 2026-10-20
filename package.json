@@ -16,6 +16,7 @@
     "test:watch": "vitest",
     "test:ci": "vitest run --coverage --project node --project idb --project dom --project ui",
     "test:e2e": "playwright test",
+    "test:e2e:slow": "pnpm build:e2e && pnpm build:cli && playwright test --grep @slow",
     "bench": "vitest run --project bench --no-file-parallelism",
     "bench:calibrate": "vitest run --config vitest.calibrate.config.ts",
     "size": "node scripts/check-bundle-size.mjs",

@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Shop — Recospec E2E Fixture</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        max-width: 420px;
+        margin: 60px auto;
+        padding: 0 20px;
+      }
+      label {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 14px;
+      }
+      input,
+      button {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 8px 12px;
+        margin-bottom: 16px;
+        font-size: 14px;
+      }
+      [hidden] {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <!--
+      Offline login + search fixture for the "recorded test runs green" E2E. It is served for every
+      path by a local static server, so the URL changes (/ -> /search) without a page load.
+    -->
+    <main>
+      <!-- novalidate: generated tests fill credentials with placeholders ("change-me"), not real emails. -->
+      <form id="login" aria-label="Login" novalidate>
+        <h1>Sign in</h1>
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" autocomplete="off" />
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="off" />
+        <button id="sign-in" type="submit">Sign in</button>
+      </form>
+
+      <section id="search-view" hidden>
+        <h1>Catalogue</h1>
+        <label for="query">Search products</label>
+        <input id="query" name="query" type="search" autocomplete="off" />
+        <p id="result-count" data-testid="result-count" aria-live="polite"></p>
+        <ul id="results" data-testid="results"></ul>
+      </section>
+    </main>
+
+    <script>
+      const PRODUCTS = ['Red mug', 'Blue mug', 'Green kettle', 'Steel kettle', 'Red notebook']
+      const login = document.getElementById('login')
+      const searchView = document.getElementById('search-view')
+      const query = document.getElementById('query')
+      const count = document.getElementById('result-count')
+      const results = document.getElementById('results')
+
+      function showSearch() {
+        login.hidden = true
+        searchView.hidden = false
+        query.focus()
+      }
+
+      login.addEventListener('submit', (event) => {
+        event.preventDefault()
+        history.pushState({}, '', '/search')
+        showSearch()
+      })
+
+      query.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter') return
+        event.preventDefault()
+        const term = query.value.trim().toLowerCase()
+        const hits = PRODUCTS.filter((p) => p.toLowerCase().includes(term))
+        count.textContent = hits.length + ' results'
+        results.replaceChildren(
+          ...hits.map((name) => {
+            const li = document.createElement('li')
+            li.textContent = name
+            return li
+          }),
+        )
+      })
+
+      if (location.pathname === '/search') showSearch()
+    </script>
+  </body>
+</html>
