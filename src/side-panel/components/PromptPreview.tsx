@@ -33,7 +33,7 @@ export function PromptPreview({ session, steps, framework }: PromptPreviewProps)
   const result = useMemo<PromptResult | null>(() => {
     if (!isOpen) return null
     try {
-      const payload = buildJsonExport(session, steps)
+      const payload = buildJsonExport(session, steps, { maskSecrets: false })
       const doc = buildPromptDocument(payload, {
         mode: 'prompt',
         framework,

@@ -64,7 +64,7 @@ export function LlmContextPreview({ session, steps, framework }: LlmContextPrevi
   const result = useMemo<ContextResult | null>(() => {
     if (!isOpen) return null
     try {
-      const payload = buildJsonExport(session, steps)
+      const payload = buildJsonExport(session, steps, { maskSecrets: false })
       const ctx = buildLlmContext(payload, { task, framework, redactSecrets: shouldRedact })
       const text = format === 'json' ? renderLlmContextJson(ctx) : renderLlmContextCompact(ctx)
       const xml = renderPromptMarkdown(
