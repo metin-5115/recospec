@@ -375,4 +375,5 @@ export const PREF_KEYS = {
   captureNetwork: 'recospec.captureNetwork',
   pierceClosedShadow: 'recospec.pierceClosedShadow',
   outputSelection: 'recospec.outputSelection',
+  advancedOpen: 'recospec.generateAdvancedOpen',
 } as const

@@ -9,6 +9,7 @@ import { MethodPreview } from '../components/MethodPreview'
 import { PromptPreview } from '../components/PromptPreview'
 import { LlmContextPreview } from '../components/LlmContextPreview'
 import { TestDataPanel } from '../components/TestDataPanel'
+import { AdvancedSection } from '../components/AdvancedSection'
 
 interface GeneratePanelProps {
   methodRenames: Record<string, string>
@@ -96,97 +97,6 @@ export const GeneratePanel = memo(function GeneratePanel({
         bddEnabled={bddEnabled}
         onBddChange={setBddEnabled}
       />
-      <MethodPreview
-        steps={steps}
-        startUrl={activeSession?.startUrl ?? 'about:blank'}
-        renames={methodRenames}
-        onRename={onRenameMethod}
-      />
-      <TestDataPanel
-        steps={steps}
-        startUrl={activeSession?.startUrl ?? 'about:blank'}
-        testData={testData}
-        onChange={onTestDataChange}
-      />
-      <label className="flex cursor-pointer items-center gap-2 text-xs text-text-muted">
-        <input
-          type="checkbox"
-          checked={includeMocks}
-          onChange={(e) => setIncludeMocks(e.target.checked)}
-          className="h-3.5 w-3.5 cursor-pointer rounded border-border accent-accent"
-        />
-        <span>
-          Include mocks for captured network requests
-          <span className="ml-1 text-text-subtle">(page.route)</span>
-        </span>
-      </label>
-      <label className="flex cursor-pointer items-center gap-2 text-xs text-text-muted">
-        <input
-          type="checkbox"
-          checked={selfHealing}
-          onChange={(e) => setSelfHealing(e.target.checked)}
-          className="h-3.5 w-3.5 cursor-pointer rounded border-border accent-accent"
-        />
-        <span>
-          Runtime self-healing
-          <span className="ml-1 text-text-subtle">
-            (Playwright, Cypress · Selenium: fallback suggestions)
-          </span>
-        </span>
-      </label>
-      <label className="flex cursor-pointer items-center gap-2 text-xs text-text-muted">
-        <input
-          type="checkbox"
-          checked={finalStateAssertion}
-          onChange={(e) => setFinalStateAssertion(e.target.checked)}
-          className="h-3.5 w-3.5 cursor-pointer rounded border-border accent-accent"
-        />
-        <span>
-          Add final-state assertion
-          <span className="ml-1 text-text-subtle">(URL, when you added none)</span>
-        </span>
-      </label>
-      <label className="flex cursor-pointer items-center gap-2 text-xs text-text-muted">
-        <input
-          type="checkbox"
-          checked={autoWaitEnabled}
-          onChange={(e) => setAutoWaitEnabled(e.target.checked)}
-          className="h-3.5 w-3.5 cursor-pointer rounded border-border accent-accent"
-          aria-label="Auto-detect waits"
-        />
-        <span>
-          Auto-detect waits
-          <span className="ml-1 text-text-subtle">(networkidle, spinners)</span>
-        </span>
-      </label>
-      <fieldset className="space-y-1.5">
-        <legend className="text-[11px] font-semibold uppercase tracking-wider text-text-subtle">
-          Output includes
-        </legend>
-        {(
-          [
-            ['pageObjects', 'Page objects', 'one class per page'],
-            ['test', 'Test spec', '.feature when BDD is on, else the scenario'],
-            ['scaffold', 'Project scaffold', 'config, package.json/pom.xml'],
-          ] as const
-        ).map(([key, label, hint]) => (
-          <label
-            key={key}
-            className="flex cursor-pointer items-center gap-2 text-xs text-text-muted"
-          >
-            <input
-              type="checkbox"
-              checked={outputSelection[key]}
-              onChange={(e) => setOutputSelection({ ...outputSelection, [key]: e.target.checked })}
-              className="h-3.5 w-3.5 cursor-pointer rounded border-border accent-accent"
-            />
-            <span>
-              {label}
-              <span className="ml-1 text-text-subtle">({hint})</span>
-            </span>
-          </label>
-        ))}
-      </fieldset>
       <div className="flex gap-2">
         <button
           onClick={onGenerate}
@@ -208,24 +118,121 @@ export const GeneratePanel = memo(function GeneratePanel({
             aria-hidden="true"
           />
         </button>
-        {activeSession && (
-          <button
-            onClick={() => void onExportJson(activeSession.sessionId)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-bg px-3 py-2 text-sm font-medium text-text-muted transition-colors hover:border-border-strong hover:bg-bg-muted hover:text-text"
-            title="Export raw session data as JSON for the recospec CLI (recospec add session.json)"
-            aria-label="Export JSON for CLI"
-          >
-            <FileJson className="h-4 w-4" aria-hidden="true" />
-            JSON for CLI
-          </button>
-        )}
       </div>
-      {activeSession && (
-        <PromptPreview session={activeSession} steps={steps} framework={selectedFramework} />
-      )}
-      {activeSession && (
-        <LlmContextPreview session={activeSession} steps={steps} framework={selectedFramework} />
-      )}
+      <AdvancedSection>
+        <MethodPreview
+          steps={steps}
+          startUrl={activeSession?.startUrl ?? 'about:blank'}
+          renames={methodRenames}
+          onRename={onRenameMethod}
+        />
+        <TestDataPanel
+          steps={steps}
+          startUrl={activeSession?.startUrl ?? 'about:blank'}
+          testData={testData}
+          onChange={onTestDataChange}
+        />
+        <label className="flex cursor-pointer items-center gap-2 text-xs text-text-muted">
+          <input
+            type="checkbox"
+            checked={includeMocks}
+            onChange={(e) => setIncludeMocks(e.target.checked)}
+            className="h-3.5 w-3.5 cursor-pointer rounded border-border accent-accent"
+          />
+          <span>
+            Include mocks for captured network requests
+            <span className="ml-1 text-text-subtle">(page.route)</span>
+          </span>
+        </label>
+        <label className="flex cursor-pointer items-center gap-2 text-xs text-text-muted">
+          <input
+            type="checkbox"
+            checked={selfHealing}
+            onChange={(e) => setSelfHealing(e.target.checked)}
+            className="h-3.5 w-3.5 cursor-pointer rounded border-border accent-accent"
+          />
+          <span>
+            Runtime self-healing
+            <span className="ml-1 text-text-subtle">
+              (Playwright, Cypress · Selenium: fallback suggestions)
+            </span>
+          </span>
+        </label>
+        <label className="flex cursor-pointer items-center gap-2 text-xs text-text-muted">
+          <input
+            type="checkbox"
+            checked={finalStateAssertion}
+            onChange={(e) => setFinalStateAssertion(e.target.checked)}
+            className="h-3.5 w-3.5 cursor-pointer rounded border-border accent-accent"
+          />
+          <span>
+            Add final-state assertion
+            <span className="ml-1 text-text-subtle">(URL, when you added none)</span>
+          </span>
+        </label>
+        <label className="flex cursor-pointer items-center gap-2 text-xs text-text-muted">
+          <input
+            type="checkbox"
+            checked={autoWaitEnabled}
+            onChange={(e) => setAutoWaitEnabled(e.target.checked)}
+            className="h-3.5 w-3.5 cursor-pointer rounded border-border accent-accent"
+            aria-label="Auto-detect waits"
+          />
+          <span>
+            Auto-detect waits
+            <span className="ml-1 text-text-subtle">(networkidle, spinners)</span>
+          </span>
+        </label>
+        <fieldset className="space-y-1.5">
+          <legend className="text-[11px] font-semibold uppercase tracking-wider text-text-subtle">
+            Output includes
+          </legend>
+          {(
+            [
+              ['pageObjects', 'Page objects', 'one class per page'],
+              ['test', 'Test spec', '.feature when BDD is on, else the scenario'],
+              ['scaffold', 'Project scaffold', 'config, package.json/pom.xml'],
+            ] as const
+          ).map(([key, label, hint]) => (
+            <label
+              key={key}
+              className="flex cursor-pointer items-center gap-2 text-xs text-text-muted"
+            >
+              <input
+                type="checkbox"
+                checked={outputSelection[key]}
+                onChange={(e) =>
+                  setOutputSelection({ ...outputSelection, [key]: e.target.checked })
+                }
+                className="h-3.5 w-3.5 cursor-pointer rounded border-border accent-accent"
+              />
+              <span>
+                {label}
+                <span className="ml-1 text-text-subtle">({hint})</span>
+              </span>
+            </label>
+          ))}
+        </fieldset>
+        <div className="flex">
+          {activeSession && (
+            <button
+              onClick={() => void onExportJson(activeSession.sessionId)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-bg px-3 py-2 text-sm font-medium text-text-muted transition-colors hover:border-border-strong hover:bg-bg-muted hover:text-text"
+              title="Export raw session data as JSON for the recospec CLI (recospec add session.json)"
+              aria-label="Export JSON for CLI"
+            >
+              <FileJson className="h-4 w-4" aria-hidden="true" />
+              JSON for CLI
+            </button>
+          )}
+        </div>
+        {activeSession && (
+          <PromptPreview session={activeSession} steps={steps} framework={selectedFramework} />
+        )}
+        {activeSession && (
+          <LlmContextPreview session={activeSession} steps={steps} framework={selectedFramework} />
+        )}
+      </AdvancedSection>
       {codeGenError && (
         <p className="flex items-start gap-1.5 rounded-lg bg-danger-soft px-3 py-2 text-xs text-danger">
           <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
