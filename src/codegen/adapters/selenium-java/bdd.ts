@@ -3,6 +3,7 @@ import { isUrlAssertionStep } from '../../shared/page-assertion'
 import type { IRScenario, IRPage } from '../../ir/types'
 import type { RenderOptions } from '../registry'
 import { javaPackages } from './packages'
+import { javaTestDataImport } from './test-data'
 import {
   mapScenarioToGherkin,
   literalArgsFor,
@@ -164,7 +165,7 @@ const SECRET_VALUE_HELPER = `    private static String secretValue(String ref) {
         if (!ref.startsWith(${JSON.stringify(FEATURE_SECRET_REF_PREFIX)})) {
             return ref;
         }
-        return System.getenv().getOrDefault(ref.substring(1), ${JSON.stringify(SECRET_PARAM_DEFAULT_VALUE)});
+        return TestData.get(ref.substring(1), ${JSON.stringify(SECRET_PARAM_DEFAULT_VALUE)});
     }`
 
 export function renderStepsFile(scenario: IRScenario, options: RenderOptions = {}): string {
@@ -209,6 +210,7 @@ export function renderStepsFile(scenario: IRScenario, options: RenderOptions = {
     .sort()
     .map((name) => `import ${javaPackages(options.dirs).pages}.${name};`)
     .join('\n')
+  const testDataImport = javaTestDataImport(usesSecrets ? SECRET_VALUE_HELPER : '')
   const pomImportBlock = pomImportLines ? `${pomImportLines}\n` : ''
 
   // Interaction-only imports are added when a generated body actually uses them.
@@ -234,7 +236,7 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-${interactionImports}${pomImportBlock}
+${interactionImports}${testDataImport}${pomImportBlock}
 public class StepDefinitions {
     private WebDriver driver;
     private WebDriverWait wait;

@@ -48,7 +48,7 @@ describe('recospec add from a masked JSON export', () => {
     'playwright-ts': /process\.env\.RECOSPEC_PASSWORD/,
     cypress: /Cypress\.env\("password"\)/,
     'selenium-py': /RECOSPEC_PASSWORD/,
-    'selenium-java': /System\.getenv\(\)\.getOrDefault\("RECOSPEC_PASSWORD"/,
+    'selenium-java': /TestData\.get\("RECOSPEC_PASSWORD"/,
   }
 
   it.each(Object.keys(ENV_READ) as FrameworkId[])(

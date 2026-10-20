@@ -106,3 +106,22 @@ describe('step definitions that resolve secrets stay valid code', () => {
     expect(steps?.content).toMatch(/"RECOSPEC_PASSWORD_\w+": "password\w+"/)
   })
 })
+
+describe('selenium-java BDD secrets use the generated TestData helper', () => {
+  it('reads the environment and test-data.properties through TestData', () => {
+    const files = generated(load(), 'selenium-java', true)
+    const steps = files.find((f) => f.content.includes('class StepDefinitions'))
+    expect(steps?.content).toContain('import support.TestData;')
+    expect(steps?.content).toContain('TestData.get(ref.substring(1)')
+  })
+})
+
+describe('selenium-java BDD project', () => {
+  it('ships the TestData helper its steps import', () => {
+    const files = generateFromActions(load().session, load().actions, 'selenium-java', {
+      bdd: true,
+      selection: { pageObjects: true, test: true, scaffold: true },
+    }).files
+    expect(files.some((f) => f.filename.endsWith('TestData.java'))).toBe(true)
+  })
+})
