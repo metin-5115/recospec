@@ -18,6 +18,8 @@ const UI_TEST_GLOBS = ['src/side-panel/**', 'src/popup/**', 'src/shared/hooks/**
 const IDB_TESTS = [
   'src/background/assertion-handler.test.ts',
   'src/background/event-aggregator.test.ts',
+  'src/background/export-handler.test.ts',
+  'src/background/iteration-controller.test.ts',
   'src/background/replay-controller.test.ts',
   'src/background/session-manager.test.ts',
   'src/background/step-controller.test.ts',
@@ -129,37 +131,28 @@ export default defineConfig({
       exclude: [
         // test infrastructure
         'src/test-setup.ts',
+        'src/test-utils/**',
+        '**/*.test-util.ts',
         'src/vite-env.d.ts',
         // type-only files (no executable code)
         'src/shared/types/**',
-        // entry points (bootstrapping only)
+        // entry points that only wire modules together
         'src/popup/popup.tsx',
         'src/side-panel/side-panel.tsx',
-        // Chrome-API-dependent files (unit-testable only via E2E)
-        'src/background/**',
+        'src/background/index.ts',
         'src/content/index.ts',
-        'src/content/event-capture.ts',
-        'src/content/element-probe.ts',
-        'src/shared/messaging/**',
-        'src/shared/logger.ts',
         // VS Code extension host (requires the `vscode` runtime + a real editor;
         // exercised via the extension host, not jsdom unit tests)
         'src/vscode-ext/**',
-        // UI components without unit tests (covered via E2E in later phases)
-        'src/popup/PopupApp.tsx',
-        'src/side-panel/SidePanelApp.tsx',
-        'src/side-panel/sessionStore.ts',
-        'src/side-panel/hooks/**',
-        'src/side-panel/components/CodePreview.tsx',
-        'src/side-panel/components/ErrorBoundary.tsx',
-        'src/side-panel/components/SessionList.tsx',
-        'src/side-panel/components/StepList.tsx',
       ],
       thresholds: {
         lines: 75,
         functions: 75,
         branches: 75,
         statements: 75,
+        // CLAUDE.md targets: the two modules the product's promise rests on are held to 85%.
+        'src/locator-engine/**': { lines: 85, functions: 85, branches: 85, statements: 85 },
+        'src/codegen/**': { lines: 85, functions: 85, branches: 85, statements: 85 },
       },
     },
   },

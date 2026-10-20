@@ -1,8 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import {
+  literalArgsFor,
   mapIRStepToGherkin,
   mapInferredMethodToGherkin,
   mapScenarioToGherkin,
+  type GherkinStep,
 } from './gherkin-mapper'
 import type { IRElement, IRPage, IRScenario, IRStep, InferredMethod } from '../ir/types'
 
@@ -568,6 +570,58 @@ describe('upload', () => {
     const method: InferredMethod = { name: 'uploadAvatar', params: [], steps: [] }
     expect(mapInferredMethodToGherkin(method, page, null).text).toBe(
       'I upload a file to the avatar',
+    )
+  })
+})
+
+describe('literalArgsFor', () => {
+  const step = (
+    params: Array<string | number | boolean>,
+    paramTypes: Array<'string' | 'number' | 'boolean'>,
+  ) =>
+    ({
+      keyword: 'When',
+      text: '',
+      pattern: '',
+      params,
+      paramTypes,
+      method: { name: 'm', params: params.map((_, i) => `p${i}`), steps: [] },
+      sourceSteps: [],
+    }) as unknown as GherkinStep
+
+  it('spells booleans per language', () => {
+    const s = step([true, 'off', 'yes'], ['boolean', 'boolean', 'boolean'])
+    expect(literalArgsFor(s, 0, 'js')).toEqual(['true', 'false', 'false'])
+    expect(literalArgsFor(s, 0, 'python')).toEqual(['True', 'False', 'False'])
+    expect(literalArgsFor(step(['on'], ['boolean']), 0, 'java')).toEqual(['true'])
+  })
+
+  it('passes numbers as numbers and anything else as a quoted string', () => {
+    const s = step(['7', 'abc', undefined as unknown as string], ['number', 'string', 'string'])
+    expect(literalArgsFor(s, 0, 'js')).toEqual(['7', '"abc"', '""'])
+    expect(literalArgsFor(step(['x'], ['number']), 0, 'js')).toEqual(['0'])
+  })
+
+  it('skips the parameters the pattern already has placeholders for', () => {
+    const s = step(['a', 'b', true], ['string', 'string', 'boolean'])
+    expect(literalArgsFor(s, 2, 'js')).toEqual(['true'])
+  })
+})
+
+describe('mapIRStepToGherkin — element roles', () => {
+  it('calls a radio input a radio button and a bare element an element', () => {
+    const radio: IRElement = { ...checkboxEl, name: 'optionRadio', inputType: 'radio' }
+    expect(mapIRStepToGherkin(ir({ action: 'click', element: radio }), 'When').text).toContain(
+      'radio button',
+    )
+    const generic: IRElement = {
+      name: 'panel',
+      locatorStrategy: 'testid',
+      locatorValue: 'p',
+      tagName: 'div',
+    }
+    expect(mapIRStepToGherkin(ir({ action: 'click', element: generic }), 'When').text).toContain(
+      'element',
     )
   })
 })
