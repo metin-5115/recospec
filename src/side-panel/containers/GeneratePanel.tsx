@@ -213,19 +213,24 @@ export const GeneratePanel = memo(function GeneratePanel({
             </label>
           ))}
         </fieldset>
-        <div className="flex">
-          {activeSession && (
+        {activeSession && (
+          <div className="flex flex-col items-start gap-1.5">
             <button
               onClick={() => void onExportJson(activeSession.sessionId)}
               className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-bg px-3 py-2 text-sm font-medium text-text-muted transition-colors hover:border-border-strong hover:bg-bg-muted hover:text-text"
-              title="Export raw session data as JSON for the recospec CLI (recospec add session.json)"
+              title="Export session data as JSON for the recospec CLI (recospec add session.json)"
               aria-label="Export JSON for CLI"
+              aria-describedby="json-export-privacy-note"
             >
               <FileJson className="h-4 w-4" aria-hidden="true" />
               JSON for CLI
             </button>
-          )}
-        </div>
+            <p id="json-export-privacy-note" className="text-xs text-text-subtle">
+              Passwords, emails and other secret fields are masked in the file. The generated code
+              reads them from environment variables.
+            </p>
+          </div>
+        )}
         {activeSession && (
           <PromptPreview session={activeSession} steps={steps} framework={selectedFramework} />
         )}

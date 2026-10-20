@@ -66,6 +66,15 @@ describe('GeneratePanel', () => {
     expect(onExportJson).toHaveBeenCalledWith('s1')
   })
 
+  it('tells the user the JSON export masks secrets, without offering a way to turn that off', () => {
+    renderPanel()
+    fireEvent.click(screen.getByRole('button', { name: /advanced/i }))
+    const button = screen.getByRole('button', { name: 'Export JSON for CLI' })
+    const note = document.getElementById(button.getAttribute('aria-describedby') ?? '')
+    expect(note?.textContent).toMatch(/secret fields are masked/i)
+    expect(screen.queryByLabelText(/mask|redact/i)).toBeNull()
+  })
+
   it('keeps a generation error visible while Advanced is closed', () => {
     useSessionStore.setState({ codeGenError: 'Nothing to generate' })
     renderPanel()
