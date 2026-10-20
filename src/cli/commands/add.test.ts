@@ -1,5 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { runAdd } from './add'
@@ -236,3 +244,51 @@ describe('runAdd final-state assertion', () => {
     expect(await outputFor(false)).not.toContain('toHaveURL')
   })
 })
+
+describe('runAdd self-healing helper', () => {
+  function writeFallbackPayload(): void {
+    const payload = makePayload()
+    const click = clickAction()
+    click.target!.fallbackLocators = [
+      { strategy: 'css', selector: 'button.sign-in', framework: {}, score: 60, matchCount: 1 },
+    ]
+    payload.actions = [click]
+    writeFileSync(jsonPath, JSON.stringify(payload), 'utf8')
+  }
+
+  async function filesFor(selfHealing?: boolean): Promise<string[]> {
+    writeFallbackPayload()
+    await runAdd(
+      { json: jsonPath, projectDir: tmp, framework: 'playwright-ts', selfHealing },
+      failingReporter,
+    )
+    return listFiles(tmp)
+  }
+
+  it('writes the helper the generated page object imports', async () => {
+    const files = await filesFor()
+    expect(files.some((f) => f.endsWith('.ts') && f.startsWith('/pages/'))).toBe(true)
+    expect(readAll(tmp)).toContain("from '../utils/locator'")
+    expect(files).toContain('/utils/locator.ts')
+  })
+
+  it('leaves the helper out when self-healing is off', async () => {
+    expect(await filesFor(false)).not.toContain('/utils/locator.ts')
+  })
+
+  it('does not overwrite a helper the project already has', async () => {
+    writeFallbackPayload()
+    mkdirSync(join(tmp, 'utils'))
+    writeFileSync(join(tmp, 'utils/locator.ts'), '// mine\n', 'utf8')
+    await runAdd({ json: jsonPath, projectDir: tmp, framework: 'playwright-ts' }, {
+      resolve: () => ({ action: 'skip' }),
+    } as unknown as ConflictReporter)
+    expect(readFileSync(join(tmp, 'utils/locator.ts'), 'utf8')).toBe('// mine\n')
+  })
+})
+
+function readAll(dir: string): string {
+  return listFiles(dir)
+    .map((f) => readFileSync(join(dir, f), 'utf8'))
+    .join('\n')
+}

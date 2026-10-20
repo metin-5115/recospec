@@ -6,6 +6,8 @@
  * behaviour is covered by tests that execute exactly this source.
  */
 
+import type { FrameworkId, GeneratedFile } from '@shared/types/generated'
+
 /** How long the primary locator may be missing before the fallback that took over is reported. */
 export const SELF_HEALING_PROBE_TIMEOUT_MS = 2000 as const
 
@@ -93,3 +95,24 @@ Cypress.Commands.add('selfHealing', (selectors) => {
     });
 });
 `
+
+/**
+ * The runtime helper a generated page object or command file imports, when the output needs one.
+ * Callers that write only part of a project (the CLI's `add`) use this to ship the helper that the
+ * rest of the output depends on, without the full scaffold.
+ */
+export function selfHealingHelperFor(
+  framework: FrameworkId,
+  files: readonly GeneratedFile[],
+): GeneratedFile | null {
+  if (
+    framework === 'playwright-ts' &&
+    files.some((f) => f.content.includes('selfHealingLocator'))
+  ) {
+    return { filename: 'utils/locator.ts', content: PLAYWRIGHT_SELF_HEALING_TS }
+  }
+  if (framework === 'cypress' && files.some((f) => f.content.includes('cy.selfHealing'))) {
+    return { filename: 'cypress/support/locator.js', content: CYPRESS_SELF_HEALING_JS }
+  }
+  return null
+}

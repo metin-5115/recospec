@@ -6,6 +6,7 @@ import { generateFromActions } from '@codegen/index'
 import type { JsonExportPayload } from '@codegen/export/json-export'
 import type { GenerateOptions } from '@shared/types/generate-options'
 import { resolveOutputPath } from '@codegen/export/output-path'
+import { selfHealingHelperFor } from '@codegen/scaffold/self-healing'
 import type { OutputDirOverrides } from '@shared/types/generate-options'
 import type { ConflictReporter } from '@codegen/apply/conflict-reporter'
 import { detectFramework } from '../detect-framework'
@@ -101,6 +102,21 @@ export async function runAdd(opts: AddOptions, reporter?: ConflictReporter): Pro
   // Per spec: SKIP scaffold. The CLI assumes the user's project already has
   // a configured test runner.
   const targets = emitted.map((f) => routeToDisk(f, framework, opts.projectDir, rc?.config.paths))
+
+  // The page objects import a runtime helper the CLI would otherwise never write (it skips the
+  // scaffold), so ship that one file when it is missing. An existing copy is the project's own.
+  const helper = opts.selfHealing === false ? null : selfHealingHelperFor(framework, emitted)
+  if (helper) {
+    const target = routeToDisk(helper, framework, opts.projectDir, rc?.config.paths)
+    if (!existsSync(target.diskPath)) {
+      targets.push(target)
+      if (framework === 'cypress') {
+        console.log(
+          "[recospec] add `import './locator'` to your cypress/support file to enable cy.selfHealing",
+        )
+      }
+    }
+  }
 
   let written = 0
   let merged = 0
