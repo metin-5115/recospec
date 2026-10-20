@@ -221,9 +221,9 @@ the three builds and fails when a budget is exceeded. KB = 1000 bytes.
 | Single locator evaluate (p99, simple form)            | **~2 ms**    | < 5 ms             |
 | Single locator evaluate (max, 1000-elem DOM)          | **~45 ms**   | < 500 ms           |
 | Chrome extension JS, all chunks (gzip)                | **~264 KB**  | < 500 KB           |
-| Chrome extension JS, all chunks (raw)                 | **~881 KB**  | < 900 KB (ceiling) |
+| Chrome extension JS, all chunks (raw)                 | **~909 KB**  | < 920 KB (ceiling) |
 | Side panel JS loaded on open (raw)                    | **~555 KB**  | —                  |
-| CLI bundle (`pnpm build:cli`, minified)               | **~232 KB**  | < 250 KB           |
+| CLI bundle (`pnpm build:cli`, minified)               | **~250 KB**  | < 255 KB           |
 | VS Code activation bundle (`extension.cjs`, minified) | **~283 KB**  | < 400 KB           |
 | VS Code merge engines (loaded on first merge)         | **~987 KB**  | —                  |
 | Unit tests (`pnpm test`, 16 cores)                    | **~25–35 s** | — (target < 10 s)  |

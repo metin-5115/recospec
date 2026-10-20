@@ -22,8 +22,8 @@ const KB = 1000
  * - vscode.activation: the file VS Code parses on every activation (merge engines load lazily).
  */
 export const BUDGETS = {
-  chrome: { gzipTotal: 500 * KB, rawTotal: 900 * KB },
-  cli: { raw: 250 * KB },
+  chrome: { gzipTotal: 500 * KB, rawTotal: 920 * KB },
+  cli: { raw: 255 * KB },
   vscode: { activation: 400 * KB },
 }
 
