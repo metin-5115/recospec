@@ -38,6 +38,29 @@ Then load the extension in Chrome:
 2. Enable **Developer mode** (top right)
 3. Click **Load unpacked** and select the `dist/` folder
 
+## Quickstart: from install to a green test in 5 steps
+
+1. **Install** — build the extension and load `dist/` as an unpacked extension (see [Install from Source](#install-from-source)).
+2. **Record** — open your app, click the Recospec icon → _Open side panel_ → **Record**, then click through the flow. Press **Stop** when you are done.
+3. **Add an assertion** — in the step list, use the **+** button on the step after which something should be true (text, visibility, value, URL…). A test with no assertion only proves that the clicks work.
+4. **Generate** — pick a framework and press **Generate**, then **Export ZIP** (a new project) or open _Advanced_ → **JSON for CLI** to add the flow to an existing project with `npx recospec add`.
+5. **Run it** — unpack the ZIP, point the tests at your app and run them:
+
+| Framework       | Run                                                                                                    |
+| --------------- | ------------------------------------------------------------------------------------------------------ |
+| Playwright (TS) | `npm install && npx playwright install chromium && BASE_URL=http://localhost:3000 npx playwright test` |
+| Cypress         | `npm install && BASE_URL=http://localhost:3000 npx cypress run`                                        |
+| Selenium Python | `pip install -r requirements.txt && BASE_URL=http://localhost:3000 pytest`                             |
+| Selenium Java   | `BASE_URL=http://localhost:3000 mvn test`                                                              |
+
+`BASE_URL` is optional: without it the tests open the origin you recorded. On Windows PowerShell set it first (`$env:BASE_URL = 'http://localhost:3000'`).
+Credentials you typed are never written to the tests; the generated code reads `RECOSPEC_*` environment variables instead (see the generated `.env.example`).
+
+<!-- Add these once the files exist in docs/media/ (see docs/media/README.md):
+![Recording a flow in the side panel](docs/media/record.gif)
+![Generate screen with the Advanced section closed](docs/media/generate.png)
+-->
+
 ## Supported Frameworks
 
 | Framework                | Status    |
@@ -213,7 +236,7 @@ dynamic `import()` is not allowed in service workers.
 
 ## Screenshots
 
-_Demo GIF and screenshots coming soon._
+Demo GIF and screenshots live in [`docs/media/`](docs/media/README.md).
 
 ## License
 

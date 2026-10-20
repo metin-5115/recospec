@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Simpler Generate screen** — the screen after a recording showed every option at once. It now
+  shows the framework picker and the Generate button; the method and test-data editors, the mock,
+  self-healing, final-assertion and auto-wait switches, the output picker, _JSON for CLI_, the Claude
+  prompt and the local LLM context sit in a collapsible **Advanced** section. The section is closed
+  at first, is a keyboard-operable disclosure (`aria-expanded`) and remembers whether you left it open.
+- **README quickstart** — "install to a green test in 5 steps", with the run command for each
+  framework and `docs/media/` placeholders for the demo GIF and screenshots.
+
 - **File uploads are recorded as `upload`** — choosing a file on an `<input type=file>` was
   recorded as `fill("C:\fakepath\…")`, which Playwright rejects and no framework can run. The
   recorder now stores the file names (never a path) and the `multiple` flag, and the click that
@@ -41,6 +49,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   fingerprint), formats `compact` lines or single-line `json`. Available as `recospec context` (stdout
   is pipe-clean with `--dry-run`) and a **Local LLM context** card in the side panel with a token
   estimate. On the bundled fixtures the compact output is 24–43% of the XML prompt's size.
+
+### Fixed
+
+- **`recospec add` wrote page objects that could not load** — with runtime self-healing on, a
+  Playwright page object imports `../utils/locator` (a Cypress command calls `cy.selfHealing`), but
+  `add` skips the scaffold, so the helper never reached the project and the first run failed with
+  "Cannot find module". The CLI now writes that one helper when the project does not have it.
 
 ### Changed
 
