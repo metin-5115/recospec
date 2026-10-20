@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import JSZip from 'jszip'
 import { buildZipExport } from './zip-export'
+import { RECOSPEC_REPO_URL } from '@shared/constants'
 import type { Session } from '@shared/types/session'
 import type { GeneratedCode } from '@shared/types/generated'
 
@@ -215,5 +216,42 @@ describe('buildZipExport — fallback locator wording', () => {
     expect(playwright).toContain('## Self-healing locators')
     expect(playwright).toContain('selfHealingLocator(this.page, [primary, ...fallbacks])')
     expect((await readmeFor('cypress')).toLowerCase()).toContain('cy.selfhealing')
+  })
+})
+
+describe('buildZipExport — test data section', () => {
+  async function readmeFor(framework: GeneratedCode['framework'], example?: string) {
+    const files = example ? [{ filename: example, content: 'RECOSPEC_PASSWORD=\n' }] : []
+    const blob = await buildZipExport(makeSession(), { framework, files })
+    return readZipFile(blob, 'README.md')
+  }
+
+  it('tells each framework which example file to copy and how to run', async () => {
+    const playwright = await readmeFor('playwright-ts', '.env.example')
+    expect(playwright).toContain('## Test data')
+    expect(playwright).toContain('cp .env.example .env')
+    expect(playwright).toContain('Node 20.12')
+
+    const cypress = await readmeFor('cypress', 'cypress.env.json.example')
+    expect(cypress).toContain('cp cypress.env.json.example cypress.env.json')
+
+    const python = await readmeFor('selenium-py', '.env.example')
+    expect(python).toContain('cp .env.example .env')
+
+    const java = await readmeFor('selenium-java', 'src/test/resources/test-data.properties.example')
+    expect(java).toContain(
+      'cp src/test/resources/test-data.properties.example src/test/resources/test-data.properties',
+    )
+    expect(java).toContain('mvn test')
+  })
+
+  it('leaves the section out when the recording had no test data', async () => {
+    expect(await readmeFor('playwright-ts')).not.toContain('## Test data')
+  })
+
+  it('links back to the real repository, not a placeholder', async () => {
+    const readme = await readmeFor('playwright-ts')
+    expect(readme).toContain(`[Recospec](${RECOSPEC_REPO_URL})`)
+    expect(readme).not.toContain('your-username')
   })
 })
